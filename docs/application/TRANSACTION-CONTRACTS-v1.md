@@ -298,7 +298,7 @@ Any failure ⇒ ROLLBACK **everything, including creation of the new target Find
 
 ## 8) T7 — `createFindingWithObservationSource` — ensure-accounted (G3, idempotent)
 
-T7 is **not** "INSERT a Finding, then assign it". It is an *ensure this Observation is accounted for by one Finding* operation: the observation is the durable key, so retry after "COMMIT succeeded but ACK lost" must **never** create a second Finding or reassign an existing link (that would leave the original Finding source-less OPEN).
+T7 is **not** "INSERT a Finding, then assign it". It is an *ensure this Observation is accounted for by one Finding* operation on an **EXISTING** AdHocObservation (the numbered Gate-5A transaction set does not currently define the application operation that creates the observation row itself): the observation is the durable key, so retry after "COMMIT succeeded but ACK lost" must **never** create a second Finding or reassign an existing link (that would leave the original Finding source-less OPEN).
 
 ```
 BEGIN IMMEDIATE;
@@ -307,8 +307,27 @@ BEGIN IMMEDIATE;
 --      its Visit must be PREPARATION / not finalized when a NEW source
 --      relationship would be created  => else ROLLBACK
 -- 2) if observation.finding_id IS NOT NULL:
---      do NOT insert another Finding;
---      return the existing linked Finding as the durable/idempotent result
+--      do NOT insert another Finding; NEVER overwrite/reassign finding_id.
+--      The existing linked Finding is the durable/idempotent result of an
+--      IDENTICAL historical retry only. For a request carrying a NEW-Finding
+--      draft, "identical" means the durable Finding matches the requested
+--      semantic creation identity:
+--        * origin_visit_id == observation.visit_id
+--        * subject_id == observation.subject_id (null-safe)
+--        * normalized description
+--        * defect_type
+--        * defect_type_other
+--        * normalized location
+--        * urgency
+--        * impact
+--        * created_by == request actor
+--      Deliberately NOT part of retry identity: created_at (a retry generates
+--      a fresh clock) and the Finding's CURRENT status — a later legitimate
+--      status transition does not invalidate an identical historical retry.
+--      If the durable link exists but the requested semantic creation target
+--      DIFFERS: conflicting retry => typed conflict, no write, no
+--      reassignment, never silent success. T7 is not an existing-Finding
+--      selection/re-home API — T6 remains the only correction/re-home path.
 --      (read-only return; no writes)  => COMMIT
 -- 3) only when finding_id IS NULL, create the Finding OPEN:
 INSERT INTO finding(origin_visit_id, description, defect_type, defect_type_other, location,
@@ -320,11 +339,12 @@ UPDATE adhoc_observation
  WHERE observation_id = ? AND finding_id IS NULL;
 -- require changes == 1 (B5)
 -- 5) if changes != 1: ROLLBACK (the newly inserted Finding disappears); re-read durable
---      state; if the observation is now already linked, return that existing link as the
---      converged state; otherwise return a conflict.
+--      state; if the observation is now already linked AND the durable link matches the
+--      identical requested semantic creation target (the step-2 identity), return that
+--      existing link as the converged state; otherwise return a typed conflict.
 COMMIT;
 ```
-Guards: `trg_obs_finding_bi` first-source-in-origin; institution consistency. An informational observation keeps `finding_id NULL` (allowed — no Finding is created for it). Idempotency: the pre-read + `finding_id IS NULL` guard make this genuinely **Class A**: retry converges on the already-linked Finding and never creates a second Finding or orphans the first one.
+Guards: `trg_obs_finding_bi` first-source-in-origin; institution consistency. An informational observation keeps `finding_id NULL` (allowed — no Finding is created for it). Idempotency: the pre-read + `finding_id IS NULL` guard make this genuinely **Class A**: an IDENTICAL retry (step-2 semantic creation identity) converges on the already-linked Finding and never creates a second Finding or orphans the first one; a conflicting retry is a typed conflict with no write and no reassignment.
 
 ---
 
@@ -405,7 +425,7 @@ No state may change between the validated snapshot and finalization (same tx). N
 - Finding/Action transitions (T8/T10) with the affected-row guard + state re-read;
 - finalization (T11);
 - Finding creation attached to an existing response cell — **T2/T3A are already safe**: the guarded source UPDATE targets the cell's durable identity and its zero-row failure rolls back the just-inserted Finding before re-reading the existing answer/link (narrow audit: T2/T3A/T7 all satisfy this);
-- **T7 ensure-accounted** (this micro-correction): pre-reads the observation; never inserts when `observation.finding_id` is already set; the guarded link requires `finding_id IS NULL`, and a zero-row guard rolls back the new Finding and returns the existing link (no blind reassignment, no orphaned first Finding);
+- **T7 ensure-accounted** (this micro-correction): pre-reads the observation; never inserts when `observation.finding_id` is already set — an already-linked observation converges only as an IDENTICAL historical retry whose durable linked Finding matches the requested NEW-Finding semantic creation identity (origin/subject null-safe/normalized description/defect_type/defect_type_other/location/urgency/impact/created_by == request actor; `created_at` and the current status deliberately excluded — see §8), and a requested target that differs is a typed conflict with no write and no reassignment; the guarded link requires `finding_id IS NULL`, and a zero-row guard rolls back the new Finding and returns the existing link only on the identical durable target (no blind reassignment, no orphaned first Finding);
 - `addSubjectToScope` for an **existing** `subjectId` — genuinely Class A via the exact grid comparison inside the transaction (T1: full grid → no INSERT; empty → insert; partial → `E_SCOPE_GAP` + ROLLBACK, never silently repaired);
 - the dedicated VOID operation (T6-VOID) and the dedicated last-source re-home + VOID operation (**T6-REHOME**): retry first reads `source.finding_id` and F_old.status — if the source points to the intended target and F_old is VOIDED, return idempotent success; a NEW-target retry converges on the already-created target identified by the durable `source.finding_id` (no second target Finding on blind retry).
 

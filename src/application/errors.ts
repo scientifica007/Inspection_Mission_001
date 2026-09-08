@@ -46,6 +46,12 @@
 //                             required), and the dedicated VOID/re-home ops
 //                             refuse a source that is NOT the last one (ordinary
 //                             correction applies — never void)
+// and the Gate-5F code required by the adopted T7 contract
+// (TRANSACTION-CONTRACTS §8 — createFindingWithObservationSource):
+//   * E_OBSERVATION_NOT_FOUND — the observation_id of the T7 ensure-accounted
+//                             operation has no adhoc_observation row (T7 only
+//                             ensures an EXISTING observation; it never creates
+//                             one)
 
 export const APP_ERR = {
     CONFIG: "E_CONFIG",
@@ -67,6 +73,7 @@ export const APP_ERR = {
     STATE_CONFLICT: "E_STATE_CONFLICT",
     VOID_HAS_ACTIONS: "E_VOID_HAS_ACTIONS",
     LAST_SOURCE: "E_LAST_SOURCE",
+    OBSERVATION_NOT_FOUND: "E_OBSERVATION_NOT_FOUND",
 } as const;
 
 export type AppErrorCode = (typeof APP_ERR)[keyof typeof APP_ERR];

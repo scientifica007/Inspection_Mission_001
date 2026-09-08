@@ -11,6 +11,25 @@
 --      index: at most one ACTIVE definition per item_code.
 --   5. Q1 OTHER companions: length(trim(...))>0.
 --   6. Documentation aligned in PHYSICAL-SCHEMA/CONSTRAINT-MATRIX.
+-- Revision 4 (Gate 4A — checklist applicability bridge, single correction):
+--   7. checklist_item_definition.applicability_rule TEXT NOT NULL: canonical
+--      JSON object (rule_schema_version = 1) owned by the exact definition
+--      version (same immutability as question/note_rule/evidence_rule/
+--      finding_rule); guarded by json_valid/json_type/rule_schema_version
+--      CHECKs; added to the trg_def_bu immutable-content audit.
+--      The DB preserves/versions/stores the rule only; evaluating it against
+--      Visit/Mission/Institution/InspectedSubject context stays APPLICATION
+--      (see docs/checklists/APPLICABILITY-RULES-v1.md). 15 tables unchanged.
+-- Revision 4 (final integrity, same gate): enforce the canonical grammar, not
+--   merely JSON well-formedness. Declarative CHECKs cover the scalar keys:
+--   $.rule_schema_version (JSON integer == 1 — boolean true rejected),
+--   $.item_code (JSON text == row item_code), $.decision_kind (AUTO |
+--   HUMAN_CONFIRMATION), $.subject_kinds (must be an array), $.source_ar
+--   (non-blank text), $.visit_type (object when present). Iterative content
+--   (subject_kinds members, missing_context for HUMAN_CONFIRMATION,
+--   visit_type.allowed members) is validated with json_each inside the
+--   existing BEFORE INSERT trigger trg_def_bi — no new trigger/table/entity.
+--   Trigger count therefore stays at 44.
 --
 -- Reference documents (GitHub main):
 --   docs/data-model/DATA-MODEL-v1.md        (invariants I1..I21)
@@ -24,8 +43,12 @@
 --     append-only.
 --   * "Every applicable checklist item has a response before finalization"
 --     and "which definition version is ACTIVE-selected for a Visit item/
---     subject context" remain APPLICATION obligations; the DB guarantees that
---     ACTIVE is unambiguous per item_code.
+--     subject context" remain APPLICATION obligations. The DB now PRESERVES
+--     and VERSIONS the exact applicability rule (applicability_rule, bound to
+--     each item_definition_id) so the application can evaluate the rule that
+--     was in force for the selected definition version instead of hard-coding
+--     applicability by item_code; the DB still guarantees that ACTIVE is
+--     unambiguous per item_code.
 -- ============================================================================
 
 PRAGMA foreign_keys = ON;
@@ -128,9 +151,46 @@ CREATE TABLE checklist_item_definition (
     note_rule           TEXT,
     evidence_rule       TEXT,
     finding_rule        TEXT,
+    -- Gate 4A (final integrity): canonical applicability rule for this exact
+    -- definition version (canonical JSON object, rule_schema_version = 1, per
+    -- docs/checklists/APPLICABILITY-RULES-v1.md — grammar keys validated
+    -- below and in trg_def_bi). NOT NULL for every definition (an ACTIVE
+    -- definition therefore always carries one); immutable under the same
+    -- definition-version rules below.
+    applicability_rule  TEXT    NOT NULL,
     status              TEXT    NOT NULL DEFAULT 'ACTIVE'
                         CHECK (status IN ('ACTIVE','SUPERSEDED','ARCHIVED')),
-    UNIQUE (item_code, version_no)
+    UNIQUE (item_code, version_no),
+    -- Canonical JSON object (root) with valid JSON.
+    CHECK ( json_valid(applicability_rule) = 1 ),
+    CHECK ( json_type(applicability_rule) = 'object' ),
+    -- $.rule_schema_version: JSON integer strictly equal to 1 (boolean true,
+    -- text, or a missing key are all rejected by the CASE guard).
+    CHECK ( CASE WHEN json_type(applicability_rule, '$.rule_schema_version') = 'integer'
+                      AND json_extract(applicability_rule, '$.rule_schema_version') = 1
+                 THEN 1 ELSE 0 END ),
+    -- $.item_code: JSON text equal to the row item_code exactly.
+    CHECK ( CASE WHEN json_type(applicability_rule, '$.item_code') = 'text'
+                      AND json_extract(applicability_rule, '$.item_code') = item_code
+                 THEN 1 ELSE 0 END ),
+    -- $.decision_kind: JSON text, closed set AUTO | HUMAN_CONFIRMATION.
+    CHECK ( CASE WHEN json_type(applicability_rule, '$.decision_kind') = 'text'
+                      AND json_extract(applicability_rule, '$.decision_kind') IN
+                          ('AUTO','HUMAN_CONFIRMATION')
+                 THEN 1 ELSE 0 END ),
+    -- $.subject_kinds: must be a JSON array (non-empty + element validity via
+    -- json_each in trg_def_bi).
+    CHECK ( CASE WHEN json_type(applicability_rule, '$.subject_kinds') = 'array'
+                 THEN 1 ELSE 0 END ),
+    -- $.source_ar: present as non-blank JSON text (required by the grammar).
+    CHECK ( CASE WHEN json_type(applicability_rule, '$.source_ar') = 'text'
+                      AND length(trim(json_extract(applicability_rule, '$.source_ar'))) > 0
+                 THEN 1 ELSE 0 END ),
+    -- $.visit_type (optional): when present it must be a JSON object
+    -- (.allowed validation via json_each in trg_def_bi); absence is allowed.
+    CHECK ( CASE WHEN json_type(applicability_rule, '$.visit_type') IS NULL THEN 1
+                 WHEN json_type(applicability_rule, '$.visit_type') = 'object' THEN 1
+                 ELSE 0 END )
 );
 CREATE INDEX idx_itemdef_code ON checklist_item_definition(item_code);
 -- At most one ACTIVE definition per item_code (partial unique index).
@@ -509,6 +569,9 @@ END;
 -- ============================================================================
 -- CHECKLIST ITEM DEFINITION : insert-time predecessor/version integrity
 -- (supersedes is immutable afterwards; catalog fixes it as "ثابت").
+-- Gate 4A (final integrity): canonical applicability_rule content that needs
+-- json_each iteration (subject_kinds members, missing_context members,
+-- visit_type.allowed members) is validated here — no new trigger/table.
 -- ============================================================================
 CREATE TRIGGER trg_def_bi BEFORE INSERT ON checklist_item_definition
 BEGIN
@@ -530,11 +593,55 @@ BEGIN
           AND EXISTS (SELECT 1 FROM checklist_item_definition s
                       WHERE s.item_definition_id = NEW.supersedes_definition_id
                         AND s.version_no >= NEW.version_no);
+
+    -- Canonical content arms below apply only to a well-formed JSON object
+    -- root (json_valid + root 'object'); NULL / invalid / non-object values
+    -- are left to the NOT NULL and CHECK constraints for clean messages.
+
+    -- $.subject_kinds must not be empty
+    SELECT RAISE(ABORT,'applicability_rule: subject_kinds must not be empty')
+        WHERE json_valid(NEW.applicability_rule) = 1
+          AND json_type(NEW.applicability_rule) = 'object'
+          AND NOT EXISTS (SELECT 1 FROM json_each(NEW.applicability_rule, '$.subject_kinds'));
+
+    -- every $.subject_kinds element must be JSON text from the closed set
+    SELECT RAISE(ABORT,'applicability_rule: every subject_kinds element must be text and one of the allowed subject types')
+        WHERE json_valid(NEW.applicability_rule) = 1
+          AND json_type(NEW.applicability_rule) = 'object'
+          AND EXISTS (SELECT 1 FROM json_each(NEW.applicability_rule, '$.subject_kinds') sk
+                      WHERE sk.type <> 'text'
+                         OR sk.value NOT IN ('INSTITUTION','WORKSHOP','LAB','CLASSROOM','DORMITORY',
+                                             'CANTEEN','FACILITY','TECHNICAL_NETWORK','OTHER'));
+
+    -- decision_kind = HUMAN_CONFIRMATION requires $.missing_context to exist
+    -- as a non-empty array whose members are non-blank text strings
+    SELECT RAISE(ABORT,'applicability_rule: HUMAN_CONFIRMATION requires a non-empty missing_context array of non-blank text members')
+        WHERE json_valid(NEW.applicability_rule) = 1
+          AND json_type(NEW.applicability_rule) = 'object'
+          AND json_extract(NEW.applicability_rule, '$.decision_kind') = 'HUMAN_CONFIRMATION'
+          AND ( json_type(NEW.applicability_rule, '$.missing_context') <> 'array'
+             OR NOT EXISTS (SELECT 1 FROM json_each(NEW.applicability_rule, '$.missing_context'))
+             OR EXISTS (SELECT 1 FROM json_each(NEW.applicability_rule, '$.missing_context') mc
+                        WHERE mc.type <> 'text' OR length(trim(mc.value)) = 0) );
+
+    -- $.visit_type (when present as an object) must carry $.visit_type.allowed
+    -- as a non-empty array of JSON text values SURPRISE | PLANNED
+    SELECT RAISE(ABORT,'applicability_rule: visit_type.allowed must be a non-empty array of SURPRISE/PLANNED')
+        WHERE json_valid(NEW.applicability_rule) = 1
+          AND json_type(NEW.applicability_rule) = 'object'
+          AND json_type(NEW.applicability_rule, '$.visit_type') = 'object'
+          AND ( json_type(NEW.applicability_rule, '$.visit_type.allowed') <> 'array'
+             OR NOT EXISTS (SELECT 1 FROM json_each(NEW.applicability_rule, '$.visit_type.allowed'))
+             OR EXISTS (SELECT 1 FROM json_each(NEW.applicability_rule, '$.visit_type.allowed') vt
+                        WHERE vt.type <> 'text' OR vt.value NOT IN ('SURPRISE','PLANNED')) );
 END;
 
 -- ============================================================================
--- CHECKLIST ITEM DEFINITION mutability (§2.5 + item 3)
+-- CHECKLIST ITEM DEFINITION mutability (§2.5 + item 3 + Gate 4A item 7)
 --   Only status is mutable; effective_from adjustable only while unused.
+--   applicability_rule is definition-version content: immutable like
+--   question/response_model/note_rule/evidence_rule/finding_rule (a changed
+--   applicability rule requires a NEW definition version).
 --   PK item_definition_id immutable here (not via FK side effects).
 -- ============================================================================
 CREATE TRIGGER trg_def_bu BEFORE UPDATE ON checklist_item_definition
@@ -553,7 +660,9 @@ BEGIN
            OR OLD.requirement_refs <> NEW.requirement_refs
            OR OLD.note_rule IS NOT NEW.note_rule OR OLD.note_rule <> NEW.note_rule
            OR OLD.evidence_rule IS NOT NEW.evidence_rule OR OLD.evidence_rule <> NEW.evidence_rule
-           OR OLD.finding_rule IS NOT NEW.finding_rule OR OLD.finding_rule <> NEW.finding_rule;
+           OR OLD.finding_rule IS NOT NEW.finding_rule OR OLD.finding_rule <> NEW.finding_rule
+           OR OLD.applicability_rule IS NOT NEW.applicability_rule
+           OR OLD.applicability_rule <> NEW.applicability_rule;
 
     SELECT RAISE(ABORT,'definition: effective_from is fixed once the definition is used')
         WHERE (OLD.effective_from IS NOT NEW.effective_from

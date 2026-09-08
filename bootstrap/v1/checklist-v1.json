@@ -1,0 +1,1242 @@
+{
+  "artifact_name": "checklist-v1.json",
+  "artifact_schema_version": 1,
+  "definitions": [
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "مُفعَّلة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "ACTIVE"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير مُفعَّلة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "INACTIVE"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-001",
+        "not_applicable_when_ar": "لا ورشة مشمولة في نطاق الزيارة (لا موضوع WORKSHOP في النطاق) — تُسجَّل «غير معني».",
+        "note_ar": "لكل ورشة مشمولة بزيارة رقابية (فجائية أو مقررة) بمناسبة الدخول التكويني؛ تُعرَّف الورشة في بيانات الزيارة (DER-01). نوع الزيارة لا يقيّد: فجائية أو مقررة على السواء.",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-001 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "WORKSHOP"
+        ],
+        "visit_type": {
+          "allowed": [
+            "SURPRISE",
+            "PLANNED"
+          ]
+        }
+      },
+      "arabic_question": "هل الورشة البيداغوجية [اسم/رقم الورشة] مُفعَّلة؟",
+      "domain_id": "DOM-02",
+      "evidence_rule": "اختيارية؛ موصى بها عند «غير مُفعَّلة» إن وُجد سبب مادي (قفل، إغلاق، تعطل).",
+      "finding_rule": "«غير مُفعَّلة» → نقص محتمل (ورشة غير مفعّلة) في DOM-15؛ «مُفعَّلة»/«غير معني»/«لا يُعاين» لا تولّد نقصًا. التلميح: استعجال/أثر يحددهما المفتش على محورين مستقلين.",
+      "item_code": "CHK-001",
+      "note_rule": "إلزامية عند «غير مُفعَّلة» (بيان الوضعية والسبب الظاهر).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-002"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "تُستغل فعليًا",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "USED"
+        },
+        {
+          "active": true,
+          "arabic_label": "لا تُستغل",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_USED"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-002",
+        "not_applicable_when_ar": "لا ورشة مشمولة في نطاق الزيارة — تُسجَّل «غير معني» (لا تُنتج حالة الانطلاق «غير معني» أبدًا).",
+        "note_ar": "عند انطلاق الأنشطة التعليمية المقررة (أثناء الدورة/بعد الدخول) يُعاين البند؛ قبل انطلاقها يُسجَّل «لا يُعاين» ولا يُحتسب — البند منطبق لورشة مشمولة دائمًا، والتوقيت يوجّه النتيجة (NOT_INSPECTED) لا الانطباق؛ مرساة التمييز mission.reference_entry_date مقابل visit.visit_date عند توفرها.",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-002 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "WORKSHOP"
+        ]
+      },
+      "arabic_question": "هل تُستغل الورشة فعليًا في الأنشطة التعليمية المقررة؟",
+      "domain_id": "DOM-02",
+      "evidence_rule": "اختيارية (مثل مرجع جدول الأنشطة عند توفره).",
+      "finding_rule": "«لا تُستغل» → نقص محتمل (استغلال بيداغوجي غير فعلي) في DOM-15؛ التلميح: استعجال «قبل الدخول/متابعة عادية» حسب الوضعية، والأثر يحدده المفتش.",
+      "item_code": "CHK-002",
+      "note_rule": "إلزامية عند «لا تُستغل» (بيان: معطلة، غير مُدرجة في الأنشطة المقررة...).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-002"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "ملتزم",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "COMPLIANT"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير ملتزم",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_COMPLIANT"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-003",
+        "not_applicable_when_ar": "لا موضوع من أصناف المباني (ورشة/فضاء) في نطاق الزيارة — تُسجَّل «غير معني».",
+        "note_ar": "لكل ورشة/فضاء مشمول بمعاينة «الأمن والسلامة والنظافة» في الزيارة؛ أصناف المباني تفسير حرفي لـ«ورشة/فضاء» (قسم 5).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-003 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "WORKSHOP",
+          "LAB",
+          "CLASSROOM",
+          "DORMITORY",
+          "CANTEEN",
+          "FACILITY"
+        ]
+      },
+      "arabic_question": "هل [الورشة/الفضاء] ملتزمة بمعايير النظافة المطلوبة؟",
+      "domain_id": "DOM-03",
+      "evidence_rule": "موصى بها عند «غير ملتزم» (صور توثق الحالة).",
+      "finding_rule": "«غير ملتزم» → نقص محتمل في DOM-15؛ التلميح: يحدده المفتش.",
+      "item_code": "CHK-003",
+      "note_rule": "إلزامية عند «غير ملتزم» لوصف مواطن الخلل — **لا تُسرد معايير نظافة مختلقة** (المصدر لا يحددها؛ التقييم تقدير مهني مع الوصف).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-003"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "متوفرة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "AVAILABLE"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير متوفرة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_AVAILABLE"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-004",
+        "not_applicable_when_ar": "لا موضوع من أصناف المباني في نطاق الزيارة — تُسجَّل «غير معني».",
+        "note_ar": "للورشات/الفضاءات الخاضعة لمعاينة الأمن والسلامة (توفر وسائل الحماية والوقاية).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-004 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "WORKSHOP",
+          "LAB",
+          "CLASSROOM",
+          "DORMITORY",
+          "CANTEEN",
+          "FACILITY"
+        ]
+      },
+      "arabic_question": "هل تتوفر وسائل الحماية والوقاية [بالورشة/الفضاء]؟",
+      "domain_id": "DOM-03",
+      "evidence_rule": "موصى بها عند «غير متوفرة».",
+      "finding_rule": "«غير متوفرة» → نقص محتمل في DOM-15؛ التلميح: يحدده المفتش.",
+      "item_code": "CHK-004",
+      "note_rule": "إلزامية عند «غير متوفرة» لتعداد المفقود.",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-003"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "لا يوجد خلل",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "NO_FAULT"
+        },
+        {
+          "active": true,
+          "arabic_label": "يوجد خلل",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "FAULT"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-005",
+        "not_applicable_when_ar": "لا موضوع من أصناف المباني في نطاق الزيارة — تُسجَّل «غير معني».",
+        "note_ar": "تدقيق شبكات الكهرباء في الورشات/الفضاءات المشمولة بالزيارة (شبكات الكهرباء داخل المباني، لا موضوع TECHNICAL_NETWORK).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-005 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "WORKSHOP",
+          "LAB",
+          "CLASSROOM",
+          "DORMITORY",
+          "CANTEEN",
+          "FACILITY"
+        ]
+      },
+      "arabic_question": "هل يوجد خلل كهربائي في شبكات الكهرباء [بالورشة/الفضاء] يهدد سلامة المستخدمين؟",
+      "domain_id": "DOM-03",
+      "evidence_rule": "موصى بها بقوة عند «يوجد خلل» (صورة الخلل).",
+      "finding_rule": "«يوجد خلل» → نقص (خلل كهربائي مهدد للسلامة) في DOM-15؛ التلميح: استعجال **فوري** (REQ-007: تدخل فوري وصيانة عاجلة) والأثر يحدده المفتش (محوران مستقلان).",
+      "item_code": "CHK-005",
+      "note_rule": "إلزامية عند «يوجد خلل»: وصف دقيق + موقع (نوع/موقع/وصف — DER-03).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-006",
+        "DER-03"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "منتظم",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "REGULAR"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير منتظم (انقطاعات)",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "IRREGULAR"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-006",
+        "not_applicable_when_ar": "لا حالة NOT_APPLICABLE بنيوية: مستوى المؤسسة حاضر دائمًا في الزيارة، وأي ورشة مشمولة تُعاين.",
+        "note_ar": "على مستوى المؤسسة ولكل ورشة مشمولة؛ عند وجود ورشات الطبخ/الحلويات/الطلاء تُعطى معاينة التزويد بالكهرباء فيها عنايةً وأولوية خاصة كما نص المصدر — تلميح لا يُنشئ إلزامًا إضافيًا ولا بوابة انطباق (لا يُستعمل institution.kind_code ولا subject.specialty قرارًا).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-006 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION",
+          "WORKSHOP"
+        ]
+      },
+      "arabic_question": "هل التزويد بالكهرباء [بالمؤسسة/بالورشات المعنية] منتظم؟",
+      "domain_id": "DOM-04",
+      "evidence_rule": "موصى بها عند الانقطاع.",
+      "finding_rule": "«غير منتظم» → نقص (انقطاع كهرباء) في DOM-15؛ التلميح: يحدده المفتش (فوري/قبل الدخول حسب الوضعية).",
+      "item_code": "CHK-006",
+      "note_rule": "إلزامية عند «غير منتظم» (تكرار/مدة الانقطاع إن أمكن).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-004"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "منتظم",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "REGULAR"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير منتظم (انقطاعات)",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "IRREGULAR"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-007",
+        "not_applicable_when_ar": "لا حالة NOT_APPLICABLE بنيوية: مستوى المؤسسة حاضر دائمًا في الزيارة، وأي ورشة مشمولة تُعاين.",
+        "note_ar": "مثل CHK-006 للمياه الصالحة للشرب؛ ورشات الطبخ/الحلويات/الطلاء عناية وأولوية خاصة عند وجودها — تلميح لا إلزام ولا بوابة انطباق.",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-007 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION",
+          "WORKSHOP"
+        ]
+      },
+      "arabic_question": "هل التزويد بالمياه الصالحة للشرب [بالمؤسسة/بالورشات المعنية] منتظم؟",
+      "domain_id": "DOM-04",
+      "evidence_rule": "موصى بها عند الانقطاع.",
+      "finding_rule": "«غير منتظم» → نقص (انقطاع مياه صالحة للشرب) في DOM-15؛ التلميح: يحدده المفتش.",
+      "item_code": "CHK-007",
+      "note_rule": "إلزامية عند «غير منتظم» (تكرار/مدة الانقطاع إن أمكن).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-004"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "لا توجد",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "NONE"
+        },
+        {
+          "active": true,
+          "arabic_label": "توجد",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "PRESENT"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-008",
+        "not_applicable_when_ar": "لا موضوع من أصناف المباني في نطاق الزيارة — تُسجَّل «غير معني».",
+        "note_ar": "معاينة دقيقة للهياكل والأسقف في الورشات والفضاءات المشمولة (تسربات مائية).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-008 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "WORKSHOP",
+          "LAB",
+          "CLASSROOM",
+          "DORMITORY",
+          "CANTEEN",
+          "FACILITY"
+        ]
+      },
+      "arabic_question": "هل توجد تسربات مائية في الهياكل أو الأسقف [بالفضاءات المعاينة]؟",
+      "domain_id": "DOM-04",
+      "evidence_rule": "موصى بها (صورة التسرب).",
+      "finding_rule": "«توجد» → خلل/نقص (تسرب مائي) في DOM-15؛ التلميح: استعجال فوري (REQ-007) والأثر يحدده المفتش.",
+      "item_code": "CHK-008",
+      "note_rule": "إلزامية عند «توجد» (الموقع والوصف).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-005"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "لا يوجد",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "NONE"
+        },
+        {
+          "active": true,
+          "arabic_label": "يوجد",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "PRESENT"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-009",
+        "not_applicable_when_ar": "لا موضوع من أصناف المباني في نطاق الزيارة — تُسجَّل «غير معني».",
+        "note_ar": "معاينة دقيقة للهياكل والأسقف والجدران المحيطة في الورشات والفضاءات المشمولة (اهتراء).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-009 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "WORKSHOP",
+          "LAB",
+          "CLASSROOM",
+          "DORMITORY",
+          "CANTEEN",
+          "FACILITY"
+        ]
+      },
+      "arabic_question": "هل يوجد اهتراء في الجدران المحيطة أو الأسقف [بالفضاءات المعاينة]؟",
+      "domain_id": "DOM-04",
+      "evidence_rule": "موصى بها (صورة الاهتراء).",
+      "finding_rule": "«يوجد» → نقص (اهتراء جدران/أسقف) في DOM-15؛ التلميح: استعجال «قبل الدخول» افتراضيًا (تهيئة/صيانة) مع تقدير المفتش.",
+      "item_code": "CHK-009",
+      "note_rule": "إلزامية عند «يوجد» (الموقع والوصف).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-005"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "متوفرة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "AVAILABLE"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير متوفرة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_AVAILABLE"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-010",
+        "not_applicable_when_ar": "لا حالة NOT_APPLICABLE بنيوية: المؤسسة مشمولة بالتغطية عبر الزيارات (DER-01)، وأي ورشة مشمولة تُعاين.",
+        "note_ar": "مسح وضعية التجهيزات لكل مؤسسة/ورشة/تخصص مشمول (يشمل «كل المؤسسات التابعة للمقاطعة» عبر تغطية الزيارات — DER-01)؛ «التخصص» سياق وصفي في صيغة البند لا صنف موضوع مستقل.",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-010 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION",
+          "WORKSHOP"
+        ]
+      },
+      "arabic_question": "هل التجهيزات والعتاد البيداغوجي والتقني اللازمة [للتخصص/للورشة/للمؤسسة] متوفرة؟",
+      "domain_id": "DOM-05",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير متوفرة» → نقص (اقتناء تجهيزات قبل استقبال المتكونين — REQ-021) في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-010",
+      "note_rule": "إلزامية عند «غير متوفرة» لتعداد الناقص.",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-009",
+        "REQ-021"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "جميعها تعمل",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "ALL_WORKING"
+        },
+        {
+          "active": true,
+          "arabic_label": "توجد أعطال",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "FAULTS_PRESENT"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-011",
+        "not_applicable_when_ar": "لا حالة NOT_APPLICABLE بنيوية: المؤسسة مشمولة بمعاينة جاهزية التجهيزات (يكمل CHK-010).",
+        "note_ar": "لكل مؤسسة/ورشة مشمولة بمعاينة جاهزية التجهيزات (صلاحية وتشغيل فعلي).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-011 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION",
+          "WORKSHOP"
+        ]
+      },
+      "arabic_question": "هل التجهيزات والعتاد المتوفرة صالحة وتعمل فعليًا (دون أعطال تعطّل الاستعمال)؟",
+      "domain_id": "DOM-05",
+      "evidence_rule": "موصى بها عند الأعطال (صورة العطل).",
+      "finding_rule": "«توجد أعطال» → نقص (عطل تجهيز؛ صيانة قبل استقبال المتكونين) في DOM-15؛ التلميح: استعجال فوري للعطل المهدد / «قبل الدخول» للصيانة العادية — بتقدير المفتش.",
+      "item_code": "CHK-011",
+      "note_rule": "إلزامية عند «توجد أعطال» (نوع العطل/عدده/موقعه).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-021"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "مطابقة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "MATCHED"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير مطابقة (فوارق)",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "MISMATCHED"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-012",
+        "not_applicable_when_ar": "لا حالة NOT_APPLICABLE بنيوية على مستوى المؤسسة المشمولة بمعاينة التجهيزات؛ تعذّر إجراء المطابقة يُسجَّل «لا يُعاين» (توجيه نتيجة) لا «غير معني».",
+        "note_ar": "عند معاينة التجهيزات بالمؤسسة؛ الاطلاع على معطيات «تسيير» وتسجيلها يدويًا في v1 (قرار الأنظمة الخارجية 2) دون تكامل API.",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-012 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION"
+        ]
+      },
+      "arabic_question": "المطابقة الميدانية بين التجهيزات المتوفرة فعليًا والإحصائيات المدونة على المنصة الرقمية «تسيير»، وتسجيل الحالة المعاينة (الفوارق دون الإجراءات التصحيحية اللاحقة).",
+      "domain_id": "DOM-05",
+      "evidence_rule": "اختيارية؛ موصى بها عند توفر لقطات/ملف للمعطيات الداعمة.",
+      "finding_rule": "وجود فارق (كمي أو نوعي) بين الكمية/القائمة المعاينة ميدانيًا والإحصائية المدونة في «تسيير» → نقص (فارق مطابقة) يُسجَّل في DOM-15 ويُربط بهذا البند؛ تحيين «تسيير» (إدخال الجديد/شطب المستهلك والمتلف — REQ-011) **إجراء تصحيحي لاحق** على عاتق مدير المؤسسة يُتتبَّع في دورة النقص، وليس جزءًا من استجابة هذا البند؛ السلسلة المحفوظة: الحالة المعاينة ← فارق/نقص ← إجراء تصحيحي ← حالة تحيين «تسيير»/تاريخه/مرجعه ← إقفال. «لا يُعاين» (تعذر إجراء المطابقة) لا يولّد نقصًا ويبقى بندًا معلقًا في تغطية الزيارة.",
+      "item_code": "CHK-012",
+      "note_rule": "إلزامية عند «غير مطابقة» تسرد الفوارق (الأصناف والكميات) ونوع الفارق ووصفه.",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-010",
+        "DER-05"
+      ],
+      "response_model": "SCHEDULE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "جاهزة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "READY"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير جاهزة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_READY"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-013",
+        "not_applicable_when_ar": "لا ورشة في نطاق الزيارة (عند عدم وجود ورشات بالمؤسسة أو عدم شمول أي منها) — «غير معني».",
+        "note_ar": "عند وجود ورشات بالمؤسسة؛ تُنفَّذ داخل معاينة الورشات إلى جانب بنود DOM-02 (CHK-001..002)؛ وإلا «غير معني».",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-013 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "WORKSHOP"
+        ]
+      },
+      "arabic_question": "هل الورشات البيداغوجية بالمؤسسة جاهزة (مجهزة وصالحة) لاستقبال الدخول التكويني؟",
+      "domain_id": "DOM-06",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير جاهزة» → نقص (جاهزية ورشات) في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-013",
+      "note_rule": "إلزامية عند «غير جاهزة» (وصف النقص/الموقع).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-019"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "جاهزة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "READY"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير جاهزة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_READY"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-014",
+        "not_applicable_when_ar": "لا مخبر في نطاق الزيارة (عند عدم وجود مخابر بالمؤسسة) — «غير معني».",
+        "note_ar": "عند وجود مخابر بالمؤسسة؛ وإلا «غير معني».",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-014 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "LAB"
+        ]
+      },
+      "arabic_question": "هل المخابر بالمؤسسة جاهزة لاستقبال الدخول التكويني؟",
+      "domain_id": "DOM-06",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير جاهزة» → نقص في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-014",
+      "note_rule": "إلزامية عند «غير جاهزة» (وصف النقص/الموقع).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-019"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "جاهزة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "READY"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير جاهزة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_READY"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-015",
+        "not_applicable_when_ar": "لا قاعة تدريس في نطاق الزيارة — «غير معني».",
+        "note_ar": "عند وجود قاعات تدريس؛ وإلا «غير معني».",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-015 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "CLASSROOM"
+        ]
+      },
+      "arabic_question": "هل قاعات التدريس بالمؤسسة جاهزة لاستقبال الدخول التكويني؟",
+      "domain_id": "DOM-06",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير جاهزة» → نقص في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-015",
+      "note_rule": "إلزامية عند «غير جاهزة» (وصف النقص/الموقع).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-019"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "جاهزة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "READY"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير جاهزة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_READY"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-016",
+        "not_applicable_when_ar": "لا داخلية في نطاق الزيارة (عند عدم وجود داخلية بالمؤسسة) — «غير معني».",
+        "note_ar": "عند وجود داخلية بالمؤسسة؛ وإلا «غير معني».",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-016 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "DORMITORY"
+        ]
+      },
+      "arabic_question": "هل الداخليات بالمؤسسة جاهزة لاستقبال الدخول التكويني؟",
+      "domain_id": "DOM-06",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير جاهزة» → نقص في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-016",
+      "note_rule": "إلزامية عند «غير جاهزة» (وصف النقص/الموقع).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-019"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "جاهزة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "READY"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير جاهزة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_READY"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-017",
+        "not_applicable_when_ar": "لا مطعم في نطاق الزيارة (عند عدم وجود مطاعم بالمؤسسة) — «غير معني».",
+        "note_ar": "عند وجود مطاعم بالمؤسسة؛ وإلا «غير معني».",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-017 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "CANTEEN"
+        ]
+      },
+      "arabic_question": "هل المطاعم بالمؤسسة جاهزة لاستقبال الدخول التكويني؟",
+      "domain_id": "DOM-06",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير جاهزة» → نقص في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-017",
+      "note_rule": "إلزامية عند «غير جاهزة» (وصف النقص/الموقع).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-019"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "جاهزة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "READY"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير جاهزة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_READY"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-018",
+        "not_applicable_when_ar": "لا مرفق في نطاق الزيارة — «غير معني».",
+        "note_ar": "عند وجود مرافق بالمؤسسة؛ المصدر لا يفصّل أصنافها — يُسجَّل وصف النقص دون ابتكار أصناف؛ وإلا «غير معني».",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-018 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "FACILITY"
+        ]
+      },
+      "arabic_question": "هل المرافق [الملحقة] بالمؤسسة جاهزة لاستقبال الدخول التكويني؟",
+      "domain_id": "DOM-06",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير جاهزة» → نقص في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-018",
+      "note_rule": "إلزامية عند «غير جاهزة» (وصف النقص/الموقع).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-019"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "جاهزة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "READY"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير جاهزة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_READY"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "AUTO",
+        "item_code": "CHK-019",
+        "not_applicable_when_ar": "لا شبكة تقنية في نطاق الزيارة — «غير معني».",
+        "note_ar": "عند وجود شبكات تقنية بالمؤسسة؛ نوع الشبكات غير مفصل في المصدر — يُسجَّل الوصف؛ وإلا «غير معني».",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-019 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "TECHNICAL_NETWORK"
+        ]
+      },
+      "arabic_question": "هل الشبكات التقنية بالمؤسسة جاهزة وصالحة للاستعمال؟",
+      "domain_id": "DOM-06",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير جاهزة» → نقص في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-019",
+      "note_rule": "إلزامية عند «غير جاهزة» (وصف النقص/الموقع).",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-019"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "متوفرة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "AVAILABLE"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير متوفرة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_AVAILABLE"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "HUMAN_CONFIRMATION",
+        "item_code": "CHK-020",
+        "missing_context": [
+          "قائمة التخصصات المفتوحة بالمؤسسة لدورة الدخول (عروض التكوين) — ليست حقلًا هيكليًا في مخطط v1 (مصدرها بيانات المنصات/التسجيلات والتوجيه: REQ-015/DER-09 وREQ-017 قدرة P1)؛ institution.kind_code لا يجزم بها"
+        ],
+        "not_applicable_when_ar": "بعد قرار المفتش الصريح بعدم وجود تخصصات مفتوحة بالمؤسسة للدورة — تُسجَّل «غير معني».",
+        "note_ar": "للمؤسسات ذات التخصصات المفتوحة؛ تُعاين لكل تخصص عند الاقتضاء. القرار يتطلب تأكيد المفتش — لا يُستنتج غياب/وجود التخصصات المفتوحة تخمينًا.",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-020 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION"
+        ]
+      },
+      "arabic_question": "هل المواد الأولية ولوازم التكوين والعتاد الاستهلاكي الضرورية لتنفيذ البرامج التكوينية [للتخصصات المفتوحة] متوفرة بالمؤسسة؟",
+      "domain_id": "DOM-07",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير متوفرة» → نقص (اقتناء وتوزيع قبل انطلاق الدخول — شرط زمني صريح REQ-020) في DOM-15؛ التلميح: استعجال «قبل الدخول».",
+      "item_code": "CHK-020",
+      "note_rule": "إلزامية عند «غير متوفرة» لتعداد الناقص.",
+      "priority": "P0",
+      "requirement_refs": [
+        "REQ-020"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "ملائمة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "SUITABLE"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير ملائمة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_SUITABLE"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "HUMAN_CONFIRMATION",
+        "item_code": "CHK-021",
+        "missing_context": [
+          "قرار توسعة نطاق فحص المفتش ليشمل «ظروف التكفل بالمتكونين» واعتماد معايير دنيا لـ«ملائمة» (قرار المراجعة D) — لا يمثّله حقل هيكلي حالي؛ البند P1 تصميمي غير مفعّل تشغيليًا وخارج مجموعة MVP"
+        ],
+        "not_applicable_when_ar": "بعد قرار المفتش الصريح بأن معاينة ظروف التكفل بالمتكونين غير مشمولة بهذه الزيارة — تُسجَّل «غير معني».",
+        "note_ar": "عند معاينة ظروف التكفل بالمتكونين (توسعة لاحقة لمجال فحص المفتش).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-021 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION"
+        ]
+      },
+      "arabic_question": "هل ترتيبات استقبال المتكونين [بالمؤسسة] جاهزة وملائمة لانطلاق الدخول؟",
+      "domain_id": "DOM-14",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير ملائمة» → نقص محتمل في DOM-15؛ التلميح: استعجال «قبل الدخول» افتراضيًا بتقدير المفتش.",
+      "item_code": "CHK-021",
+      "note_rule": "إلزامية عند «غير ملائمة» (وصف مواطن النقص).",
+      "priority": "P1",
+      "requirement_refs": [
+        "REQ-026"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "ملائمة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "SUITABLE"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير ملائمة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_SUITABLE"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "HUMAN_CONFIRMATION",
+        "item_code": "CHK-022",
+        "missing_context": [
+          "تفعيل بند ظروف الإيواء والإطعام يتطلب اعتماد معايير دنيا لـ«ملائمة» وقرار توسعة نطاق ظروف التكفل (قرار المراجعة D) — البند P1 تصميمي غير مفعّل تشغيليًا"
+        ],
+        "not_applicable_when_ar": "لا داخلية ولا مطعم في نطاق الزيارة (حسم بنيوي) — «غير معني»؛ ومع وجودهما يبقى التفعيل قرار المفتش الصريح.",
+        "note_ar": "عند وجود داخلية/مطعم؛ يكمل بندي الجاهزية المادية CHK-016/CHK-017 (DOM-06).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-022 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "DORMITORY",
+          "CANTEEN"
+        ]
+      },
+      "arabic_question": "هل ظروف الإيواء والإطعام [بالداخلية/بالمطعم] ملائمة للمتكونين؟",
+      "domain_id": "DOM-14",
+      "evidence_rule": "موصى بها عند النقص.",
+      "finding_rule": "«غير ملائمة» → نقص محتمل في DOM-15؛ التلميح: يحدده المفتش.",
+      "item_code": "CHK-022",
+      "note_rule": "إلزامية عند «غير ملائمة» (وصف مواطن النقص).",
+      "priority": "P1",
+      "requirement_refs": [
+        "REQ-026"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "متوفرة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "AVAILABLE"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير متوفرة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_AVAILABLE"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "HUMAN_CONFIRMATION",
+        "item_code": "CHK-023",
+        "missing_context": [
+          "قرار توسعة نطاق فحص المفتش ليشمل «ظروف التكفل بالمتكونين» واعتماد معايير دنيا لـ«ملائمة» (قرار المراجعة D) — لا يمثّله حقل هيكلي حالي؛ البند P1 تصميمي غير مفعّل تشغيليًا"
+        ],
+        "not_applicable_when_ar": "بعد قرار المفتش الصريح بعدم شمول معاينة ظروف التكفل بالمتكونين بهذه الزيارة — تُسجَّل «غير معني».",
+        "note_ar": "عند معاينة ظروف التكفل بالمتكونين (ترتيبات نقل المتكونين).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-023 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION"
+        ]
+      },
+      "arabic_question": "هل تتوفر ترتيبات نقل المتكونين (أو تنظيمها) الملائمة؟",
+      "domain_id": "DOM-14",
+      "evidence_rule": "اختيارية.",
+      "finding_rule": "«غير متوفرة» → نقص محتمل في DOM-15؛ التلميح: يحدده المفتش.",
+      "item_code": "CHK-023",
+      "note_rule": "إلزامية عند «غير متوفرة» (الوصف).",
+      "priority": "P1",
+      "requirement_refs": [
+        "REQ-026"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    },
+    {
+      "allowed_values": [
+        {
+          "active": true,
+          "arabic_label": "متوفرة",
+          "semantic_class": "COMPLIANT",
+          "sort_order": 1,
+          "value_code": "AVAILABLE"
+        },
+        {
+          "active": true,
+          "arabic_label": "غير متوفرة",
+          "semantic_class": "NON_COMPLIANT",
+          "sort_order": 2,
+          "value_code": "NOT_AVAILABLE"
+        }
+      ],
+      "applicability_rule": {
+        "decision_kind": "HUMAN_CONFIRMATION",
+        "item_code": "CHK-024",
+        "missing_context": [
+          "قرار توسعة نطاق فحص المفتش ليشمل «ظروف التكفل بالمتكونين» واعتماد معايير دنيا لـ«ملائمة» (قرار المراجعة D)؛ وترتيبات الفئات الخاصة غير مفصّلة بالمصدر — لا يمثّلها حقل هيكلي حالي؛ البند P1 تصميمي غير مفعّل تشغيليًا"
+        ],
+        "not_applicable_when_ar": "بعد قرار المفتش الصريح بعدم شمول معاينة ظروف التكفل بالمتكونين بهذه الزيارة — تُسجَّل «غير معني».",
+        "note_ar": "عند معاينة ظروف التكفل بالمتكونين (لا تُحدَّد ترتيبات بعينها — المصدر لا يفصّلها).",
+        "rule_schema_version": 1,
+        "source_ar": "FIELD-CHECKLIST-v1.md — CHK-024 — «متى يُطبَّق»",
+        "subject_kinds": [
+          "INSTITUTION"
+        ]
+      },
+      "arabic_question": "هل تتوفر ترتيبات التكفل بالمتكونين من الفئات الخاصة؟",
+      "domain_id": "DOM-14",
+      "evidence_rule": "اختيارية.",
+      "finding_rule": "«غير متوفرة» → نقص محتمل في DOM-15؛ التلميح: يحدده المفتش.",
+      "item_code": "CHK-024",
+      "note_rule": "إلزامية عند «غير متوفرة» (وصف الوضعية)؛ تُسجَّل ملاحظة الوضع دون معايير مختلقة.",
+      "priority": "P1",
+      "requirement_refs": [
+        "REQ-026"
+      ],
+      "response_model": "SINGLE_VALUE",
+      "traceability": "DIRECT",
+      "version_no": 1
+    }
+  ],
+  "editorial": {
+    "value_mapping": [
+      {
+        "arabic_label": "توجد",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "PRESENT"
+      },
+      {
+        "arabic_label": "توجد أعطال",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "FAULTS_PRESENT"
+      },
+      {
+        "arabic_label": "تُستغل فعليًا",
+        "semantic_class": "COMPLIANT",
+        "value_code": "USED"
+      },
+      {
+        "arabic_label": "جاهزة",
+        "semantic_class": "COMPLIANT",
+        "value_code": "READY"
+      },
+      {
+        "arabic_label": "جميعها تعمل",
+        "semantic_class": "COMPLIANT",
+        "value_code": "ALL_WORKING"
+      },
+      {
+        "arabic_label": "غير جاهزة",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "NOT_READY"
+      },
+      {
+        "arabic_label": "غير متوفرة",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "NOT_AVAILABLE"
+      },
+      {
+        "arabic_label": "غير مطابقة (فوارق)",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "MISMATCHED"
+      },
+      {
+        "arabic_label": "غير ملائمة",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "NOT_SUITABLE"
+      },
+      {
+        "arabic_label": "غير ملتزم",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "NOT_COMPLIANT"
+      },
+      {
+        "arabic_label": "غير منتظم (انقطاعات)",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "IRREGULAR"
+      },
+      {
+        "arabic_label": "غير مُفعَّلة",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "INACTIVE"
+      },
+      {
+        "arabic_label": "لا توجد",
+        "semantic_class": "COMPLIANT",
+        "value_code": "NONE"
+      },
+      {
+        "arabic_label": "لا تُستغل",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "NOT_USED"
+      },
+      {
+        "arabic_label": "لا يوجد",
+        "semantic_class": "COMPLIANT",
+        "value_code": "NONE"
+      },
+      {
+        "arabic_label": "لا يوجد خلل",
+        "semantic_class": "COMPLIANT",
+        "value_code": "NO_FAULT"
+      },
+      {
+        "arabic_label": "متوفرة",
+        "semantic_class": "COMPLIANT",
+        "value_code": "AVAILABLE"
+      },
+      {
+        "arabic_label": "مطابقة",
+        "semantic_class": "COMPLIANT",
+        "value_code": "MATCHED"
+      },
+      {
+        "arabic_label": "ملائمة",
+        "semantic_class": "COMPLIANT",
+        "value_code": "SUITABLE"
+      },
+      {
+        "arabic_label": "ملتزم",
+        "semantic_class": "COMPLIANT",
+        "value_code": "COMPLIANT"
+      },
+      {
+        "arabic_label": "منتظم",
+        "semantic_class": "COMPLIANT",
+        "value_code": "REGULAR"
+      },
+      {
+        "arabic_label": "مُفعَّلة",
+        "semantic_class": "COMPLIANT",
+        "value_code": "ACTIVE"
+      },
+      {
+        "arabic_label": "يوجد",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "PRESENT"
+      },
+      {
+        "arabic_label": "يوجد خلل",
+        "semantic_class": "NON_COMPLIANT",
+        "value_code": "FAULT"
+      }
+    ]
+  },
+  "manifest": {
+    "expected_p0_item_codes": [
+      "CHK-001",
+      "CHK-002",
+      "CHK-003",
+      "CHK-004",
+      "CHK-005",
+      "CHK-006",
+      "CHK-007",
+      "CHK-008",
+      "CHK-009",
+      "CHK-010",
+      "CHK-011",
+      "CHK-012",
+      "CHK-013",
+      "CHK-014",
+      "CHK-015",
+      "CHK-016",
+      "CHK-017",
+      "CHK-018",
+      "CHK-019",
+      "CHK-020"
+    ],
+    "expected_p1_item_codes": [
+      "CHK-021",
+      "CHK-022",
+      "CHK-023",
+      "CHK-024"
+    ],
+    "expected_total_item_count": 24,
+    "policy": "createVisit (T0) compares expected_p0_item_codes exactly, in BOTH directions, against the loaded DB ACTIVE+priority='P0' item-code set; an expected code without an ACTIVE definition => E_NO_ACTIVE_DEFINITION / E_BOOTSTRAP_DRIFT; an unexpected ACTIVE-P0 code => E_BOOTSTRAP_DRIFT; P1 definitions (expected_p1_item_codes) never enter that comparison."
+  },
+  "provenance": {
+    "artifact_name": "checklist-v1.json",
+    "artifact_schema_version": 1,
+    "generating_git_commit": "769cc8171d27180f75e7f0cb30237f25415c0bf6",
+    "generator_name": "gate5b-checklist-generator",
+    "generator_version": "1.0.0",
+    "inputs": [
+      {
+        "path": "docs/checklists/FIELD-CHECKLIST-v1.md",
+        "sha256": "3bcc40d76104417621b62789c3e8b5ea94093c888b3e5e1d710e72eb0cdc4519"
+      },
+      {
+        "path": "docs/checklists/APPLICABILITY-RULES-v1.md",
+        "sha256": "0b5a646f9368342ab27ccc02466d50d103a9eed4211e948e30c1b761d05f5f90"
+      }
+    ],
+    "semantics_note": "Arabic prose is never parsed for executable semantics. Allowed-value value_code and semantic_class are decided by the explicit editorial mapping tables in tools/gate5b/editorial.ts (requirement C); note/evidence/finding rules are verbatim reference metadata; the only machine-evaluated payloads are applicability_rule (copied verbatim from APPLICABILITY-RULES-v1.md §7) and semantic_class (APPLICATION-CORE §7, Gate-5A D4). generating_git_commit is an environment fact resolved at generation time and is excluded from semantic-equality comparisons (see compareArtifactTexts)."
+  }
+}

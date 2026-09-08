@@ -298,7 +298,7 @@ Any failure ⇒ ROLLBACK **everything, including creation of the new target Find
 
 ## 8) T7 — `createFindingWithObservationSource` — ensure-accounted (G3, idempotent)
 
-T7 is **not** "INSERT a Finding, then assign it". It is an *ensure this Observation is accounted for by one Finding* operation on an **EXISTING** AdHocObservation (the numbered Gate-5A transaction set does not currently define the application operation that creates the observation row itself): the observation is the durable key, so retry after "COMMIT succeeded but ACK lost" must **never** create a second Finding or reassign an existing link (that would leave the original Finding source-less OPEN).
+T7 is **not** "INSERT a Finding, then assign it". It is an *ensure this Observation is accounted for by one Finding* operation on an **EXISTING** AdHocObservation (the observation row itself is created separately by OBS-1 `createAdHocObservation`, Gate 5G — §14): the observation is the durable key, so retry after "COMMIT succeeded but ACK lost" must **never** create a second Finding or reassign an existing link (that would leave the original Finding source-less OPEN).
 
 ```
 BEGIN IMMEDIATE;
@@ -432,6 +432,7 @@ No state may change between the validated snapshot and finalization (same tx). N
 **B. Identity-creating commands with no durable idempotency key:**
 - `createVisit`;
 - creating a **new** `inspected_subject` inside `addSubjectToScope(newSubjectData)`;
+- `createAdHocObservation` (OBS-1, Gate 5G — §14);
 - `createCorrectiveAction`;
 - (any similar create-new-identity operation).
 
@@ -451,3 +452,47 @@ For class B: do **not** claim exactly-once/state-idempotency after "COMMIT succe
 | Crash before COMMIT | nothing persisted | clean re-run |
 | FollowUp insert fails in T8/T10/T6-VOID | status update (and source correction) rolled back | no status change without its event |
 | Status update fails in T8/T10/T6-VOID | FollowUp (and source correction) rolled back | no event without its status change |
+
+---
+
+## 14) OBS-1 — `createAdHocObservation` (Gate 5G — owner-approved application contract)
+
+**Traceability:** PROJECT — PRJ-03 (observations/notes, P0); REQ-012 is supporting DIRECT evidence that field observations feed the technical sheet/reporting outputs. The exact OBS-1 API/transaction contract is an owner-approved Gate-5G PROJECT decision (GATE5G-DECISIONS-v1.md) — not claimed DIRECT/DERIVED from the official sources.
+
+Creates **exactly one** durable AdHocObservation identity during an open field Visit — the Observation ONLY: no Finding is created or linked (`finding_id` always NULL on creation), no Subject, no Evidence, no correction/reporting/sync behavior. If the inspector later decides the Observation represents a Finding, the adopted T7 operation (§8) handles that separately; OBS-1 and T7 are never combined into one transaction/API.
+
+**Preconditions:** the Visit exists; `visit.status = 'PREPARATION'` AND `visit.finalized_at IS NULL`; when `subjectId` is supplied, the Subject exists and belongs to the Visit's institution; `text` meaningful; `recordedAt` app-supplied; `recordedBy` meaningful.
+
+```
+BEGIN IMMEDIATE;
+-- 1) authoritative Visit read INSIDE the write transaction (no TOCTOU window):
+--      missing row                            => ROLLBACK + E_VISIT_NOT_FOUND
+--      status <> 'PREPARATION'
+--        OR finalized_at IS NOT NULL          => ROLLBACK + E_VISIT_NOT_PREPARATION
+--        (no backdated creation into a finalized Visit)
+-- 2) optional Subject read (same transaction):
+--      missing subject                        => ROLLBACK + E_SUBJECT_NOT_FOUND
+--      subject.institution_id <> visit.institution_id
+--                                              => ROLLBACK + E_CONTEXT
+--      (the Subject is never created/modified here; subjectId NULL = a
+--       general Visit/institution-level observation — no "active subject
+--       only" rule is invented)
+-- 3) normalize text / recorded_at / recorded_by (project conventions):
+--      trim to meaningfulness; blank/whitespace-only
+--                                              => ROLLBACK + E_CONFIG
+--      (recorded_at is app-supplied — never invented internally;
+--       recorded_by normalized as adopted)
+-- 4) the single identity-creating INSERT (nothing else is created):
+INSERT INTO adhoc_observation(visit_id, subject_id, text, finding_id, recorded_at, recorded_by)
+VALUES (?, ?, ?, NULL, ?, ?);                  -- finding_id = NULL ALWAYS on creation
+-- require changes == 1 (B5) and a present lastInsertRowid
+--      otherwise ROLLBACK + E_STATE_CONFLICT
+-- 5) return the created durable Observation identity/state
+COMMIT;
+```
+
+**Guards relied on:** `trg_obs_bi` re-enforces PREPARATION/not-finalized and subject-institution integrity at the DB floor (defense in depth; the domain reads above hold the write lock for the whole unit, so the INSERT cannot race a finalization).
+
+**Idempotency — deliberately Class B (§12 / RECOVERY §5):** the project has adopted **no** durable request/idempotency key for observation creation: no UNIQUE constraint, no dedupe by text or timestamp, no hash-based key, no sidecar idempotency table, no client request token. Two intentional invocations with identical payloads create two distinct observations (duplicates are not a domain error — no observation-duplicate code exists). After "COMMIT succeeded but ACK lost" the caller must treat the outcome as ambiguous; the service never auto-resubmits the create command and never inspects text/time to decide an existing row "must be" the same attempt — recovery reconstructs the durable Visit observations and surfaces/reconciles them to the inspector (RECOVERY §5). A deliberate later invocation with the exact same payload is a new Class-B create and may produce a second observation.
+
+**Deferred:** a general correction API for an informational/unlinked Observation is NOT part of OBS-1 (GATE5G-DECISIONS-v1.md); observation correction rides only on the specific Gate-5E T6 source-correction operations. No schema change is introduced by OBS-1.

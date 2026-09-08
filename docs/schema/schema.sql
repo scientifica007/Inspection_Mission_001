@@ -50,6 +50,15 @@
 --     trg_finding_bu / trg_ca_bi / trg_response_bi/bu / trg_obs_bi/bu triggers
 --     are extended. Object counts stay: 15 tables / 44 triggers / 1 view /
 --     24 explicit indexes.
+-- Revision 6 (Gate 5E — owner-authorized narrow correction, reconciliation
+--   row DELETE): trg_recon_bd changes from the unconditional no-delete policy
+--   to CONDITIONAL delete permission — an equipment_reconciliation_row may be
+--   deleted only while its owning response's Visit is PREPARATION and
+--   finalized_at IS NULL (atomic T6 SCHEDULE full row-set replacement).
+--   Post-finalization deletion remains forbidden (historical truth is
+--   immutable once the Visit is finalized), and no other historical entity
+--   gains deletion permission. Object counts unchanged: 15 tables / 44
+--   triggers / 1 view / 24 explicit indexes.
 --
 -- Reference documents (GitHub main):
 --   docs/data-model/DATA-MODEL-v1.md        (invariants I1..I22)
@@ -60,7 +69,9 @@
 --   * INTEGER PRIMARY KEY ids internal only; TEXT codes/dates/timestamps.
 --   * Evidence = metadata/reference only; no binaries.
 --   * result_class DERIVED (view v_response_outcome); never stored.
---   * No DELETE on any table in v1; follow_up/external_system_tracking
+--   * No DELETE on any table in v1 — single Revision-6 exception:
+--     equipment_reconciliation_row rows are deletable while the owning Visit
+--     is PREPARATION and not finalized; follow_up/external_system_tracking
 --     append-only.
 --   * "Every applicable checklist item has a response before finalization"
 --     and "which definition version is ACTIVE-selected for a Visit item/
@@ -457,7 +468,16 @@ FROM checklist_response r
 LEFT JOIN checklist_allowed_value av ON av.allowed_value_id = r.answered_value_id;
 
 -- ============================================================================
--- NO-DELETE POLICY (all 15 tables)
+-- NO-DELETE POLICY (14 tables unconditional + 1 conditional)
+--
+-- Gate-5E owner-authorized narrow correction (T6 SCHEDULE replacement):
+-- equipment_reconciliation_row is the ONE exception to the v1 no-DELETE
+-- policy: its rows are correctable while the owning response's Visit is still
+-- open (status = 'PREPARATION' AND finalized_at IS NULL) — a SCHEDULE
+-- correction replaces the COMPLETE reconciliation row set atomically inside
+-- one transaction. Once the owning Visit is finalized, historical field truth
+-- is immutable and DELETE remains forbidden. No other historical entity gains
+-- deletion permission.
 -- ============================================================================
 CREATE TRIGGER trg_mission_bd      BEFORE DELETE ON mission                  BEGIN SELECT RAISE(ABORT,'no-delete: mission');           END;
 CREATE TRIGGER trg_institution_bd  BEFORE DELETE ON institution              BEGIN SELECT RAISE(ABORT,'no-delete: institution');       END;
@@ -466,7 +486,20 @@ CREATE TRIGGER trg_visit_bd        BEFORE DELETE ON visit                    BEG
 CREATE TRIGGER trg_def_bd          BEFORE DELETE ON checklist_item_definition BEGIN SELECT RAISE(ABORT,'no-delete: item definition');   END;
 CREATE TRIGGER trg_av_bd           BEFORE DELETE ON checklist_allowed_value  BEGIN SELECT RAISE(ABORT,'no-delete: allowed value');     END;
 CREATE TRIGGER trg_response_bd     BEFORE DELETE ON checklist_response       BEGIN SELECT RAISE(ABORT,'no-delete: response (snapshot)'); END;
-CREATE TRIGGER trg_recon_bd        BEFORE DELETE ON equipment_reconciliation_row BEGIN SELECT RAISE(ABORT,'no-delete: reconciliation row'); END;
+CREATE TRIGGER trg_recon_bd        BEFORE DELETE ON equipment_reconciliation_row
+BEGIN
+    -- Gate-5E owner-authorized narrow correction: reconciliation rows may be
+    -- deleted only while the owning response's Visit is open (PREPARATION and
+    -- not finalized) — a SCHEDULE correction replaces the complete row set
+    -- atomically. After finalization the rows are immutable historical truth.
+    SELECT RAISE(ABORT,'reconciliation row deletion requires the owning visit to be open (PREPARATION, not finalized)')
+        WHERE (SELECT v.finalized_at
+                 FROM checklist_response cr JOIN visit v ON v.visit_id = cr.visit_id
+                WHERE cr.response_id = OLD.response_id) IS NOT NULL
+           OR (SELECT v.status
+                 FROM checklist_response cr JOIN visit v ON v.visit_id = cr.visit_id
+                WHERE cr.response_id = OLD.response_id) <> 'PREPARATION';
+END;
 CREATE TRIGGER trg_obs_bd          BEFORE DELETE ON adhoc_observation        BEGIN SELECT RAISE(ABORT,'no-delete: observation');        END;
 CREATE TRIGGER trg_finding_bd      BEFORE DELETE ON finding                  BEGIN SELECT RAISE(ABORT,'no-delete: finding');            END;
 CREATE TRIGGER trg_evidence_bd     BEFORE DELETE ON evidence                 BEGIN SELECT RAISE(ABORT,'no-delete: evidence');           END;

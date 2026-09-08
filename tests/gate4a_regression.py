@@ -51,6 +51,12 @@ Scope:
     OPEN -> RESOLVED with a valid source and no open corrective actions remains
     accepted; visit finalization does not treat a valid zero-source VOIDED
     finding as an orphan blocker at schema level.
+  * Adds the Gate-5E owner-authorized narrow correction tests (S13): DELETE of
+    an equipment_reconciliation_row while the owning Visit is PREPARATION
+    (T6 SCHEDULE row-set replacement); DELETE rejected once the Visit is
+    finalized (COMPLETED and COMPLETED_WITH_UNINSPECTED) with the row left
+    intact; the retained SCHEDULE-only / CHK-012 / finalized-immutability
+    rules re-affirmed unchanged.
 
 Run:  python3 tests/gate4a_regression.py
 Exit: 0 on success, 1 when any assertion fails.  Requires Python >= 3.11 with
@@ -1615,6 +1621,131 @@ def s12_gate4b_voided(t: T):
          finalize_with_voided_ok)
 
 
+# ---------------------------------------------------------------------------
+# S13 — Gate-5E owner-authorized narrow correction: reconciliation row DELETE
+# while the owning Visit is PREPARATION (T6 SCHEDULE replacement). The v1
+# no-DELETE policy otherwise remains intact: DELETE is still forbidden once
+# the Visit is finalized, and every other reconciliation integrity rule and
+# the finalized-Visit immutability rules are re-affirmed unchanged.
+# ---------------------------------------------------------------------------
+def s13_gate5e_recon_delete(t: T):
+    def recon_fixture():
+        """(conn, ids, response_id, row_id): one MISMATCHED SCHEDULE response + 1 discrepancy row."""
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        d_sched = seed_def(conn, "CHK-012", 1, model="SCHEDULE", domain="DOM-05")
+        v_bad = seed_value(conn, d_sched, "NONCOMPLIANT", "غير مطابقة", "NON_COMPLIANT")
+        f = _mk_finding(conn, ids["visit"])
+        r = make_response(conn, ids["visit"], d_sched, value_id=v_bad, finding=f)
+        cur.execute(
+            "INSERT INTO equipment_reconciliation_row(response_id, category, declared_qty, observed_qty, "
+            "difference, discrepancy_type) VALUES (?, 'A', 10, 7, -3, 'QTY_SHORTAGE')", (r,))
+        row = cur.lastrowid
+        conn.commit()
+        return conn, ids, r, row
+
+    def finalize(conn, ids, status):
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE visit SET status = ?, finalized_at = '2026-09-20T18:00:00Z' "
+            "WHERE visit_id = ? AND status = 'PREPARATION' AND finalized_at IS NULL", (status, ids["visit"]))
+        conn.commit()
+
+    def delete_while_preparation_ok():
+        conn, _ids, r, row = recon_fixture()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM equipment_reconciliation_row WHERE row_id = ?", (row,))
+        conn.commit()
+        assert cur.execute("SELECT count(*) FROM equipment_reconciliation_row WHERE response_id = ?",
+                           (r,)).fetchone()[0] == 0
+        conn.close()
+    t.ok("DELETE reconciliation row while owning Visit PREPARATION succeeds (row set replaceable)",
+         delete_while_preparation_ok)
+
+    def delete_after_completed_rejected():
+        conn, ids, _r, row = recon_fixture()
+        finalize(conn, ids, "COMPLETED")
+        cur = conn.cursor()
+        cur.execute("DELETE FROM equipment_reconciliation_row WHERE row_id = ?", (row,))
+        conn.close()
+    t.bad_("DELETE reconciliation row after Visit finalized (COMPLETED) rejected",
+           delete_after_completed_rejected, "open (PREPARATION, not finalized)")
+
+    def delete_after_completed_with_uninspected_rejected():
+        conn, ids, _r, row = recon_fixture()
+        cur = conn.cursor()
+        d_ni = seed_def(conn, "CHK-013", 1, model="SINGLE_VALUE", domain="DOM-03")
+        ni = make_response(conn, ids["visit"], d_ni, overlay="NOT_INSPECTED")
+        cur.execute("UPDATE checklist_response SET not_inspected_reason = 'closed by owner' WHERE response_id = ?", (ni,))
+        finalize(conn, ids, "COMPLETED_WITH_UNINSPECTED")
+        cur.execute("DELETE FROM equipment_reconciliation_row WHERE row_id = ?", (row,))
+        conn.close()
+    t.bad_("DELETE reconciliation row after Visit finalized (COMPLETED_WITH_UNINSPECTED) rejected",
+           delete_after_completed_with_uninspected_rejected, "open (PREPARATION, not finalized)")
+
+    def rejected_delete_leaves_row_intact():
+        conn, ids, r, row = recon_fixture()
+        finalize(conn, ids, "COMPLETED")
+        cur = conn.cursor()
+        try:
+            cur.execute("DELETE FROM equipment_reconciliation_row WHERE row_id = ?", (row,))
+        except sqlite3.Error:
+            pass
+        else:
+            raise AssertionError("post-finalization DELETE was accepted")
+        got = cur.execute(
+            "SELECT category, declared_qty, observed_qty, difference, discrepancy_type "
+            "FROM equipment_reconciliation_row WHERE response_id = ?", (r,)).fetchall()
+        assert got == [("A", 10, 7, -3, "QTY_SHORTAGE")], f"row altered after rejected delete: {got}"
+        conn.close()
+    t.ok("rejected post-finalization DELETE does not alter the row (history intact)",
+         rejected_delete_leaves_row_intact)
+
+    def rows_under_single_value_still_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        d_single = seed_def(conn, "CHK-001", 1, model="SINGLE_VALUE")
+        v_ok = seed_value(conn, d_single, "OK", "مطابق", "COMPLIANT")
+        r = make_response(conn, ids["visit"], d_single, value_id=v_ok)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO equipment_reconciliation_row(response_id, category, declared_qty, observed_qty, difference) "
+            "VALUES (?, 'X', 1, 1, 0)", (r,))
+        conn.close()
+    t.bad_("reconciliation rows belong only to a SCHEDULE response (INSERT rule retained)",
+           rows_under_single_value_still_rejected, "SCHEDULE")
+
+    def overlay_with_rows_still_rejected():
+        conn, _ids, r, _row = recon_fixture()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE checklist_response SET overlay_state = 'NA', answered_value_id = NULL, finding_id = NULL "
+            "WHERE response_id = ?", (r,))
+        conn.close()
+    t.bad_("overlay (NA/NOT_INSPECTED) may not be set while reconciliation rows exist (CHK-012 guard retained)",
+           overlay_with_rows_still_rejected, "CHK-012")
+
+    def recon_update_after_finalize_still_rejected():
+        conn, ids, _r, row = recon_fixture()
+        finalize(conn, ids, "COMPLETED")
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE equipment_reconciliation_row SET observed_qty = 9, difference = -1 WHERE row_id = ?", (row,))
+        conn.close()
+    t.bad_("reconciliation row content UPDATE after finalization still rejected (immutability retained)",
+           recon_update_after_finalize_still_rejected, "immutable once the visit is finalized")
+
+    def response_update_after_finalize_still_rejected():
+        conn, ids, r, _row = recon_fixture()
+        finalize(conn, ids, "COMPLETED")
+        cur = conn.cursor()
+        cur.execute("UPDATE checklist_response SET note = 'x' WHERE response_id = ?", (r,))
+        conn.close()
+    t.bad_("response UPDATE after finalization still rejected (visit immutability retained)",
+           response_update_after_finalize_still_rejected, "responses are immutable once the visit is finalized")
+
+
 def main():
     suites = [
         ("S0 architecture (15 tables / 44 triggers / 1 view / 24 indexes + column)", s0_architecture),
@@ -1630,6 +1761,7 @@ def main():
         ("S10 canonical mapping doc ↔ schema (24 payloads)", s10_mapping_doc),
         ("S11 canonical grammar negative rejections (final integrity)", s11_canonical_rule_rejections),
         ("S12 Gate-4B VOIDED finding lifecycle", s12_gate4b_voided),
+        ("S13 Gate-5E narrow correction — reconciliation row DELETE during PREPARATION", s13_gate5e_recon_delete),
     ]
     total_ok, total_bad = 0, []
     for label, fn in suites:

@@ -1,8 +1,8 @@
-# مصفوفة القيود (Constraint Matrix) — v1 (Revision 5 — Gate 4A + Gate 4B)
+# مصفوفة القيود (Constraint Matrix) — v1 (Revision 6 — Gate 4A + Gate 4B + تصحيح بوابة 5E الضيق)
 
-> **البوابة الرابعة:** مطابقة قواعد البوابة الثالثة (المعمارية + I1..I22) **وعمود «قابلية التغيير» في `ENTITY-CATALOG-v1.md`** بآليات الفرض الفيزيائي الحالية في `docs/schema/schema.sql` (SQLite 3) — مع تصحيح بوابة 4A (`applicability_rule` على تعريفات البنود) **وتصحيح بوابة 4B (`VOIDED` على Finding فقط — قرار مالك مُصدَّر: توسعة قائمة حالة النقص بدورة `OPEN → VOIDED` نهائية بشروط، دون توسعة حالة CorrectiveAction ودون كيان جديد)**.
+> **البوابة الرابعة:** مطابقة قواعد البوابة الثالثة (المعمارية + I1..I22) **وعمود «قابلية التغيير» في `ENTITY-CATALOG-v1.md`** بآليات الفرض الفيزيائي الحالية في `docs/schema/schema.sql` (SQLite 3) — مع تصحيح بوابة 4A (`applicability_rule` على تعريفات البنود) **وتصحيح بوابة 4B (`VOIDED` على Finding فقط — قرار مالك مُصدَّر: توسعة قائمة حالة النقص بدورة `OPEN → VOIDED` نهائية بشروط، دون توسعة حالة CorrectiveAction ودون كيان جديد)**، **وتصحيح بوابة 5E الضيق (قرار مالك مُصدَّر: حذف شرطي لسطر `equipment_reconciliation_row` أثناء `PREPARATION` فقط — لاستبدال مجموعة سطور SCHEDULE كاملة ذريًا في تصحيح T6؛ الحذف بعد الإقفال يبقى ممنوعًا، ولا تعميم للحذف على أي كيان تاريخي آخر)**.
 > **أنواع الفرض:** `CHECK/UNIQUE/FK` · `TRIGGER` · `VIEW` · `APP` (تطبيق/خدمة مجال) · `POLICY` (سياسة v1).
-> الملف يعكس **ما ينفّذه `schema.sql` فعلًا** (15 جدولًا · **44 مُشغِّلًا** · منظر واحد · **24 فهرسًا صريحًا** — تحقق تنفيذي تراكمي **92/0** عبر `tests/gate4a_regression.py`).
+> الملف يعكس **ما ينفّذه `schema.sql` فعلًا** (15 جدولًا · **44 مُشغِّلًا** · منظر واحد · **24 فهرسًا صريحًا** — تحقق تنفيذي تراكمي **100/0** عبر `tests/gate4a_regression.py`).
 
 ## أ) تدقيق قابلية التغيير الشامل (السلطة: ENTITY-CATALOG)
 
@@ -29,7 +29,7 @@
 | # | المبدأ | الفرض | موضع التنفيذ |
 |---|---|---|---|
 | A1 | 15 كيانًا/جدولًا | POLICY | `schema.sql` |
-| A2 | الحقيقة الميدانية لا تُعاد كتابتها | TRIGGER | no-delete `*_bd` + تجميد ما بعد `finalized_at` + `trg_visit_bu` |
+| A2 | الحقيقة الميدانية لا تُعاد كتابتها | TRIGGER | no-delete `*_bd` (14 غير مشروطة + `trg_recon_bd` مشروط: حذف سطور المطابقة مسموح فقط وزيارة المالك `PREPARATION` وغير مقفلة — تصحيح بوابة 5E الضيق لاستبدال مجموعة سطور SCHEDULE) + تجميد ما بعد `finalized_at` + `trg_visit_bu` |
 | A3 | زيارة مثبتة غير قابلة للتعديل؛ إعادة معاينة = زيارة جديدة | TRIGGER + CHECK | `trg_visit_bi`/`trg_visit_bu` + CHECK الاقتران |
 | A4 | تعريفات مُرقّمة وسلسلة إصدار سليمة وACTIVE غير ملتبس + **قاعدة انطباق كنسية لكل إصدار (بوابة 4A)** | UNIQUE + INDEX + TRIGGER + CHECK | `UNIQUE(item_code,version_no)`؛ `uq_active_def_per_code`؛ `trg_def_bi/bu`؛ CHECKs `applicability_rule` + محتوى `trg_def_bi` |
 | A5 | استجابة مرتبطة بالإصدار الدقيق (فتُفسَّر تحت قاعدة انطباق إصدارها) | FK + TRIGGER | `item_definition_id` FK؛ `trg_response_bi/bu` |
@@ -50,7 +50,7 @@
 
 | # | القاعدة | الفرض | موضع التنفيذ |
 |---|---|---|---|
-| I1 | ثبات اللقطة بعد الإقفال | TRIGGER | `trg_visit_bu`, `trg_response_bu`, `trg_recon_bu`, no-delete |
+| I1 | ثبات اللقطة بعد الإقفال | TRIGGER | `trg_visit_bu`, `trg_response_bu`, `trg_recon_bu`, no-delete (سطور المطابقة قابلة للحذف/الاستبدال أثناء `PREPARATION` فقط — تصحيح بوابة 5E) |
 | I2 | مساءلة غير المطابقة | TRIGGER | `trg_response_bi`/`trg_response_bu` |
 | I3 | «غير معني» ≠ «لا يُعاين» + حالتا الإقفال | CHECK + TRIGGER | overlay CHECK؛ `visit.status` CHECK؛ `trg_visit_bu` |
 | I4 | مصدر النقص وأصل الزيارة | TRIGGER | `trg_finding_bu`، `trg_response_finding_*`، `trg_obs_finding_*`، `trg_fu_bi` |
@@ -77,7 +77,7 @@
 
 | # | السياسة | الفرض | موضع التنفيذ |
 |---|---|---|---|
-| P1 | لا DELETE (تعطيل ناعم) | TRIGGER | 15 × `*_bd` |
+| P1 | لا DELETE (تعطيل ناعم) — استثناء وحيد: حذف `equipment_reconciliation_row` أثناء `PREPARATION` فقط (تصحيح بوابة 5E) | TRIGGER | 14 × `*_bd` غير مشروطة + `trg_recon_bd` مشروط |
 | P2 | الكتابة في الزيارة فقط بحالة PREPARATION | TRIGGER | `trg_response_bi`, `trg_recon_bi`, `trg_obs_bi`, `trg_response_bu`… |
 | P3 | إلحاقية follow_up و external_system_tracking | TRIGGER | `trg_fu_bu`, `trg_ext_bu` |
 | P4 | FK مفعّلة على كل اتصال | PRAGMA | `PRAGMA foreign_keys=ON` |
@@ -102,10 +102,10 @@
 7. **مصادقة الملفات/`content_hash` الفيزيائية** ومدى الاحتفاظ — بوابة تخزين لاحقة (قرار Q5).
 8. **ترتيب إبطال النقص `OPEN → VOIDED` (بوابة 4B) — حدود DB/APP:** الترتيب التطبيقي في معاملة واحدة APP: تصحيح/تراجع آخر مصدر (فكّ `finding_id` بفرع محدد) → حدث FollowUp (`FINDING`/`VOIDED`) → تحديث الحالة إلى `VOIDED` → COMMIT، وأي فشل → ROLLBACK. **ضمانات الفيزيائي فحوص حالة راهنة فقط:** النقص يُنشأ `OPEN`؛ مغادرة `OPEN` نحو `IN_TREATMENT`/`RESOLVED` تتطلب مصدرًا حاليًا؛ `OPEN→VOIDED` يُقبل فقط بزيارة أصل مفتوحة وصفر مصادر وصفر إجراءات عند التحديث؛ إنهائية `VOIDED`/`RESOLVED`؛ لا مصدر/إجراء لاحقًا لـ`VOIDED`. **لا يدّعي الفيزيائي** منع تثبيت نقص `OPEN` بلا مصادر عند السكون ولا إثبات السببية التاريخية «تصحيح آخر مصدر» — هذان ضمانا APP (لا يُضعَّف «الحفاظ على آخر مصدر» للنقائص العادية).
 
-## ز) التحقق التنفيذي (Regression — Revision 5 / Gate 4A + Gate 4B)
+## ز) التحقق التنفيذي (Regression — Revision 6 / Gate 4A + Gate 4B + تصحيح بوابة 5E الضيق)
 
 - تنفيذ `schema.sql` من الصفر (SQLite 3.45.1 في الذاكرة وعلى ملف مؤقت): **15 جدولًا · 44 مُشغِّلًا · منظر `v_response_outcome` · 24 فهرسًا صريحًا** (بدون تغيير).
-- **إجمالي تراكمي **92 حالة — 0 فشل** عبر `tests/gate4a_regression.py` (71 حالة محفوظة من Revision 2/3/4/4A + **21 حالة بوابة 4B**)، وتشمل استبقاءً ممثَّلًا لحالات Revision 2/3 (إقفال بلا `finalized_at`، PREPARATION مع `finalized_at`، COMPLETED مع NOT_INSPECTED، أسبابهما، عدم إعادة الفتح، تغيير مؤسسة/تاريخ/مهمة الزيارة، تغيير نوع موضوع مستخدم، تعديل قواعد تعريف، إعادة توزيع ChecklistAllowedValue، موضوعات عبر المؤسسات، آخر مصدر لنقص غير OPEN، إجراء تحت نقص RESOLVED، RESOLVED بلا `verified_by`، metadata الأدلة، خلط إصدارات، update على follow_up وexternal_system_tracking، no-delete، المصدر الأول، CHK-012 ثنائي الاتجاه، سلاسل الإصدارات، ACTIVE الواحد، منظر النتيجة المشتق) **بالإضافة إلى حالات بوابة 4A**:
+- **إجمالي تراكمي **100 حالة — 0 فشل** عبر `tests/gate4a_regression.py` (71 حالة محفوظة من Revision 2/3/4/4A + **21 حالة بوابة 4B** + **8 حالات تصحيح بوابة 5E الضيق**)، وتشمل استبقاءً ممثَّلًا لحالات Revision 2/3 (إقفال بلا `finalized_at`، PREPARATION مع `finalized_at`، COMPLETED مع NOT_INSPECTED، أسبابهما، عدم إعادة الفتح، تغيير مؤسسة/تاريخ/مهمة الزيارة، تغيير نوع موضوع مستخدم، تعديل قواعد تعريف، إعادة توزيع ChecklistAllowedValue، موضوعات عبر المؤسسات، آخر مصدر لنقص غير OPEN، إجراء تحت نقص RESOLVED، RESOLVED بلا `verified_by`، metadata الأدلة، خلط إصدارات، update على follow_up وexternal_system_tracking، no-delete (بالاستثناء الشرطي لسطور المطابقة أثناء PREPARATION — تصحيح بوابة 5E)، المصدر الأول، CHK-012 ثنائي الاتجاه، سلاسل الإصدارات، ACTIVE الواحد، منظر النتيجة المشتق) **بالإضافة إلى حالات بوابة 4A**:
   - **تعريف `ACTIVE` (وأي تعريف) لا يمكن أن يخلو من `applicability_rule`** (NOT NULL)؛ وجذر JSON غير صالح/غير كائن مرفوض.
   - **`applicability_rule` لا يمكن تعديله على تعريف قائم** (ثبات إصدار التعريف عبر `trg_def_bu`) — تغيير الانطباق يستلزم إصدار تعريف جديدًا.
   - **إصدار جديد قد يحمل قاعدة انطباق مختلفة** بينما يبقى تعريف الإصدار الأسبق دون مساس.

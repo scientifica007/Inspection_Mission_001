@@ -61,9 +61,9 @@
 //     never regain a source"). T7 carries no reassignment path at all, so no
 //     VOIDED target/reassignment is introduced.
 //
-//   * Out of scope: AdHocObservation creation (no adopted Gate-5A numbered
-//     contract exists for it — contract gap), T6 retraction/re-home, T8+
-//     transitions, finalization, evidence, UI.
+//   * Out of scope: AdHocObservation creation (separate Gate-5G OBS-1
+//     contract — src/application/observation-create.ts), T6 retraction/
+//     re-home, T8+ transitions, finalization, evidence, UI.
 //
 // The finding subject equals the observation subject by construction, so
 // finding.subject_id = observation.subject_id — including the NULL

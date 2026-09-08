@@ -1330,6 +1330,203 @@ async function tX_crossCutting(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// R — NEW-Finding retry identity (Gate-5E owner-authorized narrow correction)
+//
+// A durable response linked to a Finding converges on a `finding.mode = "new"`
+// retry ONLY when the linked Finding matches the requested NEW-Finding
+// semantic creation target (origin visit, subject context, normalized
+// description/defect/location, urgency/impact, and the request-supplied
+// actor as created_by). created_at and the Finding's CURRENT status are
+// deliberately excluded (fresh retry clock / later legitimate transitions).
+// ---------------------------------------------------------------------------
+async function tR_newFindingRetryIdentity(): Promise<void> {
+    await ok("G5D-41: identical semantic NEW-Finding retry converges even with a fresh retry clock", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const cell = await cellOf(w.db, visitId, null, "CHK-006");
+        const sel = newFindingSel({ urgency: "BEFORE_ENTRY", impact: "MEDIUM", description: "لوحة توزيع مكشوفة" });
+        const first = await singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+            note: "ملاحظة",
+            finding: sel,
+            actor: "inspector-a",
+            now: NOW,
+        });
+        // identical semantic payload; different retry clock + same actor
+        const again = await singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+            note: "ملاحظة",
+            finding: sel,
+            actor: "inspector-a",
+            now: "2026-09-02T10:00:00.000Z",
+        });
+        assert(first.applied === true && again.applied === false, "identical semantic retry converges");
+        assert(again.findingId === first.findingId && first.findingId !== null, "same durable finding returned");
+        assert((await count(w.db, "SELECT count(*) AS c FROM finding")) === 1, "no second Finding");
+    });
+
+    await ok("G5D-42: same answer/note but DIFFERENT NEW-Finding description is rejected (conflicting retry)", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const cell = await cellOf(w.db, visitId, null, "CHK-006");
+        await singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+            note: "ملاحظة",
+            finding: newFindingSel({ description: "الوصف الأول" }),
+            actor: "inspector-a",
+            now: NOW,
+        });
+        const e = await rejectsCode(APP_ERR.ALREADY_DISPOSITIONED, async () =>
+            singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+                note: "ملاحظة",
+                finding: newFindingSel({ description: "وصف مختلف كلياً" }),
+                actor: "inspector-a",
+                now: NOW,
+            }),
+        );
+        assert(e.message.includes("T6"), `message points to T6: ${e.message}`);
+        const findings = await w.db.query("SELECT description FROM finding");
+        assert(findings.length === 1 && String(findings[0].description) === "الوصف الأول", "no rewrite of the historical Finding");
+    });
+
+    await ok("G5D-43: different urgency is rejected as a conflicting retry", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const cell = await cellOf(w.db, visitId, null, "CHK-006");
+        await singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+            note: "n",
+            finding: newFindingSel({ urgency: "IMMEDIATE" }),
+            actor: "inspector-a",
+            now: NOW,
+        });
+        await rejectsCode(APP_ERR.ALREADY_DISPOSITIONED, async () =>
+            singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+                note: "n",
+                finding: newFindingSel({ urgency: "ROUTINE" }),
+                actor: "inspector-a",
+                now: NOW,
+            }),
+        );
+        assert((await count(w.db, "SELECT count(*) AS c FROM finding")) === 1, "no second Finding");
+    });
+
+    await ok("G5D-44: different impact is rejected as a conflicting retry", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const cell = await cellOf(w.db, visitId, null, "CHK-006");
+        await singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+            note: "n",
+            finding: newFindingSel({ impact: "HIGH" }),
+            actor: "inspector-a",
+            now: NOW,
+        });
+        await rejectsCode(APP_ERR.ALREADY_DISPOSITIONED, async () =>
+            singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+                note: "n",
+                finding: newFindingSel({ impact: "LOW" }),
+                actor: "inspector-a",
+                now: NOW,
+            }),
+        );
+        assert((await count(w.db, "SELECT count(*) AS c FROM finding")) === 1, "no second Finding");
+    });
+
+    await ok("G5D-44x: different actor (created_by) is rejected — actor is part of the requested creation target", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const cell = await cellOf(w.db, visitId, null, "CHK-006");
+        await singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+            note: "n",
+            finding: newFindingSel(),
+            actor: "inspector-a",
+            now: NOW,
+        });
+        await rejectsCode(APP_ERR.ALREADY_DISPOSITIONED, async () =>
+            singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+                note: "n",
+                finding: newFindingSel(),
+                actor: "inspector-b",
+                now: NOW,
+            }),
+        );
+        const findings = await w.db.query("SELECT created_by FROM finding");
+        assert(findings.length === 1 && String(findings[0].created_by) === "inspector-a", "historical created_by untouched");
+    });
+
+    await ok("G5D-45: a NEW-Finding retry cannot converge across a different subject context", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const wsA = await addWorkshopSubject(w, visitId, "WS-A");
+        // Finding created FOR subject A by WS-A's cell
+        const cellA = await cellOf(w.db, visitId, wsA, "CHK-006");
+        const f = (await singleAnswerOk(w, cellA, "CHK-006", "IRREGULAR", { note: "عطل أ", finding: newFindingSel(), actor: "inspector-a", now: NOW })).findingId!;
+        // an INSTITUTION-context cell (subject NULL) links the same Finding as
+        // an existing target (legal: no subject-match restriction for NULL)
+        const cellNull = await cellOf(w.db, visitId, null, "CHK-007");
+        await singleAnswerOk(w, cellNull, "CHK-007", "IRREGULAR", { note: "نفس العطل", finding: existingFindingSel(f), actor: "inspector-a", now: NOW });
+        // a "new" retry of the NULL-subject answer would claim a Finding with
+        // subject NULL — the durable Finding is recorded for subject A
+        await rejectsCode(APP_ERR.ALREADY_DISPOSITIONED, async () =>
+            singleAnswerOk(w, cellNull, "CHK-007", "IRREGULAR", {
+                note: "نفس العطل",
+                finding: newFindingSel(),
+                actor: "inspector-a",
+                now: NOW,
+            }),
+        );
+        assert((await count(w.db, "SELECT count(*) AS c FROM finding")) === 1, "no second Finding");
+    });
+
+    await ok("G5D-45x: a NEW-Finding retry cannot converge across a different origin Visit", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const secondVisit = await createVisitFor(w, w.institutionId);
+        // Finding created in the SECOND visit (origin = secondVisit)
+        const cellB = await cellOf(w.db, secondVisit, null, "CHK-006");
+        const f = (await singleAnswerOk(w, cellB, "CHK-006", "IRREGULAR", { note: "عطل ب", finding: newFindingSel(), actor: "inspector-b", now: NOW })).findingId!;
+        // the first visit's cell links the same Finding as an existing target
+        const cellA = await cellOf(w.db, visitId, null, "CHK-006");
+        await singleAnswerOk(w, cellA, "CHK-006", "IRREGULAR", { note: "نفس العطل", finding: existingFindingSel(f), actor: "inspector-a", now: NOW });
+        // a "new" retry would claim origin == the first visit; durable origin is
+        // the second visit => conflicting
+        await rejectsCode(APP_ERR.ALREADY_DISPOSITIONED, async () =>
+            singleAnswerOk(w, cellA, "CHK-006", "IRREGULAR", {
+                note: "نفس العطل",
+                finding: newFindingSel(),
+                actor: "inspector-a",
+                now: NOW,
+            }),
+        );
+        assert((await count(w.db, "SELECT count(*) AS c FROM finding")) === 1, "no second Finding");
+    });
+
+    await ok("G5D-46: RESOLVED Finding with an identical creation payload still converges historically", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const cell = await cellOf(w.db, visitId, null, "CHK-006");
+        const sel = newFindingSel({ urgency: "ROUTINE", impact: "LOW", description: "نقص تاريخي" });
+        const first = await singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+            note: "n",
+            finding: sel,
+            actor: "inspector-a",
+            now: NOW,
+        });
+        // the linked Finding later legitimately transitions (T8 territory)
+        await w.db.run("UPDATE finding SET status = 'RESOLVED', status_changed_at = ? WHERE finding_id = ?", [NOW, first.findingId]);
+        const again = await singleAnswerOk(w, cell, "CHK-006", "IRREGULAR", {
+            note: "n",
+            finding: sel,
+            actor: "inspector-a",
+            now: "2026-09-02T11:00:00.000Z",
+        });
+        assert(again.applied === false && again.findingId === first.findingId, "historical retry converges without re-linking");
+        const st = await rowStateOf(w.db, await responseIdOf(w.db, cell));
+        assert(st.answeredValueId !== null && st.findingId === first.findingId, "durable answer/link untouched");
+        assert(
+            (await count(w.db, "SELECT count(*) AS c FROM checklist_response WHERE finding_id = ?", [first.findingId])) === 1,
+            "no extra source from the historical retry",
+        );
+    });
+}
+
+// ---------------------------------------------------------------------------
 // runner
 // ---------------------------------------------------------------------------
 const SUITES: Array<[string, () => Promise<void>]> = [
@@ -1338,6 +1535,7 @@ const SUITES: Array<[string, () => Promise<void>]> = [
     ["G5D-T4 markNotInspected", tT4_markNotInspected],
     ["G5D-T5 HUMAN NOT_APPLICABLE resolution", tT5_humanNotApplicable],
     ["G5D-X cross-cutting (finalization gate / neutrality / orphan scan)", tX_crossCutting],
+    ["G5D-R NEW-Finding retry identity (Gate-5E narrow correction)", tR_newFindingRetryIdentity],
 ];
 
 async function main(): Promise<void> {

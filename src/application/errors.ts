@@ -1,13 +1,19 @@
-// Gate 5C — application-core error taxonomy (runtime-neutral TypeScript, no node:* imports).
+// Gate 5C + Gate 5D — application-core error taxonomy (runtime-neutral
+// TypeScript, no node:* imports).
 //
 // The Gate-5C executable slice (evaluateApplicability / createVisit T0 /
 // addSubjectToScope T1) surfaces every abnormal condition as a typed
 // DomainError whose `code` follows the Gate-5A contract vocabulary where one
 // exists:
-//   * E_CONFIG              — malformed/unknown applicability payload (APPLICATION-CORE §5.4)
+//   * E_CONFIG              — malformed/unknown applicability payload (APPLICATION-CORE §5.4);
+//                             reused by Gate 5D for a request that does not fit the pinned
+//                             cell/definition contract (wrong response_model for the op,
+//                             allowed value outside the pinned definition, a NON_COMPLIANT
+//                             answer without finding data, an AUTO cell through T5, ...)
 //   * E_MISSION_CLOSED      — createVisit on a mission not PREPARATION/ACTIVE (§4.1, T0)
-//   * E_VISIT_NOT_PREPARATION — addSubjectToScope on a Visit not in PREPARATION (§4.2)
-//   * E_CONTEXT             — subject of another institution (§5.4)
+//   * E_VISIT_NOT_PREPARATION — addSubjectToScope / initial disposition on a Visit not in
+//                             PREPARATION (§4.2, §4.5, §4.6, §4.4)
+//   * E_CONTEXT             — subject/finding of another institution (§5.4)
 //   * E_SCOPE_GAP           — partial/mismatched grid (never silently repaired) (§4.2, T1)
 // plus the Gate-5B manifest codes reused by T0 (the executable Gate-5B check
 // raises BootstrapError; createVisit maps it to the same code in this type):
@@ -18,6 +24,13 @@
 //   * E_MISSION_NOT_FOUND   — mission_id has no row (T0 re-read)
 //   * E_VISIT_NOT_FOUND     — visit_id has no row (T1 re-read)
 //   * E_SUBJECT_NOT_FOUND   — subjectId has no row (T1 existing-subject path)
+//   * E_CELL_NOT_MATERIALIZED / E_ALREADY_DISPOSITIONED / E_HUMAN_NEEDS_DECISION
+//                           — Gate-5A §5.4 names adopted as typed codes by the
+//                             Gate-5D initial-disposition slice (T2/T3/T4/T5)
+//   * E_FINDING_NOT_FOUND   — chosen existing Finding has no row (T2/T3 re-read)
+//   * E_FINDING_TARGET_INVALID — existing-Finding target violates the Gate-5A
+//                             selectable-status / source-origin / explicit
+//                             covers-same-issue contract (§4.7, T2(c)/T3B)
 //   * E_STATE_CONFLICT      — affected-row cardinality failure (B5) or an
 //                             impossible duplicate-ACTIVE resolution state;
 //                             "conflict/domain error" of TRANSACTION §1.5/§12
@@ -34,6 +47,11 @@ export const APP_ERR = {
     NO_ACTIVE_DEFINITION: "E_NO_ACTIVE_DEFINITION",
     BOOTSTRAP_DRIFT: "E_BOOTSTRAP_DRIFT",
     BOOTSTRAP_CONFLICT: "E_BOOTSTRAP_CONFLICT",
+    CELL_NOT_MATERIALIZED: "E_CELL_NOT_MATERIALIZED",
+    ALREADY_DISPOSITIONED: "E_ALREADY_DISPOSITIONED",
+    HUMAN_NEEDS_DECISION: "E_HUMAN_NEEDS_DECISION",
+    FINDING_NOT_FOUND: "E_FINDING_NOT_FOUND",
+    FINDING_TARGET_INVALID: "E_FINDING_TARGET_INVALID",
     STATE_CONFLICT: "E_STATE_CONFLICT",
 } as const;
 

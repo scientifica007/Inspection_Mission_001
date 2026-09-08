@@ -1,8 +1,8 @@
-# مصفوفة القيود (Constraint Matrix) — v1 (Revision 4 — Gate 4A)
+# مصفوفة القيود (Constraint Matrix) — v1 (Revision 5 — Gate 4A + Gate 4B)
 
-> **البوابة الرابعة:** مطابقة قواعد البوابة الثالثة (المعمارية + I1..I21) **وعمود «قابلية التغيير» في `ENTITY-CATALOG-v1.md`** بآليات الفرض الفيزيائي الحالية في `docs/schema/schema.sql` (SQLite 3) — مع تصحيح بوابة 4A: `applicability_rule` على تعريفات البنود.
+> **البوابة الرابعة:** مطابقة قواعد البوابة الثالثة (المعمارية + I1..I22) **وعمود «قابلية التغيير» في `ENTITY-CATALOG-v1.md`** بآليات الفرض الفيزيائي الحالية في `docs/schema/schema.sql` (SQLite 3) — مع تصحيح بوابة 4A (`applicability_rule` على تعريفات البنود) **وتصحيح بوابة 4B (`VOIDED` على Finding فقط — قرار مالك مُصدَّر: توسعة قائمة حالة النقص بدورة `OPEN → VOIDED` نهائية بشروط، دون توسعة حالة CorrectiveAction ودون كيان جديد)**.
 > **أنواع الفرض:** `CHECK/UNIQUE/FK` · `TRIGGER` · `VIEW` · `APP` (تطبيق/خدمة مجال) · `POLICY` (سياسة v1).
-> الملف يعكس **ما ينفّذه `schema.sql` فعلًا** (15 جدولًا · **44 مُشغِّلًا** · منظر واحد · **24 فهرسًا صريحًا** — تحقق تنفيذي **71/0** عبر `tests/gate4a_regression.py`).
+> الملف يعكس **ما ينفّذه `schema.sql` فعلًا** (15 جدولًا · **44 مُشغِّلًا** · منظر واحد · **24 فهرسًا صريحًا** — تحقق تنفيذي تراكمي **92/0** عبر `tests/gate4a_regression.py`).
 
 ## أ) تدقيق قابلية التغيير الشامل (السلطة: ENTITY-CATALOG)
 
@@ -17,7 +17,7 @@
 | M7 | checklist_response | visit/item/subject/recorded ثابتة؛ overlay/answered/note/reason/finding قابلة للتصحيح في PREPARATION | TRIGGER `trg_response_bu` (+bi) |
 | M8 | equipment_reconciliation_row | response_id/sort_order ثابتة؛ قيم الملاحظة قابلة للتصحيح في PREPARATION | TRIGGER `trg_recon_bu` |
 | M9 | adhoc_observation | observation/visit/recorded ثابتة؛ subject/text/finding قابلة للتصحيح في PREPARATION؛ ثابتة بعد الإقفال | TRIGGER `trg_obs_bu` |
-| M10 | finding | كل حقول الإنشاء ثابتة (origin/description/defect(+other)/location/subject/urgency/impact/created)؛ status/status_changed_at متحولان | TRIGGER `trg_finding_bu` |
+| M10 | finding | كل حقول الإنشاء ثابتة (origin/description/defect(+other)/location/subject/urgency/impact/created)؛ status/status_changed_at متحولان **وفق مخطط انتقالات بوابة 4B** (RESOLVED وVOIDED نهائيتان؛ `OPEN→VOIDED` بشروط القاعدة 22) | TRIGGER `trg_finding_bu` |
 | M11 | evidence | **كل الحقول ما عدا note** ثابتة (منها storage_ref/content_hash/file_size/captured_at/device_note/recorded) | TRIGGER `trg_evidence_bu` |
 | M12 | corrective_action | finding_id/action_type(+other)/created ثابتة؛ RESOLVED ⇐ closed_at+verified_by؛ close/verify ثابتة بعد التعيين | TRIGGER `trg_ca_bu` + CHECK |
 | M13 | follow_up | إلحاقي بحت | TRIGGER `trg_fu_bu`/`trg_fu_bd` |
@@ -35,7 +35,7 @@
 | A5 | استجابة مرتبطة بالإصدار الدقيق (فتُفسَّر تحت قاعدة انطباق إصدارها) | FK + TRIGGER | `item_definition_id` FK؛ `trg_response_bi/bu` |
 | A6 | لا خلط إصدارات (visit,item_code,سياق) | UNIQUE + TRIGGER | `uq_response_ctx`؛ `trg_response_bi/bu` |
 | A7 | result_class مشتق | VIEW | `v_response_outcome` |
-| A8 | origin_visit_id + مصدر أول في الأصل | FK + TRIGGER | `finding.origin_visit_id`؛ `trg_finding_bu`؛ `trg_response_finding_bi/bu`؛ `trg_obs_finding_bi/bu` |
+| A8 | origin_visit_id + مصدر أول في الأصل + **لا استعادة مصدر لنقص مُبطَل (بوابة 4B)** | FK + TRIGGER | `finding.origin_visit_id`؛ `trg_finding_bu`؛ `trg_response_finding_bi/bu`؛ `trg_obs_finding_bi/bu`؛ رفض ربط مصدر بنقص `VOIDED` في `trg_response_bi/bu` و`trg_obs_bi/bu` (موسَّعة — بوابة 4B) |
 | A9 | مصدرا النقص (استجابة/معاينة) | FK + TRIGGER | `checklist_response.finding_id`؛ `adhoc_observation.finding_id` |
 | A10 | استعجال/أثر مطلوبان مستقلان | CHECK (+APP) | `finding.urgency/impact` NOT NULL + CHECK |
 | A11 | FollowUp إلحاقي يتبع النقص | FK + TRIGGER | `follow_up.finding_id`؛ `trg_fu_bu/bd` |
@@ -46,7 +46,7 @@
 | A16 | الأدلة metadata فقط | POLICY | جدول `evidence` بلا أعمدة ثنائية + `storage_ref` |
 | A17 | Report P0 metadata | POLICY | جدول `report` |
 
-## ج) قواعد النزاهة I1..I21 → الفرض الحالي
+## ج) قواعد النزاهة I1..I22 → الفرض الحالي
 
 | # | القاعدة | الفرض | موضع التنفيذ |
 |---|---|---|---|
@@ -64,13 +64,14 @@
 | I12 | بنية/حسابات CHK-012 واتساق النتيجة الإجمالية ثنائي الاتجاه | CHECK + TRIGGER | CHECKs الصف؛ `trg_recon_bi/bu` + `trg_response_chk012_bu` |
 | I13 | سلامة القيمة واشتقاق result_class | FK + TRIGGER + VIEW | `trg_response_bi/bu`؛ `v_response_outcome` |
 | I14 | تفرد الاستجابة | UNIQUE | `uq_response_ctx` |
-| I15 | اتساق الإقفال | TRIGGER | `trg_finding_bu`, `trg_ca_bu` |
+| I15 | اتساق الإقفال (+ دورة `VOIDED` — بوابة 4B: شروط `OPEN→VOIDED` وإنهائية الحالتين، وعدم مغادرة `OPEN` بلا مصدر نحو IN_TREATMENT/RESOLVED) | TRIGGER | `trg_finding_bu`, `trg_ca_bu` |
 | I16 | اتساق المؤسسة | TRIGGER | `trg_response_bi/bu`, `trg_obs_bi/bu`, `trg_finding_bi`, `trg_fu_bi` |
 | I17 | مرجعية الدليل | TRIGGER | `trg_evidence_bi` |
 | I18 | أثر التسجيل | CHECK/POLICY | `recorded_at/by`/`created_at/by` NOT NULL |
 | I19 | لا إعادة فتح في v1 | TRIGGER | `trg_visit_bu` |
 | I20 | فصل الكيان عن التنفيذ (Report) | POLICY | جدول `report` بلا توليد |
 | I21 | إصدار واحد لكل (visit,item_code,سياق) | UNIQUE + TRIGGER | `uq_response_ctx`؛ `trg_response_bi/bu` |
+| I22 | مسار إبطال النقص `VOIDED` (بوابة 4B): دخول وحيد `OPEN→VOIDED` نهائي بفحوص حالة راهنة — زيارة الأصل مفتوحة (`PREPARATION` و`finalized_at NULL`)، صفر مصادر وصفر إجراءات عند لحظة التحديث؛ إنهائية `RESOLVED`/`VOIDED`؛ لا استعادة مصدر/إجراء لاحقًا؛ `corrective_action.status` بلا VOIDED؛ `follow_up.status_after=VOIDED` مشروط بـ `status_target='FINDING'` | CHECK + TRIGGER + **APP** | **فيزيائي (فحوص حالة راهنة):** `finding.status` CHECK + `follow_up.status_after` CHECK والشرطي `VOIDED ⇒ status_target='FINDING'`؛ `trg_finding_bu` (موسَّع)؛ `trg_ca_bi` (موسَّع)؛ `trg_response_bi/bu` و`trg_obs_bi/bu` (موسَّعة) · **APP (السببية/الحدث):** «هذا تصحيح آخر مصدر» وعدم ترك نقص `OPEN` عادي بلا مصادر عند السكون وتزامن تصحيح المصدر + حدث FollowUp `FINDING`/`VOIDED` + تحديث الحالة في معاملة واحدة — لا يُثبت الفيزيائي بمفرده الدورة السببية |
 
 ## د) سياسات فيزيائية
 
@@ -90,23 +91,25 @@
 - الفيزيائي يضمن: مغادرة OPEN تتطلب مصدرًا مسجلًا (`trg_finding_bu`)؛ الربط الأول خارج زيارة الأصل مرفوض (`trg_response_finding_bi/bu`، `trg_obs_finding_bi/bu`)؛ **بعد مغادرة OPEN لا يجوز حذف/إعادة توزيع آخر مصدر** (الحارس في `trg_response_bu` و`trg_obs_bu`)؛ الربط اللاحق لنفس المؤسسة فقط.
 - حالات إعادة التوزيع إلى نقص آخر مع بقاء مصادر كافية: تخضع لنفس قواعد المؤسسة/الأول/المساءلة (APP للتحقق من «نفس المسألة»).
 
-## و) خلاصة القيود غير القابلة للفرض التصريحي (APP-only) — بعد تصحيح بوابة 4A
+## و) خلاصة القيود غير القابلة للفرض التصريحي (APP-only) — بعد تصحيحَي بوابتي 4A/4B
 
 1. **تقييم قاعدة الانطباق وإكمال المعاينة**: قاعدة البيانات تخزّن/تُرقّم/تحفظ قاعدة انطباق كل تعريف (`applicability_rule`) **وتقييمها تطبيقي** — يقرأ التطبيق قاعدة **الإصدار الدقيق المختار** ويقيّمها ضد سياق الزيارة (نوع الزيارة/الموضوع/المهمة/المؤسسة — السلطة: `docs/checklists/APPLICABILITY-RULES-v1.md`) ويُنتج `NOT_APPLICABLE`(NA)/`APPLICABLE`(إجابة أو لا يُعاين)/`HUMAN_CONFIRMATION`(قرار المفتش)؛ ثم «كل بند منطبق له استجابة قبل الإقفال» — APP (لا ChecklistSet بالتصميم، والفيزيائي لا يقيّم الانطباق).
-2. **أحداث الانتقال**: كل انتقال حالة (Finding/CorrectiveAction) يُمثَّل بحدث FollowUp (`status_target`/`status_after`) — APP ضمن معاملة (الفيزيائي يضمن إلحاقية وسلامة الصف).
+2. **أحداث الانتقال**: كل انتقال حالة (Finding/CorrectiveAction — **ومنها `OPEN → VOIDED` في بوابة 4B**) يُمثَّل بحدث FollowUp (`status_target`/`status_after`) — APP ضمن معاملة (الفيزيائي يضمن إلحاقية وسلامة الصف، وأن `status_after=VOIDED` لا يصح إلا مع `status_target='FINDING'`).
 3. **اختيار إصدار التعريف النشط للسياق عند بدء الزيارة** — APP؛ قاعدة البيانات تضمن **عدم غموض ACTIVE لكل `item_code`** (فهرس جزئي فريد `uq_active_def_per_code`) ثم الثبات/عدم الخلط/الربط الدقيق.
 4. **قاعدة ملاحظة البند الشرطية** (`note_rule`) — APP/طبقة تحقق (تعريفية ديناميكية).
 5. **ربط غير المطابقة بنقص قائم «يغطي نفس المسألة»** — حكم APP (الفيزيائي يضمن المؤسسة + أول مصدر + الحفاظ على آخر مصدر).
 6. **ترتيب النقص OPEN ← ربط المصدر الأول** ضمن معاملة — APP (قيود الفيزيائي داعمة كما في «هـ»).
 7. **مصادقة الملفات/`content_hash` الفيزيائية** ومدى الاحتفاظ — بوابة تخزين لاحقة (قرار Q5).
+8. **ترتيب إبطال النقص `OPEN → VOIDED` (بوابة 4B) — حدود DB/APP:** الترتيب التطبيقي في معاملة واحدة APP: تصحيح/تراجع آخر مصدر (فكّ `finding_id` بفرع محدد) → حدث FollowUp (`FINDING`/`VOIDED`) → تحديث الحالة إلى `VOIDED` → COMMIT، وأي فشل → ROLLBACK. **ضمانات الفيزيائي فحوص حالة راهنة فقط:** النقص يُنشأ `OPEN`؛ مغادرة `OPEN` نحو `IN_TREATMENT`/`RESOLVED` تتطلب مصدرًا حاليًا؛ `OPEN→VOIDED` يُقبل فقط بزيارة أصل مفتوحة وصفر مصادر وصفر إجراءات عند التحديث؛ إنهائية `VOIDED`/`RESOLVED`؛ لا مصدر/إجراء لاحقًا لـ`VOIDED`. **لا يدّعي الفيزيائي** منع تثبيت نقص `OPEN` بلا مصادر عند السكون ولا إثبات السببية التاريخية «تصحيح آخر مصدر» — هذان ضمانا APP (لا يُضعَّف «الحفاظ على آخر مصدر» للنقائص العادية).
 
-## ز) التحقق التنفيذي (Regression — Revision 4 / Gate 4A)
+## ز) التحقق التنفيذي (Regression — Revision 5 / Gate 4A + Gate 4B)
 
 - تنفيذ `schema.sql` من الصفر (SQLite 3.45.1 في الذاكرة وعلى ملف مؤقت): **15 جدولًا · 44 مُشغِّلًا · منظر `v_response_outcome` · 24 فهرسًا صريحًا** (بدون تغيير).
-- **71 حالة — 0 فشل** عبر `tests/gate4a_regression.py`، وتشمل استبقاءً ممثَّلًا لحالات Revision 2/3 (إقفال بلا `finalized_at`، PREPARATION مع `finalized_at`، COMPLETED مع NOT_INSPECTED، أسبابهما، عدم إعادة الفتح، تغيير مؤسسة/تاريخ/مهمة الزيارة، تغيير نوع موضوع مستخدم، تعديل قواعد تعريف، إعادة توزيع ChecklistAllowedValue، موضوعات عبر المؤسسات، آخر مصدر لنقص غير OPEN، إجراء تحت نقص RESOLVED، RESOLVED بلا `verified_by`، metadata الأدلة، خلط إصدارات، update على follow_up وexternal_system_tracking، no-delete، المصدر الأول، CHK-012 ثنائي الاتجاه، سلاسل الإصدارات، ACTIVE الواحد، منظر النتيجة المشتق) **بالإضافة إلى حالات بوابة 4A**:
+- **إجمالي تراكمي **92 حالة — 0 فشل** عبر `tests/gate4a_regression.py` (71 حالة محفوظة من Revision 2/3/4/4A + **21 حالة بوابة 4B**)، وتشمل استبقاءً ممثَّلًا لحالات Revision 2/3 (إقفال بلا `finalized_at`، PREPARATION مع `finalized_at`، COMPLETED مع NOT_INSPECTED، أسبابهما، عدم إعادة الفتح، تغيير مؤسسة/تاريخ/مهمة الزيارة، تغيير نوع موضوع مستخدم، تعديل قواعد تعريف، إعادة توزيع ChecklistAllowedValue، موضوعات عبر المؤسسات، آخر مصدر لنقص غير OPEN، إجراء تحت نقص RESOLVED، RESOLVED بلا `verified_by`، metadata الأدلة، خلط إصدارات، update على follow_up وexternal_system_tracking، no-delete، المصدر الأول، CHK-012 ثنائي الاتجاه، سلاسل الإصدارات، ACTIVE الواحد، منظر النتيجة المشتق) **بالإضافة إلى حالات بوابة 4A**:
   - **تعريف `ACTIVE` (وأي تعريف) لا يمكن أن يخلو من `applicability_rule`** (NOT NULL)؛ وجذر JSON غير صالح/غير كائن مرفوض.
   - **`applicability_rule` لا يمكن تعديله على تعريف قائم** (ثبات إصدار التعريف عبر `trg_def_bu`) — تغيير الانطباق يستلزم إصدار تعريف جديدًا.
   - **إصدار جديد قد يحمل قاعدة انطباق مختلفة** بينما يبقى تعريف الإصدار الأسبق دون مساس.
   - **الاستجابة التاريخية تبقى مربوطة بإصدار تعريفها الأصلي** (لا إعادة ربط بإصدار أحدث) — ولا خلط إصدارات لنفس (زيارة، بند، سياق) — فتُفسَّر تحت قاعدة انطباق إصدارها.
   - **بنية الـ 15 جدولًا غير متغيرة** + **كل حمولات الانطباق الكنسية الـ 24** (CHK-001..CHK-024 في `docs/checklists/APPLICABILITY-RULES-v1.md`) تُقبلها قواعد المخطط عند التحميل.
   - **الفرز الكنسي النهائي (20 رفضًا):** `item_code` JSON ≠ صف `item_code`؛ `decision_kind` غير معروف؛ `subject_kinds` غير مصفوفة/فارغة/عنصر غير معروف/عنصر غير نصي؛ `HUMAN_CONFIRMATION` بلا `missing_context`/فارغة/عضو فارغ/عضو غير نصي؛ `rule_schema_version` منطقي `true` أو مفقود؛ `source_ar` فارغة أو مفقودة؛ `item_code` مفقود؛ `visit_type.allowed` قيمة خاطئة/فارغة/بنوع خاطئ؛ `visit_type` بلا `.allowed` أو غير كائن.
+  - **حالات بوابة 4B (VOIDED — دورة الإبطال):** `finding.status` يقبل `VOIDED` و`corrective_action.status` لا يقبله؛ `OPEN→VOIDED` مع مصدر باقٍ مرفوض؛ إبطال المصدر الوحيد داخل معاملة ثم `OPEN→VOIDED` مقبول وينتهي بصفر مصادر؛ `IN_TREATMENT→VOIDED`/`RESOLVED→VOIDED`/`VOIDED→أي حالة` مرفوضة؛ `VOIDED` مع زيارة أصل مقفلة مرفوض؛ `VOIDED` مع إجراء تصحيحي مرفوض؛ ربط مصدر بنقص `VOIDED` عبر الاستجابة أو المعاينة مرفوض (**مسارا INSERT وUPDATE معًا**)؛ إنشاء إجراء تحت `VOIDED` مرفوض؛ `follow_up.status_after=VOIDED` مقبول مع `status_target=FINDING` ومرفوض مع `CORRECTIVE_ACTION` (حتى مع إجراء تصحيحي حقيقي تابع للنقص)؛ نقص `OPEN` بلا مصادر لا ينتقل إلى `IN_TREATMENT`/`RESOLVED`؛ المباشرة `OPEN→RESOLVED` (مصدر صالح وبلا إجراءات مفتوحة) مقبولة؛ إقفال الزيارة لا يعامل نقص `VOIDED` صحيح المصادر عائقًا على مستوى المخطط.

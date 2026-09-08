@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Gate 4A regression suite — Inspection_Mission_001.
+(Cumulative: Gate 4 / Revision 3 retained + Gate 4A applicability bridge +
+ Gate 4B VOIDED Finding lifecycle. The historical filename is kept.)
 
 Scope:
   * Executes docs/schema/schema.sql FROM SCRATCH in an in-memory SQLite 3.45
@@ -11,19 +13,19 @@ Scope:
     1 view / 24 explicit indexes) and that the single Gate 4A addition
     (checklist_item_definition.applicability_rule) is present and NOT NULL.
   * Re-asserts the retained Gate 4 (Revision 3) enforcement behaviors that the
-    Gate 4A patch must not regress: visit lifecycle/finalization, definition /
-    allowed-value / response / subject / finding / evidence / action / report
-    immutability audits, no-delete policy, append-only follow_up and
-    external_system_tracking, response overlay XOR + finding accountability +
-    version-mix rules, CHK-012 bidirectional integrity, definition version
-    chain integrity, uq_active_def_per_code, first-source-in-origin rules,
-    derived result_class view.
-  * Adds the Gate 4A tests: an ACTIVE definition cannot lack applicability_rule;
-    applicability_rule cannot be mutated on an existing definition (version
-    immutability); a new definition version may carry a different
-    applicability_rule; historical responses stay bound to their original
-    definition version (whose rule is therefore never reinterpreted); the 15
-    tables are unchanged; every canonical rule payload in
+    Gate 4A/4B patches must not regress: visit lifecycle/finalization,
+    definition / allowed-value / response / subject / finding / evidence /
+    action / report immutability audits, no-delete policy, append-only
+    follow_up and external_system_tracking, response overlay XOR + finding
+    accountability + version-mix rules, CHK-012 bidirectional integrity,
+    definition version chain integrity, uq_active_def_per_code,
+    first-source-in-origin rules, derived result_class view.
+  * Adds the Gate 4A tests: an ACTIVE definition cannot lack
+    applicability_rule; applicability_rule cannot be mutated on an existing
+    definition (version immutability); a new definition version may carry a
+    different applicability_rule; historical responses stay bound to their
+    original definition version (whose rule is therefore never reinterpreted);
+    the 15 tables are unchanged; every canonical rule payload in
     docs/checklists/APPLICABILITY-RULES-v1.md is accepted by the schema
     (json_valid / object / rule_schema_version = 1) and matches CHK-001..024.
   * Adds the Gate 4A FINAL INTEGRITY tests (S11): canonical-grammar rejections —
@@ -33,6 +35,22 @@ Scope:
     true as rule_schema_version, missing rule_schema_version / item_code /
     source_ar keys, blank source_ar, and invalid / empty / wrongly-typed or
     missing visit_type.allowed plus non-object visit_type.
+  * Adds the Gate 4B tests (S12, owner-approved VOIDED Finding lifecycle):
+    finding.status accepts VOIDED while corrective_action.status does NOT;
+    OPEN -> VOIDED with a remaining source rejected; sole-source removal inside
+    a transaction followed by OPEN -> VOIDED accepted and ends with zero
+    sources; IN_TREATMENT -> VOIDED / RESOLVED -> VOIDED / VOIDED -> any state
+    rejected; VOIDED with a finalized origin visit rejected; VOIDED with any
+    corrective action rejected; source links to a VOIDED finding via
+    ChecklistResponse and AdHocObservation rejected on BOTH the INSERT and the
+    UPDATE paths; corrective-action creation under VOIDED rejected; follow_up
+    status_after=VOIDED accepted with status_target=FINDING and rejected with
+    status_target=CORRECTIVE_ACTION (the negative is proven against a real
+    corrective action of that finding, not by an unrelated FK failure);
+    source-less OPEN still cannot transition to IN_TREATMENT/RESOLVED; direct
+    OPEN -> RESOLVED with a valid source and no open corrective actions remains
+    accepted; visit finalization does not treat a valid zero-source VOIDED
+    finding as an orphan blocker at schema level.
 
 Run:  python3 tests/gate4a_regression.py
 Exit: 0 on success, 1 when any assertion fails.  Requires Python >= 3.11 with
@@ -1253,6 +1271,350 @@ def s11_canonical_rule_rejections(t: T):
         t.bad_(f"S11 canonical rejection — {label}", attempt)
 
 
+# ---------------------------------------------------------------------------
+# S12 — Gate 4B: VOIDED Finding lifecycle (owner-approved narrow correction)
+# ---------------------------------------------------------------------------
+def _mk_finding(conn, visit_id):
+    """Insert an OPEN finding in visit_id (no source) and return its id."""
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO finding(origin_visit_id, description, urgency, impact, status, created_at, created_by) "
+        "VALUES (?, 'd', 'IMMEDIATE', 'HIGH', 'OPEN', 't', 'i')", (visit_id,))
+    return cur.lastrowid
+
+
+def _mk_source(conn, visit_id, def_id, bad_value_id):
+    """Link a NON_COMPLIANT response source to a fresh OPEN finding; return (finding, response)."""
+    cur = conn.cursor()
+    f = _mk_finding(conn, visit_id)
+    cur.execute(
+        "INSERT INTO checklist_response(visit_id, item_definition_id, answered_value_id, finding_id, recorded_at, "
+        "recorded_by) VALUES (?, ?, ?, ?, 't', 'i')", (visit_id, def_id, bad_value_id, f))
+    conn.commit()
+    return f, cur.lastrowid
+
+
+def s12_gate4b_voided(t: T):
+    def status_accepts_voided():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = '2026-09-21T09:00:00Z' "
+            "WHERE finding_id = ? AND status = 'OPEN'", (f,))
+        assert cur.execute("SELECT status FROM finding WHERE finding_id = ?", (f,)).fetchone()[0] == "VOIDED"
+        conn.close()
+    t.ok("finding.status accepts VOIDED (OPEN -> VOIDED, origin visit open)", status_accepts_voided)
+
+    def ca_rejects_voided():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "INSERT INTO corrective_action(finding_id, action_type, description, responsible_role, status, "
+            "created_at, created_by) VALUES (?, 'MAINTENANCE_WORK', 'fix', 'DIRECTOR', 'VOIDED', 't', 'i')", (f,))
+        conn.close()
+    t.bad_("corrective_action.status does NOT accept VOIDED", ca_rejects_voided)
+
+    def voided_with_source_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        d1 = seed_def(conn, "CHK-001", 1)
+        v_bad = seed_value(conn, d1, "INACTIVE", "غير مفعّلة", "NON_COMPLIANT")
+        f, _rid = _mk_source(conn, ids["visit"], d1, v_bad)
+        cur = conn.cursor()
+        cur.execute("UPDATE finding SET status = 'VOIDED' WHERE finding_id = ?", (f,))
+        conn.close()
+    t.bad_("OPEN -> VOIDED with a remaining source rejected", voided_with_source_rejected, "zero recorded sources")
+
+    def voided_after_sole_source_retraction():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        d1 = seed_def(conn, "CHK-001", 1)
+        v_ok = seed_value(conn, d1, "ACTIVE", "مفعّلة", "COMPLIANT")
+        v_bad = seed_value(conn, d1, "INACTIVE", "غير مفعّلة", "NON_COMPLIANT")
+        f, rid = _mk_source(conn, ids["visit"], d1, v_bad)
+        cur = conn.cursor()
+        # preferred void ordering: correct the sole source inside the tx, append the
+        # FollowUp event, then update OPEN -> VOIDED (the DB then sees zero sources).
+        cur.execute("BEGIN IMMEDIATE")
+        cur.execute(
+            "UPDATE checklist_response SET answered_value_id = ?, overlay_state = NULL, note = NULL, finding_id = NULL "
+            "WHERE response_id = ? AND finding_id = ?", (v_ok, rid, f))
+        cur.execute(
+            "INSERT INTO follow_up(finding_id, status_target, status_after, event_datetime, actor_role, note, "
+            "recorded_by) VALUES (?, 'FINDING', 'VOIDED', '2026-09-21T09:00:00Z', 'INSPECTOR', "
+            "'last source retracted', 'i')", (f,))
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = '2026-09-21T09:00:00Z' "
+            "WHERE finding_id = ? AND status = 'OPEN'", (f,))
+        cur.execute("COMMIT")
+        assert cur.execute("SELECT status FROM finding WHERE finding_id = ?", (f,)).fetchone()[0] == "VOIDED"
+        n_src = cur.execute("SELECT count(*) FROM checklist_response WHERE finding_id = ?", (f,)).fetchone()[0]
+        n_obs = cur.execute("SELECT count(*) FROM adhoc_observation WHERE finding_id = ?", (f,)).fetchone()[0]
+        assert (n_src, n_obs) == (0, 0), (n_src, n_obs)
+        fu = cur.execute(
+            "SELECT status_target, status_after FROM follow_up WHERE finding_id = ? "
+            "ORDER BY followup_id DESC LIMIT 1", (f,)).fetchone()
+        assert fu == ("FINDING", "VOIDED"), fu
+        conn.close()
+    t.ok("sole source removed inside a transaction, then OPEN -> VOIDED accepted (FollowUp recorded)",
+         voided_after_sole_source_retraction)
+
+    def voided_ends_zero_sources():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = 't' WHERE finding_id = ? AND status = 'OPEN'",
+            (f,))
+        n_src = cur.execute("SELECT count(*) FROM checklist_response WHERE finding_id = ?", (f,)).fetchone()[0]
+        n_obs = cur.execute("SELECT count(*) FROM adhoc_observation WHERE finding_id = ?", (f,)).fetchone()[0]
+        n_ca = cur.execute("SELECT count(*) FROM corrective_action WHERE finding_id = ?", (f,)).fetchone()[0]
+        assert (n_src, n_obs, n_ca) == (0, 0, 0), (n_src, n_obs, n_ca)
+        conn.close()
+    t.ok("VOIDED ends with zero recorded sources (and zero actions)", voided_ends_zero_sources)
+
+    def in_treatment_to_voided_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        d1 = seed_def(conn, "CHK-001", 1)
+        v_bad = seed_value(conn, d1, "INACTIVE", "غير مفعّلة", "NON_COMPLIANT")
+        f, _rid = _mk_source(conn, ids["visit"], d1, v_bad)
+        cur = conn.cursor()
+        cur.execute("UPDATE finding SET status = 'IN_TREATMENT', status_changed_at = 't' WHERE finding_id = ?", (f,))
+        cur.execute("UPDATE finding SET status = 'VOIDED' WHERE finding_id = ?", (f,))
+        conn.close()
+    t.bad_("IN_TREATMENT -> VOIDED rejected", in_treatment_to_voided_rejected, "terminal")
+
+    def resolved_to_voided_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        d1 = seed_def(conn, "CHK-001", 1)
+        v_bad = seed_value(conn, d1, "INACTIVE", "غير مفعّلة", "NON_COMPLIANT")
+        f, _rid = _mk_source(conn, ids["visit"], d1, v_bad)
+        cur = conn.cursor()
+        cur.execute("UPDATE finding SET status = 'RESOLVED', status_changed_at = 't' WHERE finding_id = ?", (f,))
+        cur.execute("UPDATE finding SET status = 'VOIDED' WHERE finding_id = ?", (f,))
+        conn.close()
+    t.bad_("RESOLVED -> VOIDED rejected", resolved_to_voided_rejected, "terminal")
+
+    def voided_terminal():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = 't' WHERE finding_id = ? AND status = 'OPEN'",
+            (f,))
+        for target in ("OPEN", "IN_TREATMENT", "RESOLVED"):
+            try:
+                cur.execute("UPDATE finding SET status = ? WHERE finding_id = ?", (target, f))
+            except sqlite3.Error:
+                pass
+            else:
+                raise AssertionError(f"VOIDED transitioned to {target}")
+        conn.close()
+    t.ok("VOIDED is terminal (OPEN/IN_TREATMENT/RESOLVED from VOIDED all rejected)", voided_terminal)
+
+    def voided_finalized_origin_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE visit SET status = 'COMPLETED', finalized_at = '2026-09-20T18:00:00Z' WHERE visit_id = ?",
+            (ids["visit"],))
+        cur.execute("UPDATE finding SET status = 'VOIDED' WHERE finding_id = ?", (f,))
+        conn.close()
+    t.bad_("VOIDED when origin Visit is finalized rejected", voided_finalized_origin_rejected, "origin visit")
+
+    def voided_with_action_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "INSERT INTO corrective_action(finding_id, action_type, description, responsible_role, status, "
+            "created_at, created_by) VALUES (?, 'MAINTENANCE_WORK', 'fix', 'DIRECTOR', 'OPEN', 't', 'i')", (f,))
+        cur.execute("UPDATE finding SET status = 'VOIDED' WHERE finding_id = ?", (f,))
+        conn.close()
+    t.bad_("VOIDED when any CorrectiveAction exists rejected", voided_with_action_rejected,
+           "zero corrective actions")
+
+    def link_response_to_voided_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        d1 = seed_def(conn, "CHK-001", 1)
+        v_bad = seed_value(conn, d1, "INACTIVE", "غير مفعّلة", "NON_COMPLIANT")
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = 't' WHERE finding_id = ? AND status = 'OPEN'",
+            (f,))
+        cur.execute(
+            "INSERT INTO checklist_response(visit_id, item_definition_id, answered_value_id, finding_id, "
+            "recorded_at, recorded_by) VALUES (?, ?, ?, ?, 't', 'i')", (ids["visit"], d1, v_bad, f))
+        conn.close()
+    t.bad_("source link to VOIDED Finding via ChecklistResponse rejected", link_response_to_voided_rejected,
+           "VOIDED")
+
+    def update_link_response_to_voided_rejected():
+        # existing NON_COMPLIANT response linked to an OPEN finding F1, then UPDATE to
+        # relink finding_id = VOIDED finding F2 -> rejected by the VOIDED source guard
+        conn = fresh_db()
+        ids = seed_base(conn)
+        d1 = seed_def(conn, "CHK-001", 1)
+        v_bad = seed_value(conn, d1, "INACTIVE", "غير مفعّلة", "NON_COMPLIANT")
+        cur = conn.cursor()
+        f1 = _mk_finding(conn, ids["visit"])          # OPEN, origin visit
+        cur.execute(
+            "INSERT INTO checklist_response(visit_id, item_definition_id, answered_value_id, finding_id, "
+            "recorded_at, recorded_by) VALUES (?, ?, ?, ?, 't', 'i')", (ids["visit"], d1, v_bad, f1))
+        rid = cur.lastrowid
+        f2 = _mk_finding(conn, ids["visit"])          # becomes VOIDED
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = 't' WHERE finding_id = ? AND status = 'OPEN'",
+            (f2,))
+        cur.execute("UPDATE checklist_response SET finding_id = ? WHERE response_id = ?", (f2, rid))
+        conn.close()
+    t.bad_("UPDATE of an existing ChecklistResponse to link a VOIDED Finding rejected",
+           update_link_response_to_voided_rejected, "VOIDED")
+
+    def link_observation_to_voided_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = 't' WHERE finding_id = ? AND status = 'OPEN'",
+            (f,))
+        cur.execute(
+            "INSERT INTO adhoc_observation(visit_id, text, finding_id, recorded_at, recorded_by) "
+            "VALUES (?, 'note', ?, 't', 'i')", (ids["visit"], f))
+        conn.close()
+    t.bad_("source link to VOIDED Finding via AdHocObservation rejected", link_observation_to_voided_rejected,
+           "VOIDED")
+
+    def update_link_observation_to_voided_rejected():
+        # existing AdHocObservation with finding_id NULL: UPDATE finding_id = VOIDED finding -> rejected
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = 't' WHERE finding_id = ? AND status = 'OPEN'",
+            (f,))
+        cur.execute(
+            "INSERT INTO adhoc_observation(visit_id, text, recorded_at, recorded_by) "
+            "VALUES (?, 'note', 't', 'i')", (ids["visit"],))
+        oid = cur.lastrowid
+        cur.execute("UPDATE adhoc_observation SET finding_id = ? WHERE observation_id = ?", (f, oid))
+        conn.close()
+    t.bad_("UPDATE of an existing AdHocObservation to link a VOIDED Finding rejected",
+           update_link_observation_to_voided_rejected, "VOIDED")
+
+    def ca_under_voided_rejected():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = 't' WHERE finding_id = ? AND status = 'OPEN'",
+            (f,))
+        cur.execute(
+            "INSERT INTO corrective_action(finding_id, action_type, description, responsible_role, status, "
+            "created_at, created_by) VALUES (?, 'MAINTENANCE_WORK', 'fix', 'DIRECTOR', 'OPEN', 't', 'i')", (f,))
+        conn.close()
+    t.bad_("CorrectiveAction creation under VOIDED Finding rejected", ca_under_voided_rejected, "VOIDED")
+
+    def fu_voided_finding_ok():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "INSERT INTO follow_up(finding_id, status_target, status_after, event_datetime, actor_role, note, "
+            "recorded_by) VALUES (?, 'FINDING', 'VOIDED', '2026-09-21T09:00:00Z', 'INSPECTOR', 'void', 'i')", (f,))
+        assert cur.lastrowid is not None
+        conn.close()
+    t.ok("follow_up status_after=VOIDED with status_target=FINDING accepted", fu_voided_finding_ok)
+
+    def fu_voided_ca_rejected():
+        # status_after=VOIDED with status_target=CORRECTIVE_ACTION must fail on the
+        # VOIDED/status_target rule, so use a REAL CorrectiveAction of this Finding
+        # (an unrelated FK failure must not be what the test proves).
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "INSERT INTO corrective_action(finding_id, action_type, description, responsible_role, status, "
+            "created_at, created_by) VALUES (?, 'MAINTENANCE_WORK', 'fix', 'DIRECTOR', 'OPEN', 't', 'i')", (f,))
+        a = cur.lastrowid
+        cur.execute(
+            "INSERT INTO follow_up(finding_id, corrective_action_id, status_target, status_after, "
+            "event_datetime, actor_role, note, recorded_by) VALUES (?, ?, 'CORRECTIVE_ACTION', 'VOIDED', "
+            "'2026-09-21T09:00:00Z', 'INSPECTOR', 'void', 'i')", (f, a))
+        conn.close()
+    t.bad_("follow_up status_after=VOIDED with status_target=CORRECTIVE_ACTION rejected",
+           fu_voided_ca_rejected, "VOIDED")
+
+    def source_less_open_no_in_treatment():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute("UPDATE finding SET status = 'IN_TREATMENT' WHERE finding_id = ?", (f,))
+        conn.close()
+    t.bad_("source-less OPEN cannot transition to IN_TREATMENT", source_less_open_no_in_treatment,
+           "source before leaving OPEN")
+
+    def source_less_open_no_resolved():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute("UPDATE finding SET status = 'RESOLVED' WHERE finding_id = ?", (f,))
+        conn.close()
+    t.bad_("source-less OPEN cannot transition to RESOLVED", source_less_open_no_resolved,
+           "source before leaving OPEN")
+
+    def direct_open_resolved_ok():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        d1 = seed_def(conn, "CHK-001", 1)
+        v_bad = seed_value(conn, d1, "INACTIVE", "غير مفعّلة", "NON_COMPLIANT")
+        f, _rid = _mk_source(conn, ids["visit"], d1, v_bad)
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE finding SET status = 'RESOLVED', status_changed_at = '2026-09-21T09:00:00Z' "
+            "WHERE finding_id = ? AND status = 'OPEN'", (f,))
+        assert cur.execute("SELECT status FROM finding WHERE finding_id = ?", (f,)).fetchone()[0] == "RESOLVED"
+        conn.close()
+    t.ok("direct OPEN -> RESOLVED with a valid source and no open corrective actions accepted",
+         direct_open_resolved_ok)
+
+    def finalize_with_voided_ok():
+        conn = fresh_db()
+        ids = seed_base(conn)
+        cur = conn.cursor()
+        f = _mk_finding(conn, ids["visit"])
+        cur.execute(
+            "UPDATE finding SET status = 'VOIDED', status_changed_at = '2026-09-21T09:00:00Z' "
+            "WHERE finding_id = ? AND status = 'OPEN'", (f,))
+        cur.execute(
+            "UPDATE visit SET status = 'COMPLETED', finalized_at = '2026-09-20T18:00:00Z' WHERE visit_id = ?",
+            (ids["visit"],))
+        assert cur.execute("SELECT status FROM visit WHERE visit_id = ?", (ids["visit"],)).fetchone()[0] == "COMPLETED"
+        conn.close()
+    t.ok("visit finalization does not treat a valid zero-source VOIDED Finding as an orphan blocker",
+         finalize_with_voided_ok)
+
+
 def main():
     suites = [
         ("S0 architecture (15 tables / 44 triggers / 1 view / 24 indexes + column)", s0_architecture),
@@ -1267,6 +1629,7 @@ def main():
         ("S9 derived result_class view (retained)", s9_view),
         ("S10 canonical mapping doc ↔ schema (24 payloads)", s10_mapping_doc),
         ("S11 canonical grammar negative rejections (final integrity)", s11_canonical_rule_rejections),
+        ("S12 Gate-4B VOIDED finding lifecycle", s12_gate4b_voided),
     ]
     total_ok, total_bad = 0, []
     for label, fn in suites:

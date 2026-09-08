@@ -30,10 +30,31 @@
 --   visit_type.allowed members) is validated with json_each inside the
 --   existing BEFORE INSERT trigger trg_def_bi — no new trigger/table/entity.
 --   Trigger count therefore stays at 44.
+-- Revision 5 (Gate 4B — VOIDED Finding lifecycle, owner-approved narrow
+--   correction): finding gains a fourth status VOIDED = مُبطَل. A Finding
+--   validly created from an observed source whose LAST remaining source is
+--   corrected/retracted while its origin Visit is still PREPARATION may be
+--   retained as VOIDED (audit/history) instead of deleted. Semantics (narrow):
+--   * OPEN -> VOIDED is the only path INTO VOIDED; VOIDED is terminal;
+--     IN_TREATMENT -> VOIDED and RESOLVED -> VOIDED rejected.
+--   * VOIDED requires origin Visit PREPARATION and finalized_at IS NULL,
+--     ZERO recorded sources, and ZERO corrective_action rows at the instant the
+--     finding becomes VOIDED; VOIDED may never regain a source or an action.
+--   * "a finding must have a recorded source before leaving OPEN" is kept for
+--     IN_TREATMENT/RESOLVED; VOIDED is the single approved zero-source
+--     exception (the post-retraction state). Zero-source OPEN remains invalid
+--     at rest at the APPLICATION level and cannot reach IN_TREATMENT/RESOLVED.
+--   * follow_up.status_after gains VOIDED but ONLY for status_target=FINDING;
+--     CorrectiveAction.status does NOT gain VOIDED.
+--   * No new table/trigger/entity: existing CHECKs + the existing
+--     trg_finding_bu / trg_ca_bi / trg_response_bi/bu / trg_obs_bi/bu triggers
+--     are extended. Object counts stay: 15 tables / 44 triggers / 1 view /
+--     24 explicit indexes.
 --
 -- Reference documents (GitHub main):
---   docs/data-model/DATA-MODEL-v1.md        (invariants I1..I21)
+--   docs/data-model/DATA-MODEL-v1.md        (invariants I1..I22)
 --   docs/data-model/ENTITY-CATALOG-v1.md    (per-column mutability authority)
+--   docs/schema/PHYSICAL-SCHEMA-v1.md / CONSTRAINT-MATRIX-v1.md (Gate 4B rows)
 --
 -- Conventions (unchanged):
 --   * INTEGER PRIMARY KEY ids internal only; TEXT codes/dates/timestamps.
@@ -286,7 +307,7 @@ CREATE TABLE finding (
     subject_id          INTEGER REFERENCES inspected_subject(subject_id) ON DELETE RESTRICT,
     urgency             TEXT    NOT NULL CHECK (urgency IN ('IMMEDIATE','BEFORE_ENTRY','ROUTINE')),
     impact              TEXT    NOT NULL CHECK (impact IN ('HIGH','MEDIUM','LOW')),
-    status              TEXT    NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','IN_TREATMENT','RESOLVED')),
+    status              TEXT    NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','IN_TREATMENT','RESOLVED','VOIDED')),
     status_changed_at   TEXT,
     created_at          TEXT    NOT NULL,
     created_by          TEXT    NOT NULL,
@@ -358,7 +379,7 @@ CREATE TABLE follow_up (
     corrective_action_id INTEGER REFERENCES corrective_action(action_id) ON DELETE RESTRICT,
     visit_id            INTEGER REFERENCES visit(visit_id) ON DELETE RESTRICT,
     status_target       TEXT    CHECK (status_target IN ('FINDING','CORRECTIVE_ACTION')),
-    status_after        TEXT    CHECK (status_after IN ('OPEN','IN_TREATMENT','RESOLVED')),
+    status_after        TEXT    CHECK (status_after IN ('OPEN','IN_TREATMENT','RESOLVED','VOIDED')),
     event_datetime      TEXT    NOT NULL,
     actor_role          TEXT    NOT NULL CHECK (actor_role IN
                             ('DIRECTOR','CONCERNED_SERVICE','INSPECTOR','OTHER')),
@@ -367,6 +388,9 @@ CREATE TABLE follow_up (
     note                TEXT    NOT NULL,
     recorded_by         TEXT    NOT NULL,
     CHECK ( status_after IS NULL OR status_target IS NOT NULL ),
+    -- Gate 4B: VOIDED is a Finding-only transition outcome; a CorrectiveAction
+    -- never becomes VOIDED, so status_after=VOIDED requires status_target=FINDING.
+    CHECK ( status_after <> 'VOIDED' OR status_target = 'FINDING' ),
     CHECK ( status_target <> 'CORRECTIVE_ACTION' OR corrective_action_id IS NOT NULL ),
     CHECK ( actor_role <> 'OTHER'
             OR (actor_role_other IS NOT NULL AND length(trim(actor_role_other)) > 0) )
@@ -725,6 +749,12 @@ BEGIN
              OR EXISTS (SELECT 1 FROM checklist_allowed_value av
                         WHERE av.allowed_value_id = NEW.answered_value_id
                           AND av.semantic_class = 'COMPLIANT') );
+
+    -- Gate 4B: a VOIDED finding must never regain a source.
+    SELECT RAISE(ABORT,'cannot link a VOIDED finding as a source')
+        WHERE NEW.finding_id IS NOT NULL
+          AND EXISTS (SELECT 1 FROM finding f
+                      WHERE f.finding_id = NEW.finding_id AND f.status = 'VOIDED');
 END;
 
 -- Finding-accountability link on INSERT.
@@ -801,6 +831,12 @@ BEGIN
              OR EXISTS (SELECT 1 FROM checklist_allowed_value av
                         WHERE av.allowed_value_id = NEW.answered_value_id
                           AND av.semantic_class = 'COMPLIANT') );
+
+    -- Gate 4B: a VOIDED finding must never regain a source.
+    SELECT RAISE(ABORT,'cannot link a VOIDED finding as a source')
+        WHERE NEW.finding_id IS NOT NULL
+          AND EXISTS (SELECT 1 FROM finding f
+                      WHERE f.finding_id = NEW.finding_id AND f.status = 'VOIDED');
 END;
 
 -- Finding-accountability link on UPDATE (first-source semantics, current row excluded).
@@ -914,6 +950,12 @@ BEGIN
         WHERE NEW.subject_id IS NOT NULL
           AND (SELECT s.institution_id FROM inspected_subject s WHERE s.subject_id = NEW.subject_id)
             <> (SELECT v.institution_id FROM visit v WHERE v.visit_id = NEW.visit_id);
+
+    -- Gate 4B: a VOIDED finding must never regain a source.
+    SELECT RAISE(ABORT,'cannot link a VOIDED finding as a source')
+        WHERE NEW.finding_id IS NOT NULL
+          AND EXISTS (SELECT 1 FROM finding f
+                      WHERE f.finding_id = NEW.finding_id AND f.status = 'VOIDED');
 END;
 
 CREATE TRIGGER trg_obs_finding_bi AFTER INSERT ON adhoc_observation
@@ -960,6 +1002,12 @@ BEGIN
           AND NOT EXISTS (SELECT 1 FROM checklist_response cr WHERE cr.finding_id = OLD.finding_id)
           AND NOT EXISTS (SELECT 1 FROM adhoc_observation o
                           WHERE o.finding_id = OLD.finding_id AND o.observation_id <> OLD.observation_id);
+
+    -- Gate 4B: a VOIDED finding must never regain a source.
+    SELECT RAISE(ABORT,'cannot link a VOIDED finding as a source')
+        WHERE NEW.finding_id IS NOT NULL
+          AND EXISTS (SELECT 1 FROM finding f
+                      WHERE f.finding_id = NEW.finding_id AND f.status = 'VOIDED');
 END;
 
 CREATE TRIGGER trg_obs_finding_bu AFTER UPDATE ON adhoc_observation
@@ -1009,17 +1057,42 @@ BEGIN
            OR OLD.created_at <> NEW.created_at
            OR OLD.created_by <> NEW.created_by;
 
-    SELECT RAISE(ABORT,'finding: status may not move backwards and RESOLVED is terminal')
+    -- Gate 4B: status may not move backwards; RESOLVED and VOIDED are terminal;
+    -- IN_TREATMENT -> VOIDED is not part of the v1 lifecycle.
+    SELECT RAISE(ABORT,'finding: status may not move backwards and RESOLVED/VOIDED are terminal')
         WHERE (OLD.status = 'IN_TREATMENT' AND NEW.status = 'OPEN')
-           OR (OLD.status = 'RESOLVED' AND NEW.status <> 'RESOLVED');
+           OR (OLD.status = 'RESOLVED' AND NEW.status <> 'RESOLVED')
+           OR (OLD.status = 'VOIDED' AND NEW.status <> 'VOIDED')
+           OR (OLD.status = 'IN_TREATMENT' AND NEW.status = 'VOIDED');
 
     SELECT RAISE(ABORT,'finding cannot be RESOLVED while a corrective action is OPEN or IN_TREATMENT')
         WHERE NEW.status = 'RESOLVED'
           AND EXISTS (SELECT 1 FROM corrective_action ca
                       WHERE ca.finding_id = NEW.finding_id AND ca.status IN ('OPEN','IN_TREATMENT'));
 
+    -- Gate 4B: OPEN -> VOIDED preconditions. VOIDED specifically represents the
+    -- zero-source post-retraction state, allowed only while the origin Visit is
+    -- still open and only with no corrective actions under the finding.
+    SELECT RAISE(ABORT,'VOIDED requires the origin visit to be open (PREPARATION, not finalized)')
+        WHERE NEW.status = 'VOIDED' AND OLD.status = 'OPEN'
+          AND ( (SELECT v.status FROM visit v WHERE v.visit_id = NEW.origin_visit_id) <> 'PREPARATION'
+             OR (SELECT v.finalized_at FROM visit v WHERE v.visit_id = NEW.origin_visit_id) IS NOT NULL );
+
+    SELECT RAISE(ABORT,'VOIDED requires zero recorded sources')
+        WHERE NEW.status = 'VOIDED' AND OLD.status = 'OPEN'
+          AND ( EXISTS (SELECT 1 FROM checklist_response cr WHERE cr.finding_id = NEW.finding_id)
+             OR EXISTS (SELECT 1 FROM adhoc_observation o WHERE o.finding_id = NEW.finding_id) );
+
+    SELECT RAISE(ABORT,'VOIDED requires zero corrective actions')
+        WHERE NEW.status = 'VOIDED' AND OLD.status = 'OPEN'
+          AND EXISTS (SELECT 1 FROM corrective_action ca WHERE ca.finding_id = NEW.finding_id);
+
+    -- Gate 4B narrow exception: leaving OPEN requires a recorded source for
+    -- IN_TREATMENT/RESOLVED only; OPEN -> VOIDED is the single approved
+    -- zero-source exit (its own preconditions above already require zero
+    -- sources). Ordinary historical-source rules for other exits are unchanged.
     SELECT RAISE(ABORT,'a finding must have at least one recorded source before leaving OPEN')
-        WHERE NEW.status <> 'OPEN'
+        WHERE NEW.status IN ('IN_TREATMENT','RESOLVED')
           AND NOT EXISTS (SELECT 1 FROM checklist_response cr WHERE cr.finding_id = NEW.finding_id)
           AND NOT EXISTS (SELECT 1 FROM adhoc_observation o WHERE o.finding_id = NEW.finding_id);
 END;
@@ -1032,8 +1105,8 @@ BEGIN
     SELECT RAISE(ABORT,'corrective action must be created OPEN')
         WHERE NEW.status <> 'OPEN';
 
-    SELECT RAISE(ABORT,'no corrective action may be created under a RESOLVED finding')
-        WHERE (SELECT f.status FROM finding f WHERE f.finding_id = NEW.finding_id) = 'RESOLVED';
+    SELECT RAISE(ABORT,'no corrective action may be created under a RESOLVED or VOIDED finding')
+        WHERE (SELECT f.status FROM finding f WHERE f.finding_id = NEW.finding_id) IN ('RESOLVED','VOIDED');
 END;
 
 CREATE TRIGGER trg_ca_bu BEFORE UPDATE ON corrective_action

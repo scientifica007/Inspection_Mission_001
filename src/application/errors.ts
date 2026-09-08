@@ -1,5 +1,5 @@
-// Gate 5C + Gate 5D — application-core error taxonomy (runtime-neutral
-// TypeScript, no node:* imports).
+// Gate 5C + Gate 5D + Gate 5E — application-core error taxonomy
+// (runtime-neutral TypeScript, no node:* imports).
 //
 // The Gate-5C executable slice (evaluateApplicability / createVisit T0 /
 // addSubjectToScope T1) surfaces every abnormal condition as a typed
@@ -34,6 +34,18 @@
 //   * E_STATE_CONFLICT      — affected-row cardinality failure (B5) or an
 //                             impossible duplicate-ACTIVE resolution state;
 //                             "conflict/domain error" of TRANSACTION §1.5/§12
+// and the two Gate-5E correction codes required by the adopted T6 contract
+// (TRANSACTION-CONTRACTS §7 — T6-VOID / T6-REHOME):
+//   * E_VOID_HAS_ACTIONS    — the Finding carries >=1 CorrectiveAction, so its
+//                             last-source VOID / re-home+VOID stays refused in
+//                             v1 (Gate 4B + TRANSACTION §7)
+//   * E_LAST_SOURCE         — the source in question is (or is not) the Finding's
+//                             last source in the wrong operation: an ordinary
+//                             detach/re-home on F_old's LAST source is refused
+//                             (the dedicated T6-VOID / T6-REHOME branch is
+//                             required), and the dedicated VOID/re-home ops
+//                             refuse a source that is NOT the last one (ordinary
+//                             correction applies — never void)
 
 export const APP_ERR = {
     CONFIG: "E_CONFIG",
@@ -53,6 +65,8 @@ export const APP_ERR = {
     FINDING_NOT_FOUND: "E_FINDING_NOT_FOUND",
     FINDING_TARGET_INVALID: "E_FINDING_TARGET_INVALID",
     STATE_CONFLICT: "E_STATE_CONFLICT",
+    VOID_HAS_ACTIONS: "E_VOID_HAS_ACTIONS",
+    LAST_SOURCE: "E_LAST_SOURCE",
 } as const;
 
 export type AppErrorCode = (typeof APP_ERR)[keyof typeof APP_ERR];

@@ -311,7 +311,7 @@ export class InitialDispositionService {
         }
 
         // Class-A retry convergence / durable-state gate
-        if (this.durableMatchesAnswer(snap, value.allowedValueId, note, link)) {
+        if (await this.durableMatchesAnswer(snap, value.allowedValueId, note, link)) {
             return this.resultFromState(snap, false);
         }
         if (!isTruePending(snap)) {
@@ -787,20 +787,67 @@ export class InitialDispositionService {
     }
 
     // -- durable retry-convergence comparisons -----------------------------
+    //
+    // Gate-5E owner-authorized narrow correction (retry identity): a durable
+    // response already linked to a Finding converges on a request that says
+    // `finding.mode = "new"` ONLY when the linked durable Finding matches the
+    // requested NEW-Finding semantic creation target:
+    //   * origin_visit_id == the response's Visit
+    //   * subject_id == the response's subject context (null-safe)
+    //   * normalized description / defect_type / defect_type_other / location
+    //   * urgency / impact
+    //   * created_by == the request-supplied actor — the actor is part of the
+    //     requested durable creation target because the request carries it
+    //     explicitly and no adopted contract lets it vary on a retry.
+    // Deliberately NOT compared: created_at (a retry generates a fresh clock
+    // and must not defeat otherwise identical historical convergence) and the
+    // Finding's CURRENT status (it may legitimately have transitioned later —
+    // recognizing the historical retry never re-authorizes a new link).
 
-    private durableMatchesAnswer(
+    private async durableMatchesAnswer(
         s: CellSnapshot,
         avId: number,
         note: string | null,
         link: LinkExpectation,
-    ): boolean {
+    ): Promise<boolean> {
         if (s.overlayState !== null) return false;
         if (s.notInspectedReason !== null) return false;
         if (s.answeredValueId !== avId) return false;
         if (normalizeText(s.note) !== note) return false;
         if (link.kind === "none") return s.findingId === null;
-        if (link.kind === "new") return s.findingId !== null;
-        return s.findingId === link.findingId;
+        if (link.kind === "existing") return s.findingId === link.findingId;
+        // NEW: durable Finding identity must equal the requested creation target
+        return this.findingMatchesNewDraft(s, link);
+    }
+
+    /** durable linked Finding vs the requested NEW-Finding creation identity. */
+    private async findingMatchesNewDraft(
+        s: CellSnapshot,
+        link: Extract<LinkExpectation, { kind: "new" }>,
+    ): Promise<boolean> {
+        if (s.findingId === null) return false;
+        const rows = await this.db.query(
+            `SELECT origin_visit_id, subject_id, description, defect_type, defect_type_other, location,
+                    urgency, impact, created_by
+               FROM finding WHERE finding_id = ?`,
+            [s.findingId],
+        );
+        if (rows.length === 0) return false;
+        const f = rows[0];
+        const d = link.draft;
+        return (
+            Number(f.origin_visit_id) === s.visitId &&
+            (f.subject_id === null ? s.subjectId === null : s.subjectId !== null && Number(f.subject_id) === s.subjectId) &&
+            String(f.description) === d.description &&
+            (f.defect_type === null ? d.defectType === null : d.defectType !== null && String(f.defect_type) === d.defectType) &&
+            (f.defect_type_other === null
+                ? d.defectTypeOther === null
+                : d.defectTypeOther !== null && String(f.defect_type_other) === d.defectTypeOther) &&
+            (f.location === null ? d.location === null : d.location !== null && String(f.location) === d.location) &&
+            String(f.urgency) === d.urgency &&
+            String(f.impact) === d.impact &&
+            String(f.created_by) === link.createdBy
+        );
     }
 
     private async durableMatchesScheduleAnswer(
@@ -810,7 +857,7 @@ export class InitialDispositionService {
         link: LinkExpectation,
         rows: readonly ReconRow[],
     ): Promise<boolean> {
-        if (!this.durableMatchesAnswer(s, avId, note, link)) return false;
+        if (!(await this.durableMatchesAnswer(s, avId, note, link))) return false;
         return this.reconciliationRowsEqual(s.responseId, rows);
     }
 
@@ -945,7 +992,7 @@ export class InitialDispositionService {
             // NEW Finding disappeared with it) — re-read the durable cell state
             const durable = await this.resolveCell({ visitId: a.snap.visitId, itemDefinitionId: a.snap.itemDefinitionId, subjectId: a.snap.subjectId });
             if (a.rows === null) {
-                if (this.durableMatchesAnswer(durable, a.valueId, a.note, a.link)) return this.resultFromState(durable, false);
+                if (await this.durableMatchesAnswer(durable, a.valueId, a.note, a.link)) return this.resultFromState(durable, false);
             } else if (await this.durableMatchesScheduleAnswer(durable, a.valueId, a.note, a.link, a.rows)) {
                 return this.resultFromState(durable, false);
             }

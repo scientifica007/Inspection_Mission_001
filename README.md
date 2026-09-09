@@ -74,13 +74,15 @@
 - لا server ولا sync مطلوبين للنسخة الميدانية الأولى.
 - لا يتم اعتماد SQLite plugin نهائيًا قبل إثبات تطابقه مع عقد الـadapter الحالي على جهاز Android فعلي.
 
-## الخطوة التنفيذية التالية
+## الخطوة التنفيذية التالية على مستوى المنتج
 
 **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
 
 الحالة: **NOT STARTED**.
 
-الهدف هو إثبات أن الـApplication Core الحالية تعمل على Android الحقيقي بنفس semantics المعتمدة، مع:
+لكن لا يبدأ التنفيذ التقني لـGate 6B مباشرة. توجد أولًا **PENDING NARROW CLOSED-GATE CORRECTION REVIEW** حول سلوك `SqlResult.lastInsertRowid` للـnon-INSERT في `NodeSqliteAdapter`. هذا لا يغيّر كون Gate 6B هي Gate المنتج التالية؛ بل يفرض حسم التناقض الضيق وفق workflow المشروع قبل أن تعتمد 6B على عقد `SqlAdapter`.
+
+بعد حسم تلك المراجعة، يكون هدف Gate 6B إثبات أن الـApplication Core الحالية تعمل على Android الحقيقي بنفس semantics المعتمدة، مع:
 
 - `BEGIN IMMEDIATE` فعلي؛
 - transaction boundaries صحيحة؛

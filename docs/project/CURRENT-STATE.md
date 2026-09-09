@@ -44,6 +44,27 @@
 
 لا توجد Gate تنفيذية لاحقة معتمدة قبل نجاح 6B.
 
+قبل بدء التنفيذ التقني لـGate 6B توجد خطوة إلزامية سابقة لها في سير العمل:
+
+**PENDING NARROW CLOSED-GATE CORRECTION REVIEW** حول سلوك `SqlResult.lastInsertRowid` للـnon-INSERT في `NodeSqliteAdapter`.
+
+هذا لا يغيّر كون 6B هي Gate المنتج التالية، لكنه يمنع بدء تنفيذها التقني قبل مراجعة/حسم التناقض وفق سياسة التصحيح الضيق المعتمدة.
+
+## 2A) إغلاق تجربة HNT-001 / HNT-002 وقرار أدوات التنفيذ
+
+تم إغلاق تجربة HNT-001/HNT-002 وحفظ أدلتها في الفروع التجريبية ووثيقة:
+
+`docs/experiments/HNT-001-HNT-002-FINAL-EVALUATION.md`
+
+قرار مالك المشروع من نوع `PROJECT`:
+
+- **Default implementation workflow:** `ChatGPT + GitHub + GitHub Actions`.
+- الـReviewing/Planning AI والـIndependent ChatGPT Implementation Agent أدوار منفصلة عندما تكون الاستقلالية في المراجعة مهمة.
+- Harness أو أي local execution agent: **ON_DEMAND_ONLY** عند وجود حاجة فعلية لقدرات محلية/فيزيائية لا توفرها GitHub-hosted CI بكفاءة، مثل Android فعلي أو ADB/USB أو lifecycle محلي أو hardware-specific reproduction.
+- لم يُعتمد أي HNT-001 candidate كـproduct artifact.
+- لا يُدمج أي HNT candidate كما هو.
+- تبقى الفروع التجريبية أدلة محفوظة إلى أن يصدر قرار منفصل بشأن تنظيفها/حذفها.
+
 ## 3) ما أصبح موجودًا فعليًا
 
 ### Data / schema
@@ -168,8 +189,16 @@ P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، mult
 
 ## 9) المهمة التالية عند الاستلام
 
-لا تبدأ UI ولا Evidence ولا reports مباشرة.
+لا تبدأ UI ولا Evidence ولا reports مباشرة، ولا تبدأ التنفيذ التقني لـGate 6B فورًا.
 
-ابدأ فقط بتخطيط وتنفيذ **Gate 6B** وفق `DEVICE-ADAPTER-CONTRACT-v1.md`، مع Fresh Read للعقود المرتبطة بالـruntime والـtransactions والـbootstrap و`currentVisitState`.
+ابدأ أولًا بمراجعة التصحيح الضيق المعلّقة:
 
-قبل التنفيذ اتبع `docs/project/WORKFLOW.md`.
+`SqlResult.lastInsertRowid` non-INSERT behavior in `NodeSqliteAdapter`.
+
+تعامل معها وفق قاعدة **Concrete reproducible executable contradiction** وسياسة إعادة الفتح الضيق في `docs/project/WORKFLOW.md`. لا تغيّر عقد Gate 5B أو adapter أو regressions بلا owner authorization.
+
+بعد حسم هذه المراجعة فقط، ابدأ تخطيط/تنفيذ **Gate 6B** وفق `DEVICE-ADAPTER-CONTRACT-v1.md` باستخدام الـdefault workflow:
+
+`ChatGPT + GitHub + GitHub Actions`
+
+واستخدم Harness/local execution agent فقط عند ظهور حاجة فعلية لقدرات محلية/فيزيائية غير مناسبة لـGitHub-hosted CI.

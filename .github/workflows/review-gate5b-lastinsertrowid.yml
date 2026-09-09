@@ -1,0 +1,71 @@
+name: Gate 5B lastInsertRowid correction probe
+
+on:
+  push:
+    branches:
+      - correction/gate5b-lastinsertrowid-normalization-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Confirm production/test inputs still equal governing main
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=25cd1ed248b3962a9fefc6cc1c1115bf27961551
+          git diff --exit-code "$BASE" -- dev/node-sqlite-adapter.ts src/bootstrap/adapter.ts tests/gate5b_regression.ts
+
+      - name: Reproduce unmodified-main SqlResult behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types --input-type=module <<'EOF'
+          import { DatabaseSync } from 'node:sqlite';
+          import { NodeSqliteAdapter } from './dev/node-sqlite-adapter.ts';
+
+          const raw = new DatabaseSync(':memory:');
+          raw.exec('CREATE TABLE probe (id INTEGER PRIMARY KEY, value TEXT UNIQUE NOT NULL)');
+          const db = new NodeSqliteAdapter(raw);
+
+          const insert1 = await db.run('INSERT INTO probe(value) VALUES (?)', ['first']);
+          const update = await db.run('UPDATE probe SET value = ? WHERE id = ?', ['updated', insert1.lastInsertRowid]);
+          const zeroUpdate = await db.run('UPDATE probe SET value = ? WHERE id = ?', ['missing', 999999]);
+          const deleteResult = await db.run('DELETE FROM probe WHERE id = ?', [insert1.lastInsertRowid]);
+          const insert2 = await db.run('INSERT INTO probe(value) VALUES (?)', ['second']);
+          const ignored = await db.run('INSERT OR IGNORE INTO probe(value) VALUES (?)', ['second']);
+
+          console.log('INSERT1', JSON.stringify(insert1));
+          console.log('UPDATE', JSON.stringify(update));
+          console.log('ZERO_UPDATE', JSON.stringify(zeroUpdate));
+          console.log('DELETE', JSON.stringify(deleteResult));
+          console.log('INSERT2', JSON.stringify(insert2));
+          console.log('INSERT_OR_IGNORE_NOOP', JSON.stringify(ignored));
+          raw.close();
+          EOF
+
+      - name: Inventory SqlAdapter run and rowid usage
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== lastInsertRowid consumers ==='
+          grep -RIn --exclude-dir=.git 'lastInsertRowid' src dev tests || true
+          echo '=== .run call sites in runtime code ==='
+          grep -RIn --exclude-dir=.git -E '\.run\(' src dev || true
+          echo '=== potentially relevant INSERT variants in runtime code ==='
+          grep -RIn --exclude-dir=.git -E 'INSERT[[:space:]]+OR[[:space:]]+IGNORE|INSERT[[:space:]].*ON[[:space:]]+CONFLICT|\bREPLACE\b|WITH[[:space:]].*INSERT' src dev || true

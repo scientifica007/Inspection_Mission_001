@@ -1,0 +1,175 @@
+# CURRENT STATE — Inspection_Mission_001
+
+> **الغرض:** لقطة بشرية مختصرة للحالة الحاكمة للمشروع، مخصصة للاستلام والاستمرار من GitHub وحده.
+>
+> **قاعدة السلطة:** `main` الحي هو المرجع. هذا الملف لا يغني عن Fresh Read للـHEAD الحالي.
+
+## 1) المرجع الحاكم
+
+- Repository: `scientifica007/Inspection_Mission_001`
+- Governing branch: `main`
+- آخر merge منتجي قبل طبقة handoff: `f142791520fd95dda23c5e6a9c1decd0f2602b6f` — **Merge Gate 6A product runtime architecture**.
+- عند قراءة هذا الملف لاحقًا لا تعتبر الـSHA أعلاه HEAD الحالي تلقائيًا؛ اقرأ `main` الحي أولًا.
+
+## 2) حالة Gates
+
+### مغلقة / معتمدة / مدمجة
+
+- Gate 1 — Requirements.
+- Gate 2 — Checklist Design.
+- Gate 3 — Logical Data Model.
+- Gate 4 — Physical / Executable Schema.
+- Gate 4A — Applicability Bridge.
+- Gate 4B — Finding VOIDED lifecycle.
+- Gate 4 Revision 6 — owner-authorized narrow reconciliation correction.
+- Gate 5A — Application Core Contracts.
+- Gate 5B — Bootstrap.
+- Gate 5C — Visit Scope Composition.
+- Gate 5D — Initial Response Disposition.
+- Gate 5E — Corrections / Finding Source Lifecycle، مع التصحيح الضيق المعتمد لـcontextual AUTO-NA.
+- Gate 5F — T7 Observation→Finding ensure-accounted.
+- Gate 5G — OBS-1 `createAdHocObservation`.
+- Gate 5H — T8 Finding Status Transitions.
+- Gate 5I — T9 `createCorrectiveAction`.
+- Gate 5J — T10 CorrectiveAction Status Transitions.
+- Gate 5K — T11 `finalizeVisit`.
+- Gate 5L — `currentVisitState` / restart reconstruction.
+- Gate 6A — Product Runtime Architecture & Delivery Roadmap.
+
+### التالية
+
+**Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
+
+الحالة: `NOT_STARTED`.
+
+لا توجد Gate تنفيذية لاحقة معتمدة قبل نجاح 6B.
+
+## 3) ما أصبح موجودًا فعليًا
+
+### Data / schema
+
+- SQLite 3 هو المخزن المحلي الحاكم.
+- 15 logical entities.
+- 15 physical tables.
+- 44 triggers.
+- 1 view.
+- 24 explicit indexes.
+- schema regression baseline: **100 / 0**.
+
+### Application Core
+
+الـCore التنفيذي يغطي:
+
+- T0→T11.
+- OBS-1.
+- checklist applicability / HUMAN confirmation semantics.
+- corrections and source lifecycle.
+- Finding lifecycle including terminal `VOIDED` and `RESOLVED` semantics.
+- optional 0..* CorrectiveActions per Finding.
+- append-only FollowUp.
+- Visit finalization.
+- restart reconstruction بواسطة `currentVisitState` من SQLite durable rows فقط.
+
+الحالة التشغيلية لا تعتمد على process memory كسلطة.
+
+## 4) قرارات domain أساسية لا تُعاد اختراعها
+
+- Visit بعد finalization غير قابلة لإعادة الفتح؛ reinspection = Visit جديدة.
+- الحقيقة التاريخية الميدانية لا تُستبدل بسبب remediation لاحق.
+- ChecklistResponse مثبتة إلى exact definition version؛ current ACTIVE لا يعيد تفسير Visit قديمة.
+- `result_class` مشتق، وليس source of truth.
+- Finding قد تأتي من ChecklistResponse غير مطابقة أو AdHocObservation.
+- `urgency` و`impact` مستقلان وإلزاميان.
+- CorrectiveActions اختيارية؛ Finding يمكن أن تُرفع مباشرة بلا Action.
+- إذا وجدت Actions، لا تُرفع Finding بينما Action ما زالت OPEN/IN_TREATMENT.
+- T10 لا يرفع Finding تلقائيًا.
+- T11 يقفل field truth فقط؛ لا يشترط رفع جميع Findings/Actions.
+- FollowUp وremediation قد يستمران بعد Visit finalization.
+- `VOIDED != RESOLVED`، وكلتاهما terminal.
+- source-less OPEN Finding حالة فساد `E_ORPHAN_FINDING`؛ zero-source VOIDED تاريخ صالح.
+
+## 5) معمارية المنتج المعتمدة بعد Gate 6A
+
+- Android-first.
+- Capacitor Web Native shell.
+- React + Vite + TypeScript baseline للواجهة الميدانية.
+- الـApplication Core تبقى runtime-neutral / WebView-compatible TypeScript.
+- SQLite تبقى السلطة المحلية.
+- لا server ولا sync مطلوبين لـField-usable v1.
+- لا يعتمد SQLite plugin نهائي قبل Device Runtime Proof يثبت تطابقه مع `SqlAdapter` الحالي.
+- Evidence pipeline تسبق full UI.
+- التقرير يبنى من deterministic report snapshot/model؛ DOCX/PDF renderers downstream.
+
+راجع:
+
+- `docs/architecture/PRODUCT-ARCHITECTURE-v1.md`
+- `docs/architecture/PRODUCT-ROADMAP-v1.md`
+- `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md`
+
+## 6) Roadmap الحاكمة حتى Field-usable v1
+
+```text
+6A  Product Runtime Architecture & Delivery Roadmap       CLOSED
+ ↓
+6B  Android Shell + Native SQLite Adapter / Runtime Proof NEXT
+ ↓
+6C  Evidence Storage + Camera/File Pipeline
+ ↓
+6D  Arabic RTL Field UI + End-to-End Visit Workflow
+ ↓
+6E  ExternalSystemTracking application capability
+ ↓
+6F  Deterministic Report Model / Snapshot Generation
+ ↓
+6G  DOCX + PDF + Artifact Save/Share
+ ↓
+6H  Android Packaging + Field Qualification
+ ↓
+FIELD-USABLE v1
+```
+
+P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، multi-user/sync/server، external APIs، وما يُعتمد لاحقًا بقرار مالك المشروع.
+
+## 7) Baselines الاختبارات الحالية
+
+آخر baselines تنفيذية معتمدة قبل Gate 6A الوثائقية:
+
+| Suite | Baseline |
+|---|---:|
+| Gate 5L | 94 / 0 |
+| Gate 5K | 82 / 0 |
+| Gate 5J | 75 / 0 |
+| Gate 5I | 48 / 0 |
+| Gate 5H | 66 / 0 |
+| Gate 5G | 41 / 0 |
+| Gate 5F | 30 / 0 |
+| Gate 5E | 79 / 0 |
+| Gate 5D | 60 / 0 |
+| Gate 5C | 55 / 0 |
+| Gate 5B | 32 / 0 |
+| Schema | 100 / 0 |
+
+التفاصيل والأوامر في `docs/project/TEST-BASELINES.md`.
+
+## 8) حدود GitHub المقصودة
+
+المستودع يحفظ الذاكرة الهندسية:
+
+- sources النصية المرجعية؛
+- requirements؛
+- schemas؛
+- design/architecture؛
+- source code؛
+- tests؛
+- bootstrap/templates/synthetic fixtures؛
+- history عبر commits وPRs.
+
+ولا يحفظ البيانات التشغيلية الحقيقية مثل الصور، Evidence الفعلية، البيانات الشخصية/الحساسة، production SQLite databases أو سجلات التفتيش الحقيقية.
+
+## 9) المهمة التالية عند الاستلام
+
+لا تبدأ UI ولا Evidence ولا reports مباشرة.
+
+ابدأ فقط بتخطيط وتنفيذ **Gate 6B** وفق `DEVICE-ADAPTER-CONTRACT-v1.md`، مع Fresh Read للعقود المرتبطة بالـruntime والـtransactions والـbootstrap و`currentVisitState`.
+
+قبل التنفيذ اتبع `docs/project/WORKFLOW.md`.

@@ -1,0 +1,110 @@
+{
+  "state_schema_version": 1,
+  "project": "Inspection_Mission_001",
+  "repository": "scientifica007/Inspection_Mission_001",
+  "governing_branch": "main",
+  "authority_policy": "Fresh-read live GitHub main before any substantive decision; conversation memory is not authoritative.",
+  "state_basis": {
+    "last_product_architecture_merge_sha": "f142791520fd95dda23c5e6a9c1decd0f2602b6f",
+    "last_product_architecture_merge_title": "Merge Gate 6A product runtime architecture",
+    "sha_policy": "Do not treat this embedded SHA as the current branch HEAD; always read live main first."
+  },
+  "traceability": {
+    "DIRECT": "Explicitly stated in an official source.",
+    "DERIVED": "Executable/technical consequence derived from an official requirement.",
+    "PROJECT": "Explicit project-owner decision or requirement; must not be attributed to official sources."
+  },
+  "closed_gates": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "4A",
+    "4B",
+    "4-Revision-6",
+    "5A",
+    "5B",
+    "5C",
+    "5D",
+    "5E",
+    "5F",
+    "5G",
+    "5H",
+    "5I",
+    "5J",
+    "5K",
+    "5L",
+    "6A"
+  ],
+  "application_core": {
+    "status": "CLOSED",
+    "coverage": [
+      "T0-T11",
+      "OBS-1",
+      "currentVisitState/restart reconstruction"
+    ],
+    "authoritative_store": "SQLite 3",
+    "process_memory_authoritative": false
+  },
+  "database": {
+    "logical_entities": 15,
+    "physical_tables": 15,
+    "triggers": 44,
+    "views": 1,
+    "explicit_indexes": 24,
+    "schema_regression": {
+      "passed": 100,
+      "failed": 0
+    }
+  },
+  "product_architecture": {
+    "status": "ADOPTED",
+    "platform": "Android-first",
+    "shell": "Capacitor Web Native",
+    "ui_baseline": "React + Vite + TypeScript",
+    "local_authority": "SQLite",
+    "server_required_for_field_v1": false,
+    "sync_required_for_field_v1": false,
+    "sqlite_driver_selection": "DEFERRED_TO_GATE_6B_PROOF"
+  },
+  "next_gate": {
+    "id": "6B",
+    "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
+    "status": "NOT_STARTED"
+  },
+  "roadmap": [
+    "6B Android Shell + Native SQLite Adapter / Device Runtime Proof",
+    "6C Evidence Storage + Camera/File Pipeline",
+    "6D Arabic RTL Field UI + End-to-End Visit Workflow",
+    "6E ExternalSystemTracking application capability",
+    "6F Deterministic Report Model / Snapshot Generation",
+    "6G DOCX + PDF + Artifact Save/Share",
+    "6H Android Packaging + Field Qualification",
+    "FIELD-USABLE v1"
+  ],
+  "field_usable_v1": false,
+  "test_baselines": {
+    "gate5l": { "passed": 94, "failed": 0 },
+    "gate5k": { "passed": 82, "failed": 0 },
+    "gate5j": { "passed": 75, "failed": 0 },
+    "gate5i": { "passed": 48, "failed": 0 },
+    "gate5h": { "passed": 66, "failed": 0 },
+    "gate5g": { "passed": 41, "failed": 0 },
+    "gate5f": { "passed": 30, "failed": 0 },
+    "gate5e": { "passed": 79, "failed": 0 },
+    "gate5d": { "passed": 60, "failed": 0 },
+    "gate5c": { "passed": 55, "failed": 0 },
+    "gate5b": { "passed": 32, "failed": 0 },
+    "schema": { "passed": 100, "failed": 0 }
+  },
+  "closed_gate_reopen_policy": "Only for a concrete reproducible executable contradiction; correction must be narrowly scoped and regressions rerun.",
+  "repository_exclusions": [
+    "real inspection photos",
+    "real operational Evidence",
+    "personal or sensitive data",
+    "production SQLite databases",
+    "real operational inspection records",
+    "secrets and API keys"
+  ],
+  "handoff_entrypoint": "START-HERE.md"
+}

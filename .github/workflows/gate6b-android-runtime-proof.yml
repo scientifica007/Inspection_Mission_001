@@ -70,6 +70,9 @@ jobs:
       - name: Validate project state JSON
         run: python -m json.tool docs/project/CURRENT-STATE.json >/dev/null
 
+      - name: Record canonical asset SHA-256
+        run: sha256sum docs/schema/schema.sql bootstrap/v1/checklist-v1.json
+
       - name: Enforce runtime-neutral production core
         shell: bash
         run: |
@@ -83,10 +86,10 @@ jobs:
             exit 1
           fi
 
-      - name: Typecheck
+      - name: Typecheck Gate 6B runtime layer
         run: npm run typecheck
 
-      - name: Gate 6B host adapter contract
+      - name: Gate 6B host adapter contract 16/0
         run: npm run gate6b:host
 
       - name: Gate 5B adapter normalization 6/0
@@ -141,11 +144,11 @@ jobs:
       - name: Check branch diff whitespace
         run: git diff --check origin/main...HEAD
 
-      - name: Check no runtime-core drift from main
+      - name: Check no runtime-core or canonical-authority drift from main
         shell: bash
         run: |
           set -euo pipefail
-          git diff --exit-code origin/main...HEAD -- src/application src/bootstrap/adapter.ts docs/schema/schema.sql bootstrap/v1/checklist-v1.json
+          git diff --exit-code origin/main...HEAD -- src/application src/bootstrap docs/schema/schema.sql bootstrap/v1/checklist-v1.json
 
       - name: Upload synthetic Gate 6B debug APK
         uses: actions/upload-artifact@v4

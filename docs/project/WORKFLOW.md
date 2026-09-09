@@ -209,9 +209,10 @@ GitHub ليس storage للتشغيل الميداني الحقيقي.
 - Evidence فعلية؛
 - بيانات شخصية أو حساسة؛
 - production databases؛
-- أسرار أو API keys.
+- أسرار أو API keys؛
+- device serial numbers.
 
-استخدم فقط synthetic fixtures في tests.
+استخدم فقط synthetic fixtures في tests/proof artifacts.
 
 ## 12) المرحلة الحالية
 
@@ -219,6 +220,8 @@ GitHub ليس storage للتشغيل الميداني الحقيقي.
 - HNT-001/HNT-002 tooling experiment: `CLOSED`.
 - Default implementation workflow: `ChatGPT + GitHub + GitHub Actions`.
 - Harness/local execution agent: `ON_DEMAND_ONLY`.
-- توجد **PENDING NARROW CLOSED-GATE CORRECTION REVIEW** حول `SqlResult.lastInsertRowid` non-INSERT behavior في `NodeSqliteAdapter`.
-- Gate 6B هي Gate المنتج التالية و`NOT_STARTED`، لكن لا يبدأ تنفيذها التقني قبل حسم المراجعة الضيقة أعلاه.
-- لا تبدأ Gate 6C أو UI أو Evidence أو reports قبل اجتياز Gate 6B وفق الـRoadmap الحاكمة، إلا إذا غيّر المالك الـRoadmap بقرار صريح موثق.
+- تصحيح Gate 5B الضيق حول `SqlResult.lastInsertRowid` أصبح **MERGED / RESOLVED** في `main` عند merge SHA `608314ae62721af44d8ed4f50c1c618ac469fc66`؛ لا يُعاد فتح Gate 5B بسبب Gate 6B.
+- Gate 6B بدأت على `implementation/gate6b-android-runtime-proof-v1` وحالتها `IN_PROGRESS / DEVICE_PROOF_PENDING`.
+- GitHub-hosted CI وAndroid debug build وhost qualification لا تعادل physical-device proof ولا تغلق Gate 6B.
+- Gate 6B لا تُغلق قبل تنفيذ evidence على جهاز Android فعلي ومراجعتها مستقلًا.
+- لا تبدأ Gate 6C أو UI ميدانية أو Evidence أو reports قبل اجتياز Gate 6B وفق الـRoadmap الحاكمة، إلا إذا غيّر المالك الـRoadmap بقرار صريح موثق.

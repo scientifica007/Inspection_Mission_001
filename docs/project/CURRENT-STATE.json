@@ -38,9 +38,10 @@
   ],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
-      "status": "IMPLEMENTED_PENDING_REVIEW_MERGE",
+      "status": "MERGED_RESOLVED",
       "authorization": "PROJECT_OWNER_AUTHORIZED_NARROW_CLOSED_GATE_CORRECTION",
       "governing_base_sha": "25cd1ed248b3962a9fefc6cc1c1115bf27961551",
+      "merge_sha": "608314ae62721af44d8ed4f50c1c618ac469fc66",
       "record": "docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md",
       "technical_validation_commit": "6a4b1dddf8426bb1a2a43520d5c41f7b3be4a363",
       "github_actions_run": 34359830705
@@ -75,7 +76,7 @@
     "local_authority": "SQLite",
     "server_required_for_field_v1": false,
     "sync_required_for_field_v1": false,
-    "sqlite_driver_selection": "DEFERRED_TO_GATE_6B_PROOF"
+    "sqlite_driver_selection": "PROVISIONAL_GATE6B_CANDIDATE_PENDING_DEVICE_PROOF"
   },
   "implementation_workflow": {
     "classification": "PROJECT",
@@ -135,13 +136,30 @@
     "issue": "SqlResult.lastInsertRowid non-insert behavior in NodeSqliteAdapter",
     "classification": "OWNER_AUTHORIZED_NARROW_CLOSED_GATE_CORRECTION",
     "gate_6b_technical_start_blocked": false,
-    "resolution": "NodeSqliteAdapter normalization corrected to preserve existing SqlResult semantics; focused Gate-5B adapter regression 6/0 and all adopted higher baselines green.",
+    "resolution": "NodeSqliteAdapter normalization correction merged to main and preserves the existing SqlResult semantics; focused Gate-5B adapter regression 6/0 and all adopted higher baselines remain green.",
     "correction_record": "docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md"
+  },
+  "gate_6b": {
+    "id": "6B",
+    "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
+    "status": "IN_PROGRESS",
+    "device_proof_status": "PENDING",
+    "implementation_branch": "implementation/gate6b-android-runtime-proof-v1",
+    "governing_base_sha": "608314ae62721af44d8ed4f50c1c618ac469fc66",
+    "sqlite_candidate": "@capacitor-community/sqlite@8.1.1",
+    "sqlite_candidate_status": "PROVISIONAL_CANDIDATE_PENDING_DEVICE_PROOF",
+    "host_adapter_contract": {
+      "passed": 16,
+      "failed": 0
+    },
+    "physical_device_proof_executed": false,
+    "closure_authorized": false
   },
   "next_gate": {
     "id": "6B",
     "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
-    "status": "NOT_STARTED"
+    "status": "IN_PROGRESS",
+    "device_proof_status": "PENDING"
   },
   "roadmap": [
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof",
@@ -155,6 +173,11 @@
   ],
   "field_usable_v1": false,
   "test_baselines": {
+    "gate6b_host_adapter_contract": {
+      "passed": 16,
+      "failed": 0,
+      "scope": "host-side provisional Capacitor SQLite adapter mapping and canonical schema inventory parser"
+    },
     "gate5l": {
       "passed": 94,
       "failed": 0
@@ -221,7 +244,8 @@
     "personal or sensitive data",
     "production SQLite databases",
     "real operational inspection records",
-    "secrets and API keys"
+    "secrets and API keys",
+    "device serial numbers"
   ],
   "handoff_entrypoint": "START-HERE.md"
 }

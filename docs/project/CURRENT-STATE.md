@@ -9,7 +9,8 @@
 - Repository: `scientifica007/Inspection_Mission_001`
 - Governing branch: `main`
 - آخر merge منتجي قبل طبقة handoff: `f142791520fd95dda23c5e6a9c1decd0f2602b6f` — **Merge Gate 6A product runtime architecture**.
-- عند قراءة هذا الملف لاحقًا لا تعتبر الـSHA أعلاه HEAD الحالي تلقائيًا؛ اقرأ `main` الحي أولًا.
+- merge تصحيح Gate 5B الضيق: `608314ae62721af44d8ed4f50c1c618ac469fc66` — **MERGED / RESOLVED**.
+- عند قراءة هذا الملف لاحقًا لا تعتبر أي SHA أعلاه HEAD الحالي تلقائيًا؛ اقرأ `main` الحي أولًا.
 
 ## 2) حالة Gates
 
@@ -23,7 +24,7 @@
 - Gate 4B — Finding VOIDED lifecycle.
 - Gate 4 Revision 6 — owner-authorized narrow reconciliation correction.
 - Gate 5A — Application Core Contracts.
-- Gate 5B — Bootstrap، مع **owner-authorized narrow `lastInsertRowid` normalization correction** موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`.
+- Gate 5B — Bootstrap، مع **owner-authorized narrow `lastInsertRowid` normalization correction** المدمجة والموثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`.
 - Gate 5C — Visit Scope Composition.
 - Gate 5D — Initial Response Disposition.
 - Gate 5E — Corrections / Finding Source Lifecycle، مع التصحيح الضيق المعتمد لـcontextual AUTO-NA.
@@ -36,17 +37,21 @@
 - Gate 5L — `currentVisitState` / restart reconstruction.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap.
 
-### التالية
+### قيد التنفيذ
 
 **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
 
-الحالة: `NOT_STARTED`.
+الحالة: `IN_PROGRESS / DEVICE_PROOF_PENDING`.
 
-لا توجد Gate تنفيذية لاحقة معتمدة قبل نجاح 6B.
+فرع التنفيذ: `implementation/gate6b-android-runtime-proof-v1`.
 
-تم حسم التناقض الضيق السابق لـGate 6B حول `SqlResult.lastInsertRowid` للـnon-INSERT في `NodeSqliteAdapter` عبر التصحيح الضيق المصرح به من المالك. حالة pre-Gate-6B لهذا البند الآن: **RESOLVED**، و`gate_6b_technical_start_blocked = false` لهذا السبب تحديدًا.
+تم حسم التناقض السابق حول `SqlResult.lastInsertRowid` ودمج تصحيحه إلى `main`. لا يوجد blocker تقني سابق يمنع بدء Gate 6B بسبب هذا البند.
 
-هذا التصحيح لم يغيّر عقد `SqlAdapter` ولم يبدأ Gate 6B.
+على فرع Gate 6B أصبحت موجودة طبقة React/Vite/TypeScript + Capacitor Android، وadapter مرشح provisional لـ`@capacitor-community/sqlite@8.1.1`، وproof harness تقني، وhost adapter regression جديدة **16 / 0**. Android shell وAPK debug يبنيان في GitHub Actions، لكن هذا لا يُعد physical-device proof ولا يغلق Gate 6B.
+
+المتبقي الحاكم للإغلاق: تنفيذ proof على جهاز Android فعلي، بما فيه restart/force-stop Phase A/B، ومراجعة مستقلة للأدلة، مع بقاء competing-writer qualification غير محسومة إذا لم يتوفر مسار كتابة مستقل حقيقي إلى نفس الملف.
+
+لا تبدأ Gate 6C أو UI ميدانية أو Evidence أو reports قبل اجتياز 6B أو قرار مالك صريح يغيّر الـRoadmap.
 
 ## 2A) إغلاق تجربة HNT-001 / HNT-002 وقرار أدوات التنفيذ
 
@@ -95,8 +100,20 @@
 
 - `NodeSqliteAdapter.run()` لم يعد يسرّب stale connection `lastInsertRowid` بعد UPDATE/DELETE/no-op INSERT.
 - `SqlResult` contract بقي دون تغيير: rowid رقمي فقط عندما تنفذ العملية INSERT فعليًا؛ خلاف ذلك `null`.
-- regression جديدة: `tests/gate5b_adapter_regression.ts` = **6 / 0**.
+- regression: `tests/gate5b_adapter_regression.ts` = **6 / 0**.
 - Gate-5B bootstrap/reference-data regression الأصلية بقيت **32 / 0**.
+- حالة التصحيح: **MERGED / RESOLVED** على `main`.
+
+### Gate-6B preparation
+
+- React + Vite + TypeScript diagnostic shell.
+- Capacitor Android target.
+- provisional adapter: `src/device/capacitor-sqlite-adapter.ts`.
+- literal `BEGIN IMMEDIATE` عبر `execute(..., false)`؛ per-statement plugin transaction wrapping معطل.
+- canonical schema/bootstrap assets bundled from their repository authorities, بلا نسخ ثانية.
+- Gate-6B host adapter regression: **16 / 0**.
+- Android debug build مُعد ويُتحقق منه في GitHub Actions.
+- **PHYSICAL DEVICE PROOF NOT YET EXECUTED**.
 
 ## 4) قرارات domain أساسية لا تُعاد اختراعها
 
@@ -131,13 +148,14 @@
 - `docs/architecture/PRODUCT-ARCHITECTURE-v1.md`
 - `docs/architecture/PRODUCT-ROADMAP-v1.md`
 - `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md`
+- `docs/architecture/GATE6B-ANDROID-RUNTIME-PROOF-v1.md`
 
 ## 6) Roadmap الحاكمة حتى Field-usable v1
 
 ```text
 6A  Product Runtime Architecture & Delivery Roadmap       CLOSED
  ↓
-6B  Android Shell + Native SQLite Adapter / Runtime Proof NEXT
+6B  Android Shell + Native SQLite Adapter / Runtime Proof IN_PROGRESS / DEVICE_PROOF_PENDING
  ↓
 6C  Evidence Storage + Camera/File Pipeline
  ↓
@@ -158,10 +176,9 @@ P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، mult
 
 ## 7) Baselines الاختبارات الحالية
 
-آخر baselines التنفيذية المعتمدة، مع إضافة التصحيح الضيق لـGate 5B:
-
 | Suite | Baseline |
 |---|---:|
+| Gate 6B host adapter contract | 16 / 0 |
 | Gate 5L | 94 / 0 |
 | Gate 5K | 82 / 0 |
 | Gate 5J | 75 / 0 |
@@ -176,37 +193,26 @@ P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، mult
 | Gate 5B adapter normalization | 6 / 0 |
 | Schema | 100 / 0 |
 
-إجمالي تغطية Gate 5B التنفيذية الحالية عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع إبقاء العدّين منفصلين حتى لا تختلط مسؤولية bootstrap/reference-data بمسؤولية adapter normalization.
+إجمالي تغطية Gate 5B التنفيذية الحالية عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع إبقاء العدّين منفصلين.
 
 التفاصيل والأوامر في `docs/project/TEST-BASELINES.md`.
 
 ## 8) حدود GitHub المقصودة
 
-المستودع يحفظ الذاكرة الهندسية:
+المستودع يحفظ الذاكرة الهندسية: sources النصية المرجعية، requirements، schemas، design/architecture، source code، tests، bootstrap/templates/synthetic fixtures، وhistory عبر commits وPRs.
 
-- sources النصية المرجعية؛
-- requirements؛
-- schemas؛
-- design/architecture؛
-- source code؛
-- tests؛
-- bootstrap/templates/synthetic fixtures؛
-- history عبر commits وPRs.
-
-ولا يحفظ البيانات التشغيلية الحقيقية مثل الصور، Evidence الفعلية، البيانات الشخصية/الحساسة، production SQLite databases أو سجلات التفتيش الحقيقية.
+ولا يحفظ الصور أو Evidence التشغيلية الحقيقية، البيانات الشخصية/الحساسة، production SQLite databases، سجلات التفتيش الحقيقية، الأسرار/API keys، أو device serial numbers.
 
 ## 9) المهمة التالية عند الاستلام
 
-لا تبدأ UI ولا Evidence ولا reports مباشرة.
+Gate 6B بدأت فعليًا على الفرع المذكور أعلاه. لا تعيد بدءها من الصفر ولا تعتبر CI/Android build دليل جهاز فعلي.
 
-التناقض الضيق السابق لـGate 6B حول `SqlResult.lastInsertRowid` أصبح **RESOLVED** عبر:
+المهمة التالية هي مراجعة branch/diff/CI/proof design ثم تنفيذ بروتوكول الجهاز الحقيقي:
 
-`docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`
+1. تشغيل adapter/application proof على جهاز Android فعلي.
+2. تشغيل Restart Phase A.
+3. تنفيذ force-stop حقيقي للعملية دون uninstall أو حذف DB.
+4. إعادة تشغيل التطبيق وتشغيل Restart Phase B ضد نفس SQLite file.
+5. حفظ الأدلة synthetic فقط ومراجعتها مستقلًا.
 
-بعد اعتماد/دمج هذا التصحيح وفق review/owner/PR workflow، تبقى المهمة المنتجية التالية هي تخطيط/تنفيذ **Gate 6B** وفق `DEVICE-ADAPTER-CONTRACT-v1.md` باستخدام الـdefault workflow:
-
-`ChatGPT + GitHub + GitHub Actions`
-
-واستخدم Harness/local execution agent فقط عند ظهور حاجة فعلية لقدرات محلية/فيزيائية غير مناسبة لـGitHub-hosted CI.
-
-حالة Gate 6B نفسها تبقى `NOT_STARTED` حتى يبدأها المالك/المراجع في مهمة مستقلة؛ هذه correction لا تبدأها.
+Gate 6B تبقى `IN_PROGRESS / DEVICE_PROOF_PENDING` حتى ذلك الحين، ولا تبدأ Gate 6C.

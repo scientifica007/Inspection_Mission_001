@@ -51,7 +51,7 @@
 - Gate 5A→5L — Application Core، بما يشمل T0→T11 وOBS-1 و`currentVisitState` لإعادة البناء بعد restart من SQLite وحدها.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap.
 
-Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، دون تغيير عقد `SqlAdapter`.
+Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، وقد أصبحت **MERGED / RESOLVED** دون تغيير عقد `SqlAdapter`.
 
 قاعدة البيانات المحلية الحاكمة للنسخة أحادية المفتش هي SQLite 3، ولا تعتمد الحالة التشغيلية على process memory.
 
@@ -76,13 +76,15 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
 - لا server ولا sync مطلوبين للنسخة الميدانية الأولى.
 - لا يتم اعتماد SQLite plugin نهائيًا قبل إثبات تطابقه مع عقد الـadapter الحالي على جهاز Android فعلي.
 
-## الخطوة التنفيذية التالية على مستوى المنتج
+## المرحلة التنفيذية الحالية على مستوى المنتج
 
 **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
 
-الحالة: **NOT STARTED**.
+الحالة: **IN_PROGRESS / DEVICE_PROOF_PENDING**.
 
-تم حسم الـpre-Gate-6B blocker السابق حول `SqlResult.lastInsertRowid` عبر التصحيح الضيق المصرح به من المالك. لا يزال Gate 6B نفسه غير مبدوء؛ يبدأ فقط في مهمة مستقلة بعد اعتماد/دمج التصحيح وفق workflow المشروع.
+فرع التنفيذ: `implementation/gate6b-android-runtime-proof-v1`.
+
+تم إعداد Android shell وprovisional `@capacitor-community/sqlite@8.1.1` adapter وproof harness وGitHub CI/Android debug build. هذا العمل لا يغلق Gate 6B؛ physical-device proof ما زال مطلوبًا، والمرشح يبقى provisional حتى تنفيذ evidence على Android فعلي ومراجعتها مستقلًا.
 
 هدف Gate 6B هو إثبات أن الـApplication Core الحالية تعمل على Android الحقيقي بنفس semantics المعتمدة، مع:
 
@@ -101,7 +103,7 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
 ```text
 6A  Product Runtime Architecture & Delivery Roadmap       CLOSED
  ↓
-6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   NEXT
+6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   IN_PROGRESS / DEVICE_PROOF_PENDING
  ↓
 6C  Evidence Storage + Camera/File Pipeline
  ↓
@@ -165,4 +167,5 @@ GitHub يخزن:
 - بيانات شخصية أو حساسة؛
 - قواعد SQLite إنتاجية؛
 - سجلات تفتيش تشغيلية حقيقية؛
-- أسرار أو API keys.
+- أسرار أو API keys؛
+- device serial numbers.

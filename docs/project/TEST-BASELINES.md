@@ -6,9 +6,9 @@
 
 ## 1) مصدر baseline الحالي
 
-آخر تحقق تنفيذي شامل قبل Gate 6A كان ضمن Gate 5L / PR #12، بعد التصحيح الضيق المعتمد في Gate 5E.
+آخر تحقق تنفيذي شامل قبل Gate 6A كان ضمن Gate 5L / PR #12، بعد التصحيح الضيق المعتمد في Gate 5E. ثم أضاف التصحيح الضيق المصرح به من المالك لـGate 5B regression مستقلة لسلامة `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، مع إعادة تشغيل جميع baselines الأعلى.
 
-PR #12 سجل النتائج التالية قبل push/merge:
+النتائج الحاكمة بعد تصحيح Gate 5B:
 
 | Suite | Passed | Failed |
 |---|---:|---:|
@@ -22,14 +22,22 @@ PR #12 سجل النتائج التالية قبل push/merge:
 | Gate 5E | 79 | 0 |
 | Gate 5D | 60 | 0 |
 | Gate 5C | 55 | 0 |
-| Gate 5B | 32 | 0 |
+| Gate 5B bootstrap/reference-data | 32 | 0 |
+| Gate 5B adapter normalization | 6 | 0 |
 | Schema | 100 | 0 |
 
-Gate 6A غيّرت documentation/architecture فقط، ولم تغيّر source code أو tests أو schema، لذلك هذه هي baselines الحاكمة عند بدء Gate 6B.
+إجمالي Gate 5B عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**. يبقى العدّ منفصلًا لأن `tests/gate5b_regression.ts` تختبر bootstrap/reference-data بينما `tests/gate5b_adapter_regression.ts` تختبر seam الـNode adapter فقط.
+
+دليل التصحيح والـCI محفوظ في:
+
+`docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`
+
+Gate 6A غيّرت documentation/architecture فقط. تصحيح Gate 5B اللاحق غيّر `dev/node-sqlite-adapter.ts` وأضاف regression ضيقة دون تغيير Application Core أو schema أو bootstrap artifacts.
 
 ## 2) ملفات suites الحاكمة
 
 ```text
+tests/gate5b_adapter_regression.ts
 tests/gate5b_regression.ts
 tests/gate5c_regression.ts
 tests/gate5d_regression.ts
@@ -46,20 +54,21 @@ tests/gate4a_regression.py
 
 ## 3) أوامر التشغيل المرجعية على Ubuntu dev/test host
 
-Application-core TypeScript suites:
+Gate-5B adapter seam + Application-core TypeScript suites:
 
 ```bash
-node --experimental-strip-types tests/gate5l_regression.ts
-node --experimental-strip-types tests/gate5k_regression.ts
-node --experimental-strip-types tests/gate5j_regression.ts
-node --experimental-strip-types tests/gate5i_regression.ts
-node --experimental-strip-types tests/gate5h_regression.ts
-node --experimental-strip-types tests/gate5g_regression.ts
-node --experimental-strip-types tests/gate5f_regression.ts
-node --experimental-strip-types tests/gate5e_regression.ts
-node --experimental-strip-types tests/gate5d_regression.ts
-node --experimental-strip-types tests/gate5c_regression.ts
+node --experimental-strip-types tests/gate5b_adapter_regression.ts
 node --experimental-strip-types tests/gate5b_regression.ts
+node --experimental-strip-types tests/gate5c_regression.ts
+node --experimental-strip-types tests/gate5d_regression.ts
+node --experimental-strip-types tests/gate5e_regression.ts
+node --experimental-strip-types tests/gate5f_regression.ts
+node --experimental-strip-types tests/gate5g_regression.ts
+node --experimental-strip-types tests/gate5h_regression.ts
+node --experimental-strip-types tests/gate5i_regression.ts
+node --experimental-strip-types tests/gate5j_regression.ts
+node --experimental-strip-types tests/gate5k_regression.ts
+node --experimental-strip-types tests/gate5l_regression.ts
 ```
 
 Schema suite:
@@ -74,6 +83,8 @@ Repository hygiene عند Gate review:
 git diff --check
 git status --short
 ```
+
+ملاحظة: Gate-5B provenance regression داخل `tests/gate5b_regression.ts` تحتاج Git history كافية؛ في GitHub Actions استخدم `fetch-depth: 0`.
 
 ## 4) قاعدة عدم الإضعاف
 
@@ -99,6 +110,8 @@ Gate 6B ستضيف device/native runtime proof، لكنها لا ينبغي أن
 
 - focused Gate-6B adapter/device suite جديدة؛
 - proof على Android حقيقي للـtransaction/persistence semantics؛
+- Gate 5B adapter normalization **6/0** على dev/test host تبقى خضراء؛
+- Gate 5B bootstrap/reference-data **32/0** تبقى خضراء؛
 - Gate 5L baseline **94/0** على dev/test host تبقى خضراء؛
 - كل Application Core baselines أعلاه لا تضعف؛
 - schema **100/0** تبقى خضراء؛

@@ -36,6 +36,16 @@
     "5L",
     "6A"
   ],
+  "closed_gate_corrections": {
+    "gate5b_lastinsertrowid_normalization_v1": {
+      "status": "IMPLEMENTED_PENDING_REVIEW_MERGE",
+      "authorization": "PROJECT_OWNER_AUTHORIZED_NARROW_CLOSED_GATE_CORRECTION",
+      "governing_base_sha": "25cd1ed248b3962a9fefc6cc1c1115bf27961551",
+      "record": "docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md",
+      "technical_validation_commit": "6a4b1dddf8426bb1a2a43520d5c41f7b3be4a363",
+      "github_actions_run": 34359830705
+    }
+  },
   "application_core": {
     "status": "CLOSED",
     "coverage": [
@@ -121,11 +131,12 @@
     "experimental_branch_policy": "Preserve as evidence; no merge-as-is and no cleanup/deletion without a separate owner decision."
   },
   "pre_gate_6b": {
-    "status": "PENDING_NARROW_CORRECTION_REVIEW",
+    "status": "RESOLVED",
     "issue": "SqlResult.lastInsertRowid non-insert behavior in NodeSqliteAdapter",
-    "classification": "POTENTIAL_CLOSED_GATE_EXECUTABLE_CONTRADICTION",
-    "gate_6b_technical_start_blocked": true,
-    "required_resolution_path": "Owner-authorized narrow closed-Gate correction review before Gate 6B technical implementation."
+    "classification": "OWNER_AUTHORIZED_NARROW_CLOSED_GATE_CORRECTION",
+    "gate_6b_technical_start_blocked": false,
+    "resolution": "NodeSqliteAdapter normalization corrected to preserve existing SqlResult semantics; focused Gate-5B adapter regression 6/0 and all adopted higher baselines green.",
+    "correction_record": "docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md"
   },
   "next_gate": {
     "id": "6B",
@@ -186,6 +197,16 @@
     },
     "gate5b": {
       "passed": 32,
+      "failed": 0,
+      "scope": "bootstrap/reference-data regression"
+    },
+    "gate5b_adapter_normalization": {
+      "passed": 6,
+      "failed": 0,
+      "scope": "NodeSqliteAdapter SqlResult.lastInsertRowid normalization"
+    },
+    "gate5b_total_across_suites": {
+      "passed": 38,
       "failed": 0
     },
     "schema": {

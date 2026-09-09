@@ -11,6 +11,17 @@
 import { DatabaseSync } from "node:sqlite";
 import type { SqlAdapter, SqlRow, SqlResult, SqlValue } from "../src/bootstrap/adapter.ts";
 
+/**
+ * Gate-5B's audited run() call sites use top-level INSERT/UPDATE/DELETE SQL.
+ * node:sqlite exposes sqlite3_last_insert_rowid(), which is connection state,
+ * so it can retain a prior INSERT rowid after UPDATE/DELETE.  Only a top-level
+ * INSERT that actually changed at least one row may expose that value through
+ * the repository's SqlResult contract.
+ */
+function isTopLevelInsert(sourceSql: string): boolean {
+    return /^\s*INSERT\b/i.test(sourceSql);
+}
+
 export class NodeSqliteAdapter implements SqlAdapter {
     private readonly db: DatabaseSync;
 
@@ -41,9 +52,11 @@ export class NodeSqliteAdapter implements SqlAdapter {
         const res = stmt.run(...params);
         const changes = typeof res.changes === "bigint" ? Number(res.changes) : res.changes;
         const rid = res.lastInsertRowid;
+        const inserted = isTopLevelInsert(stmt.sourceSQL) && changes > 0;
         return {
             changes,
-            lastInsertRowid: typeof rid === "bigint" || typeof rid === "number" ? Number(rid) : null,
+            lastInsertRowid:
+                inserted && (typeof rid === "bigint" || typeof rid === "number") ? Number(rid) : null,
         };
     }
 

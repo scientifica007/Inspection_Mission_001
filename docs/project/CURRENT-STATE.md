@@ -23,7 +23,7 @@
 - Gate 4B — Finding VOIDED lifecycle.
 - Gate 4 Revision 6 — owner-authorized narrow reconciliation correction.
 - Gate 5A — Application Core Contracts.
-- Gate 5B — Bootstrap.
+- Gate 5B — Bootstrap، مع **owner-authorized narrow `lastInsertRowid` normalization correction** موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`.
 - Gate 5C — Visit Scope Composition.
 - Gate 5D — Initial Response Disposition.
 - Gate 5E — Corrections / Finding Source Lifecycle، مع التصحيح الضيق المعتمد لـcontextual AUTO-NA.
@@ -44,11 +44,9 @@
 
 لا توجد Gate تنفيذية لاحقة معتمدة قبل نجاح 6B.
 
-قبل بدء التنفيذ التقني لـGate 6B توجد خطوة إلزامية سابقة لها في سير العمل:
+تم حسم التناقض الضيق السابق لـGate 6B حول `SqlResult.lastInsertRowid` للـnon-INSERT في `NodeSqliteAdapter` عبر التصحيح الضيق المصرح به من المالك. حالة pre-Gate-6B لهذا البند الآن: **RESOLVED**، و`gate_6b_technical_start_blocked = false` لهذا السبب تحديدًا.
 
-**PENDING NARROW CLOSED-GATE CORRECTION REVIEW** حول سلوك `SqlResult.lastInsertRowid` للـnon-INSERT في `NodeSqliteAdapter`.
-
-هذا لا يغيّر كون 6B هي Gate المنتج التالية، لكنه يمنع بدء تنفيذها التقني قبل مراجعة/حسم التناقض وفق سياسة التصحيح الضيق المعتمدة.
+هذا التصحيح لم يغيّر عقد `SqlAdapter` ولم يبدأ Gate 6B.
 
 ## 2A) إغلاق تجربة HNT-001 / HNT-002 وقرار أدوات التنفيذ
 
@@ -92,6 +90,13 @@
 - restart reconstruction بواسطة `currentVisitState` من SQLite durable rows فقط.
 
 الحالة التشغيلية لا تعتمد على process memory كسلطة.
+
+### Gate-5B adapter seam correction
+
+- `NodeSqliteAdapter.run()` لم يعد يسرّب stale connection `lastInsertRowid` بعد UPDATE/DELETE/no-op INSERT.
+- `SqlResult` contract بقي دون تغيير: rowid رقمي فقط عندما تنفذ العملية INSERT فعليًا؛ خلاف ذلك `null`.
+- regression جديدة: `tests/gate5b_adapter_regression.ts` = **6 / 0**.
+- Gate-5B bootstrap/reference-data regression الأصلية بقيت **32 / 0**.
 
 ## 4) قرارات domain أساسية لا تُعاد اختراعها
 
@@ -153,7 +158,7 @@ P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، mult
 
 ## 7) Baselines الاختبارات الحالية
 
-آخر baselines تنفيذية معتمدة قبل Gate 6A الوثائقية:
+آخر baselines التنفيذية المعتمدة، مع إضافة التصحيح الضيق لـGate 5B:
 
 | Suite | Baseline |
 |---|---:|
@@ -167,8 +172,11 @@ P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، mult
 | Gate 5E | 79 / 0 |
 | Gate 5D | 60 / 0 |
 | Gate 5C | 55 / 0 |
-| Gate 5B | 32 / 0 |
+| Gate 5B bootstrap/reference-data | 32 / 0 |
+| Gate 5B adapter normalization | 6 / 0 |
 | Schema | 100 / 0 |
+
+إجمالي تغطية Gate 5B التنفيذية الحالية عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع إبقاء العدّين منفصلين حتى لا تختلط مسؤولية bootstrap/reference-data بمسؤولية adapter normalization.
 
 التفاصيل والأوامر في `docs/project/TEST-BASELINES.md`.
 
@@ -189,16 +197,16 @@ P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، mult
 
 ## 9) المهمة التالية عند الاستلام
 
-لا تبدأ UI ولا Evidence ولا reports مباشرة، ولا تبدأ التنفيذ التقني لـGate 6B فورًا.
+لا تبدأ UI ولا Evidence ولا reports مباشرة.
 
-ابدأ أولًا بمراجعة التصحيح الضيق المعلّقة:
+التناقض الضيق السابق لـGate 6B حول `SqlResult.lastInsertRowid` أصبح **RESOLVED** عبر:
 
-`SqlResult.lastInsertRowid` non-INSERT behavior in `NodeSqliteAdapter`.
+`docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`
 
-تعامل معها وفق قاعدة **Concrete reproducible executable contradiction** وسياسة إعادة الفتح الضيق في `docs/project/WORKFLOW.md`. لا تغيّر عقد Gate 5B أو adapter أو regressions بلا owner authorization.
-
-بعد حسم هذه المراجعة فقط، ابدأ تخطيط/تنفيذ **Gate 6B** وفق `DEVICE-ADAPTER-CONTRACT-v1.md` باستخدام الـdefault workflow:
+بعد اعتماد/دمج هذا التصحيح وفق review/owner/PR workflow، تبقى المهمة المنتجية التالية هي تخطيط/تنفيذ **Gate 6B** وفق `DEVICE-ADAPTER-CONTRACT-v1.md` باستخدام الـdefault workflow:
 
 `ChatGPT + GitHub + GitHub Actions`
 
 واستخدم Harness/local execution agent فقط عند ظهور حاجة فعلية لقدرات محلية/فيزيائية غير مناسبة لـGitHub-hosted CI.
+
+حالة Gate 6B نفسها تبقى `NOT_STARTED` حتى يبدأها المالك/المراجع في مهمة مستقلة؛ هذه correction لا تبدأها.

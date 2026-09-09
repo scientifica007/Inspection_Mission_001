@@ -38,6 +38,9 @@ dependencies {
     implementation project(':capacitor-android')
     // Gate-6B Q12 diagnostic bridge compiles against the exact same native engine as the pinned plugin.
     implementation 'net.zetetic:sqlcipher-android:4.17.0@aar'
+    // The plugin keeps its AndroidX SQLite support API behind Gradle implementation; expose the same
+    // v8.1.1 support-API version to javac only so the direct SQLCipher public type hierarchy is readable.
+    compileOnly 'androidx.sqlite:sqlite:2.4.0'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

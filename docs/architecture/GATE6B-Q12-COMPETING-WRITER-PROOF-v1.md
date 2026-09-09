@@ -24,6 +24,8 @@ Q12 writer B compiles directly against the **same** `sqlcipher-android:4.17.0@aa
 
 SQLCipher `v4.17.0` resolves to signed tag object `0725b962ffb60b00460b0e315bc632a543b399e7` and release commit `ae57a61052d8c41ce35cd48319b2f6f20f4de6bf`.
 
+The plugin also keeps `androidx.sqlite:sqlite:2.4.0` behind its Gradle `implementation` boundary. Because SQLCipher's public `SQLiteDatabase` type implements AndroidX `SupportSQLiteDatabase`, the app's diagnostic Java source needs that interface on the **compile** classpath. Gate 6B therefore declares the same plugin version as `compileOnly 'androidx.sqlite:sqlite:2.4.0'`; this does not introduce another runtime engine or persistence stack and does not replace the plugin's runtime dependency.
+
 CI inspects `debugRuntimeClasspath` and requires the only resolved `net.zetetic:sqlcipher-android` coordinate to be `4.17.0`.
 
 ## 3. A and B boundaries

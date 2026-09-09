@@ -1,0 +1,62 @@
+name: SqlAdapter qualification
+
+on:
+  push:
+    branches:
+      - "experiment/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sqladapter-qualification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualification-and-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: SqlAdapter qualification contract
+        run: node --experimental-strip-types tests/sqladapter_qualification.ts
+
+      - name: Application Core regression baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suite in \
+            gate5l_regression.ts \
+            gate5k_regression.ts \
+            gate5j_regression.ts \
+            gate5i_regression.ts \
+            gate5h_regression.ts \
+            gate5g_regression.ts \
+            gate5f_regression.ts \
+            gate5e_regression.ts \
+            gate5d_regression.ts \
+            gate5c_regression.ts \
+            gate5b_regression.ts
+          do
+            node --experimental-strip-types "tests/${suite}"
+          done
+
+      - name: Schema regression baseline
+        run: python3 tests/gate4a_regression.py
+
+      - name: Repository diff hygiene
+        run: git diff --check

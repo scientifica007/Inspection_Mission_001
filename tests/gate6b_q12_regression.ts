@@ -37,7 +37,7 @@ function baseline(): Q12Observation {
 
 test("G6B-Q12-01 complete differential proof can PASS", () => eq(classifyQ12(baseline()).status, "PASS", "status"));
 test("G6B-Q12-02 generic native error remains BLOCKED", () => { const o=baseline(); o.duringPrimaryLock=generic(); eq(classifyQ12(o).status,"BLOCKED","status"); });
-test("G6B-Q12-03 same-file mismatch is BLOCKED", () => { const o=baseline(); o.samePhysicalFile=false; eq(classifyQ12(o).status,"BLOCKED","status"); });
+test("G6B-Q12-03 same-file mismatch is FAIL", () => { const o=baseline(); o.samePhysicalFile=false; eq(classifyQ12(o).status,"FAIL","status"); });
 test("G6B-Q12-04 preflight write failure cannot PASS", () => { const o=baseline(); o.preflightWrite=generic(); eq(classifyQ12(o).status,"BLOCKED","status"); });
 test("G6B-Q12-05 writer success during primary lock is FAIL", () => { const o=baseline(); o.duringPrimaryLock=success(); eq(classifyQ12(o).status,"FAIL","status"); });
 test("G6B-Q12-06 locked marker appearing during A lock is FAIL", () => { const o=baseline(); o.lockedMarkerCount=1; eq(classifyQ12(o).status,"FAIL","status"); });

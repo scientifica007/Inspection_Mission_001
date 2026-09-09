@@ -98,9 +98,9 @@ No step releases A merely to rescue B; B's zero busy timeout makes the native lo
 
 Q12 = PASS only when the whole differential sequence is proven, including same file, same engine, preflight, concrete native lock classification, absence under lock, successful post-release retry, cleanup, and native close.
 
-Q12 = FAIL for a semantic contradiction, including B writing while A owns `BEGIN IMMEDIATE`, locked marker visibility, primary transaction acquisition/release contradiction, or inability to write after release after a valid preflight.
+Q12 = FAIL for a semantic contradiction, including a post-open same-physical-file mismatch, B writing while A owns `BEGIN IMMEDIATE`, locked marker visibility, primary transaction acquisition/release contradiction, or inability to write after release after a valid preflight.
 
-Q12 = BLOCKED for qualification limitations, including same-file proof failure, native open/preflight failure, engine mismatch, generic/unclassifiable native exception, unexpected busy policy, or incomplete cleanup/close.
+Q12 = BLOCKED for qualification limitations, including inability to open/validate B before a same-file observation can be established, native preflight failure, engine mismatch, generic/unclassifiable native exception, unexpected busy policy, or incomplete cleanup/close.
 
 ## 10. Host regression
 

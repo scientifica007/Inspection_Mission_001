@@ -59,7 +59,7 @@ function compact(o: Q12Observation): string {
 
 export function classifyQ12(o: Q12Observation): Q12Decision {
   const evidence = compact(o);
-  if (!o.samePhysicalFile) return { status: "BLOCKED", evidence: `same-file proof failed; ${evidence}` };
+  if (!o.samePhysicalFile) return { status: "FAIL", evidence: `same-file proof contradicted after native open; ${evidence}` };
   if (o.nativeEngine !== o.expectedNativeEngine) return { status: "BLOCKED", evidence: `native engine/version mismatch; ${evidence}` };
   if (!o.primarySqliteVersion || o.primarySqliteVersion !== o.competingSqliteVersion) {
     return { status: "BLOCKED", evidence: `primary/competing sqlite_version mismatch; ${evidence}` };

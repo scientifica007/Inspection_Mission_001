@@ -21,8 +21,8 @@
 5. `docs/project/TEST-BASELINES.md` — baselines الاختبارات الحاكمة.
 6. `docs/architecture/PRODUCT-ROADMAP-v1.md` — ترتيب مراحل المنتج بعد Application Core.
 7. `docs/architecture/PRODUCT-ARCHITECTURE-v1.md` — المعمارية المعتمدة للمنتج.
-8. `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md` — عقد Gate 6B للـdevice/native SQLite adapter.
-9. عند العمل على Gate 6B: `docs/architecture/GATE6B-ANDROID-RUNTIME-PROOF-v1.md` و`docs/architecture/GATE6B-Q12-COMPETING-WRITER-PROOF-v1.md`.
+8. `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md` — عقد الـdevice/native SQLite adapter الذي أغلقته Gate 6B.
+9. عند مراجعة تاريخ Gate 6B أو adapter/device proof: `docs/architecture/GATE6B-ANDROID-RUNTIME-PROOF-v1.md` و`docs/architecture/GATE6B-Q12-COMPETING-WRITER-PROOF-v1.md`.
 
 ثم اقرأ الملفات المعيارية الخاصة بالمهمة التي تعمل عليها فقط.
 
@@ -36,7 +36,7 @@
 | `docs/data-model/` | النموذج المنطقي وEntity Catalog | مرجع الكيانات والعلاقات |
 | `docs/schema/` | المخطط الفيزيائي والقيود | `schema.sql` هو المخطط التنفيذي الحاكم |
 | `docs/application/` | عقود Application Core والمعاملات والتعافي | يفسر semantics للخدمات المغلقة |
-| `docs/architecture/` | معمارية المنتج وRoadmap بعد Gate 5L | الحاكم للمرحلة الحالية |
+| `docs/architecture/` | معمارية المنتج وRoadmap ووثائق Gate 6B المغلقة | الحاكم لتسلسل المنتج |
 | `docs/project/` | حالة المشروع، handoff، workflow، test baselines | ذاكرة تشغيلية مختصرة قابلة للتسليم |
 | `bootstrap/` | bootstrap artifact canonical | تعريفات checklist المرجعية المحملة |
 | `src/bootstrap/` | bootstrap/runtime seam | يتضمن `SqlAdapter` المحايد للـruntime |
@@ -61,30 +61,20 @@
 
 - Gates 1→5L: مغلقة/معتمدة/مدمجة.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap: مغلقة/معتمدة/مدمجة.
-- **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof: `IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`.**
-- Adapter Qualification الفيزيائية على Android الحقيقي عند SHA `87135cfe80ae3de79a34e941828249fc6889139c`: **PASS** لـQ1→Q12، وQ12 status هي **`PHYSICAL_PASS_REVIEW_ACCEPTED`**.
-- أدلة Application-Core و`currentVisitState` zero-write وT11 وreal Force Stop/Restart من SHA `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى **مقبولة بإعادة استخدام evidence مبنية على non-drift** للمسارات ذات الصلة حتى `87135cfe...`؛ لا يعني ذلك أن APK البناءين binary متطابقتان.
-- `@capacitor-community/sqlite@8.1.1`: **device qualification = PASS**؛ الاعتماد النهائي وإغلاق Gate 6B ما يزالان pending PR / owner approval / merge.
-- `closure_authorized=false`.
-- Gate 6C: **NOT_STARTED**.
-- Field-usable v1: **غير مكتملة بعد**.
-
-لا تبدأ Gate لاحقة قبل إغلاق الحالية وفق `docs/project/WORKFLOW.md`.
+- **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof: CLOSED / MERGED.**
+- Gate 6B PR: `#17`؛ reviewed branch head: `04dcf001e5494c38258c7112619ea1d508af694c`؛ merge SHA: `0905c6111269d62480e7ccadc31786bef29f3c51`.
+- Adapter Qualification الفيزيائية على Android الحقيقي عند SHA `87135cfe80ae3de79a34e941828249fc6889139c`: **PASS لـQ1→Q12**؛ Q12=`PHYSICAL_PASS_REVIEW_ACCEPTED`.
+- أدلة Application-Core و`currentVisitState` zero-write وT11 وreal Force Stop/Restart من SHA `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى **مقبولة بإعادة استخدام evidence مبنية على non-drift**؛ `same_binary=false` ولا يُدعى أن APK البناءين متطابقتان.
+- `@capacitor-community/sqlite@8.1.1`: **ADOPTED_BY_CLOSED_GATE6B** مع بقاء `SqlAdapter` وcanonical schema/bootstrap هي السلطات الحاكمة في نطاقاتها.
+- `closure_authorized=true` لـGate 6B المغلقة بعد owner-approved merge.
+- **Gate 6C: NEXT / NOT_STARTED.** لم يبدأ تنفيذ Gate 6C بعد.
+- Field-usable v1: غير مكتملة بعد.
 
 ## 6) ما لا يجوز استنتاجه من المستودع
 
 GitHub هو ذاكرة **الهندسة والقرارات والعقود**، وليس مخزن البيانات التشغيلية الحقيقية.
 
-لا يُفترض وجود ما يلي هنا:
-
-- صور تفتيش حقيقية؛
-- Evidence تشغيلية حقيقية؛
-- بيانات شخصية أو حساسة؛
-- قواعد SQLite إنتاجية؛
-- سجلات زيارات أو مؤسسات حقيقية؛
-- أسرار أو مفاتيح API.
-
-غياب هذه البيانات مقصود وليس نقصًا في ذاكرة المشروع الهندسية.
+لا يُفترض وجود صور تفتيش حقيقية أو Evidence تشغيلية أو بيانات شخصية/حساسة أو قواعد SQLite إنتاجية أو أسرار/API keys هنا.
 
 ## 7) قاعدة Fresh Read قبل العمل
 
@@ -115,4 +105,4 @@ Fresh Read main
 → scoped work only
 ```
 
-لا تطلب من المالك إعادة سرد تاريخ المشروع ما دامت هذه الملفات والـartifacts الحية تكفي.
+الحالة التالية بعد إغلاق Gate 6B هي **Gate 6C — NEXT / NOT_STARTED**. لا يعني ذلك السماح ببدء تنفيذها دون scope/authorization مستقل.

@@ -1,22 +1,30 @@
 # Gate 6B — Android Runtime Proof v1
 
-> **Status:** `IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`
+> **Status:** `CLOSED / MERGED`
 >
-> **Governing base:** `main@608314ae62721af44d8ed4f50c1c618ac469fc66`
+> **Original governing base:** `main@608314ae62721af44d8ed4f50c1c618ac469fc66`
 >
 > **Implementation branch:** `implementation/gate6b-android-runtime-proof-v1`
 >
+> **Reviewed branch head:** `04dcf001e5494c38258c7112619ea1d508af694c`
+>
+> **PR:** `#17`
+>
+> **Merge SHA:** `0905c6111269d62480e7ccadc31786bef29f3c51`
+>
 > **SQLite candidate:** `@capacitor-community/sqlite@8.1.1`
 >
-> **Candidate status:** `DEVICE_QUALIFICATION_PASS_PENDING_GATE6B_FINAL_ADOPTION_MERGE`
+> **Candidate status:** `ADOPTED_BY_CLOSED_GATE6B`
 >
-> **Physical Android execution:** Adapter Qualification PASS on `87135cfe...` including Q12. Application-Core and final real Force Stop/Restart evidence from `89d405d...` remain accepted by independent non-drift evidence reuse. `closure_authorized=false`.
+> **Physical qualification target:** `87135cfe80ae3de79a34e941828249fc6889139c`
+>
+> **Physical Android execution:** Q1→Q12 PASS. Application-Core and final real Force Stop/Restart evidence from `89d405d...` remain accepted by independent non-drift evidence reuse with `same_binary=false`.
 
-## 1. Scope and acceptance boundary
+## 1. Scope and closure boundary
 
-Gate 6B proves the Android shell + candidate native SQLite adapter against the already adopted `SqlAdapter` and Application Core. It contains only diagnostic/synthetic proof capability. It does not implement Gate 6C EvidenceStorage, Gate 6D field UI, reports, sync, server or authentication.
+Gate 6B proved the Android shell + candidate native SQLite adapter against the already adopted `SqlAdapter` and Application Core. It contains diagnostic/synthetic proof capability only and does not implement Gate 6C EvidenceStorage, Gate 6D field UI, reports, sync, server or authentication.
 
-Physical qualification PASS does not itself merge or close the Gate. Final adoption/closure remains pending PR / owner approval / merge.
+Gate 6B is now formally **CLOSED / MERGED** after independent review, project-owner merge approval, PR #17 merge, and Fresh Read of `main@0905c6111269d62480e7ccadc31786bef29f3c51`.
 
 ## 2. Exact versions
 
@@ -45,7 +53,7 @@ Implementation: `src/device/capacitor-sqlite-adapter.ts`.
 | `run(sql, params)` | `connection.run(sql, params, false, "no")` |
 | `query(sql, params)` | `connection.query(sql, params)` |
 
-The explicit `false` prevents plugin-owned statement transactions inside existing Application-Core transaction boundaries. Q12 does not alter this primary adapter.
+The explicit `false` prevents plugin-owned statement transactions inside existing Application-Core transaction boundaries. Q12 did not alter this primary adapter.
 
 `lastInsertRowid` normalization remains the adopted Gate-5B contract.
 
@@ -53,14 +61,14 @@ The explicit `false` prevents plugin-owned statement transactions inside existin
 
 Persistent proof DB: `inspection_gate6b_runtime_proof_v1`. Focused adapter probe DB: `inspection_gate6b_adapter_probe_v1`. Android package: `com.scientifica.inspection.gate6bproof`.
 
-Canonical schema authority is still exactly `docs/schema/schema.sql`; canonical bootstrap authority is exactly `bootstrap/v1/checklist-v1.json`.
+Canonical schema authority remains exactly `docs/schema/schema.sql`; canonical bootstrap authority remains exactly `bootstrap/v1/checklist-v1.json`.
 
 Canonical SHA-256 values:
 
 - schema: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`;
 - bootstrap: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
 
-The canonical-schema transport correction is documented separately in `GATE6B-ANDROID-SCHEMA-EXECUTION-CORRECTION-v1.md`.
+The canonical-schema transport correction is documented in `GATE6B-ANDROID-SCHEMA-EXECUTION-CORRECTION-v1.md`.
 
 ## 5. Qualification matrix — accepted physical state
 
@@ -114,7 +122,7 @@ nativeClosed=true
 
 This is the genuine differential native lock proof: independent B writes before the lock, A obtains literal `BEGIN IMMEDIATE`, B receives genuine SQLCipher BUSY while A owns the lock, the locked marker remains absent, then B succeeds after A releases and cleanup/close complete.
 
-## 7. Pre-correction physical evidence is retained
+## 7. Historical pre-correction evidence retained
 
 A real Android phone previously executed Adapter Qualification against SHA `5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc`.
 
@@ -167,9 +175,9 @@ Basis: from `89d405d...` through Q12 target `87135cfe...`, there was no drift in
 - `docs/schema/schema.sql`;
 - `bootstrap/v1/checklist-v1.json`.
 
-The Gate-6B changes between these runtime states added/diagnosed/corrected the Q12 proof boundary and replaced the prior Q12 BLOCKED placeholder in Adapter Qualification with the real competing-writer proof. They did not alter the Application-Core or restart semantic paths covered by the reused evidence.
+The Gate-6B changes between these runtime states added/diagnosed/corrected the Q12 proof boundary and did not alter the Application-Core or restart semantic paths covered by the reused evidence.
 
-This is evidence reuse based on non-drift. It does **not** claim the `89d` physical APK and `871` physical APK were the same binary.
+This is evidence reuse based on non-drift. It does **not** claim the `89d` physical APK and `871` physical APK were the same binary: `same_binary=false`.
 
 ## 12. Q12 implementation boundary
 
@@ -189,9 +197,9 @@ Q12 classifier semantics remain unchanged.
 
 ## 14. Diagnostic UI
 
-The shell remains `GATE 6B DEVICE PROOF — NOT FIELD UI`. No product field UI is added in Gate 6B.
+The shell remains `GATE 6B DEVICE PROOF — NOT FIELD UI`. No product field UI was added in Gate 6B.
 
-## 15. Host/CI regression expectations
+## 15. Host/CI regression baselines
 
 - Gate 6B adapter mapping: 16/0;
 - Gate 6B canonical-schema execution: 8/0;
@@ -210,22 +218,24 @@ The shell remains `GATE 6B DEVICE PROOF — NOT FIELD UI`. No product field UI i
 - Gate 5L: 94/0;
 - schema: 100/0.
 
-Gate-6B CI additionally covers runtime typecheck, Vite build, Capacitor sync, resolved SQLCipher dependency assertion=4.17.0, Android assembleDebug, diff/no-drift/runtime-neutral checks, and artifact upload.
+Gate-6B CI also covered runtime typecheck, Vite build, Capacitor sync, resolved SQLCipher dependency assertion=4.17.0, Android assembleDebug, diff/no-drift/runtime-neutral checks, and artifact upload.
 
 CI is not substituted for the accepted physical proof; the physical Q12 PASS is the reviewed Android evidence on `87135cfe...`.
 
-## 16. Current closure state
+## 16. Closure provenance and next Gate
 
-Gate 6B: **`IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`**.
+Gate 6B: **`CLOSED / MERGED`**.
 
 Q12: **`PHYSICAL_PASS_REVIEW_ACCEPTED`**.
 
-`@capacitor-community/sqlite@8.1.1` device qualification: **PASS**.
+`@capacitor-community/sqlite@8.1.1`: **`ADOPTED_BY_CLOSED_GATE6B`**.
 
-Final Gate-6B adoption/closure: pending PR / owner approval / merge.
+PR: `#17`.
 
-`closure_authorized=false`.
+Reviewed branch head: `04dcf001e5494c38258c7112619ea1d508af694c`.
 
-Gate 6C: **`NOT_STARTED`**.
+Merge SHA: `0905c6111269d62480e7ccadc31786bef29f3c51`.
 
-No new physical Adapter Qualification, Application-Core Proof, or Restart Phase A/B is requested by this document.
+`closure_authorized=true`.
+
+Gate 6C: **`NEXT / NOT_STARTED`**. No Gate 6C implementation is part of this closure record.

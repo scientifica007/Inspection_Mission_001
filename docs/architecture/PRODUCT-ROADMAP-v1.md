@@ -1,7 +1,7 @@
 # Product Delivery Roadmap — v1
 
-> **Status:** Gate 6A roadmap baseline — OWNER APPROVED
-> **Authoritative base:** GitHub `main` at `bde4359eac5cdb8c9873164fe992bd03b9871a71`
+> **Status:** Gate 6A roadmap baseline — OWNER APPROVED; post-merge current-state annotations reconciled after Gate 6B closure
+> **Authoritative Gate-6A base:** GitHub `main` at `bde4359eac5cdb8c9873164fe992bd03b9871a71`
 > **Traceability:** PROJECT architecture/delivery decision. It does not replace or reinterpret DIRECT/DERIVED requirements.
 
 ## 1. Current completed baseline
@@ -27,12 +27,14 @@ The project has completed and merged:
 - Gate 5J — CorrectiveAction Status Transitions
 - Gate 5K — finalizeVisit
 - Gate 5L — currentVisitState / restart reconstruction
+- Gate 6A — Product Runtime Architecture & Delivery Roadmap
+- Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof — merged via PR #17 at `0905c6111269d62480e7ccadc31786bef29f3c51`
 
-Application Core therefore includes T0→T11, OBS-1 and durable restart reconstruction from SQLite.
+Application Core therefore includes T0→T11, OBS-1 and durable restart reconstruction from SQLite. Gate 6B has physically qualified the Android/native SQLite boundary and is CLOSED.
 
 ## 2. Product objective
 
-The next objective is not to add more domain Gates mechanically. It is to turn the completed Application Core into a **field-usable Android v1** while preserving:
+The objective remains to turn the completed Application Core into a **field-usable Android v1** while preserving:
 
 - offline-first operation;
 - SQLite local authority;
@@ -51,21 +53,21 @@ Application Core
 
         ↓
 
-6A  Product Runtime Architecture & Delivery Roadmap
+6A  Product Runtime Architecture & Delivery Roadmap        CLOSED
         ↓
-6B  Android Shell + Native SQLite Adapter / Device Runtime Proof
+6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   CLOSED
         ↓
-6C  Evidence Storage + Camera/File Pipeline
+6C  Evidence Storage + Camera/File Pipeline                NEXT / NOT_STARTED
         ↓
-6D  Arabic RTL Field UI + End-to-End Visit Workflow
+6D  Arabic RTL Field UI + End-to-End Visit Workflow        LATER
         ↓
-6E  ExternalSystemTracking application capability
+6E  ExternalSystemTracking application capability          LATER
         ↓
-6F  Deterministic Report Model / Snapshot Generation
+6F  Deterministic Report Model / Snapshot Generation       LATER
         ↓
-6G  DOCX + PDF + Artifact Save/Share
+6G  DOCX + PDF + Artifact Save/Share                       LATER
         ↓
-6H  Android Packaging + Field Qualification
+6H  Android Packaging + Field Qualification                LATER
         ↓
      FIELD-USABLE v1
 ```
@@ -75,6 +77,8 @@ No later phase should silently bypass an earlier dependency.
 ---
 
 # Gate 6A — Product Runtime Architecture & Delivery Roadmap
+
+**Status:** CLOSED
 
 **Type:** DESIGN ONLY
 
@@ -101,11 +105,15 @@ No later phase should silently bypass an earlier dependency.
 
 ### Exit condition
 
-Architecture and delivery documents are merged to `main` and identify Gate 6B as the next executable Gate.
+Architecture and delivery documents are merged to `main` and identify Gate 6B as the next executable Gate. This exit condition was satisfied before Gate 6B implementation began.
 
 ---
 
 # Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
+
+**Status:** CLOSED / MERGED
+
+**Closure provenance:** PR #17; reviewed branch head `04dcf001e5494c38258c7112619ea1d508af694c`; merge SHA `0905c6111269d62480e7ccadc31786bef29f3c51`.
 
 **Purpose:** prove the existing core works on the real target runtime without semantic weakening.
 
@@ -125,25 +133,29 @@ fresh app install
 → same durable state
 ```
 
-### Must verify
+### Verified
 
 - explicit `BEGIN IMMEDIATE` works as required;
 - explicit commit/rollback boundaries are preserved;
 - no hidden per-statement transaction breaks a domain transaction;
-- `changes` is normalized correctly;
+- `changes` and `lastInsertRowid` are normalized correctly;
 - foreign keys are enforced;
 - schema/bootstrap run correctly on Android;
 - persistence survives app/process restart;
-- serialized single-inspector write assumptions hold;
+- serialized single-inspector write assumptions hold through genuine Q12 competing-writer proof;
 - Application Core requires no `node:*` dependency or rewrite.
 
-### Selection rule
+Physical Adapter Qualification on `87135cfe80ae3de79a34e941828249fc6889139c` passed Q1→Q12. Application-Core and real Force Stop/Restart evidence from `89d405d6254108ce735125638ccdb2fb2e67c568` was accepted by non-drift evidence reuse; `same_binary=false`.
 
-Do not permanently adopt a SQLite plugin/driver until it passes this contract.
+### Selection result
+
+`@capacitor-community/sqlite@8.1.1` is `ADOPTED_BY_CLOSED_GATE6B` for the Gate-6B device/runtime boundary. Canonical schema/bootstrap and `SqlAdapter` remain authoritative in their scopes.
 
 ---
 
 # Gate 6C — Evidence Storage + Camera/File Pipeline
+
+**Status:** NEXT / NOT_STARTED
 
 **Purpose:** implement P0 phone photo/file evidence safely across SQLite + filesystem.
 
@@ -176,9 +188,13 @@ capture/import
 
 Do not pretend SQLite and filesystem form one atomic transaction.
 
+No Gate 6C implementation is introduced by this post-merge Gate 6B closure reconciliation.
+
 ---
 
 # Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
+
+**Status:** LATER
 
 **Purpose:** deliver the first complete inspector-facing vertical slice.
 
@@ -214,6 +230,8 @@ Do not pretend SQLite and filesystem form one atomic transaction.
 
 # Gate 6E — ExternalSystemTracking application capability
 
+**Status:** LATER
+
 **Purpose:** expose the already modeled append-only external-system event history.
 
 ### v1 boundary
@@ -227,6 +245,8 @@ Representative application operation may be designed as an append-only `recordEx
 ---
 
 # Gate 6F — Deterministic Report Model / Snapshot Generation
+
+**Status:** LATER
 
 **Purpose:** generate report content from durable state without coupling the report logic to Word/PDF rendering.
 
@@ -250,6 +270,8 @@ SQLite/domain state
 
 # Gate 6G — DOCX + PDF + Artifact Save/Share
 
+**Status:** LATER
+
 **Purpose:** fulfill P0 document-output requirements.
 
 ### Required outputs
@@ -267,6 +289,8 @@ DOCX/PDF renderers consume the Report Model; they do not query and reinterpret o
 ---
 
 # Gate 6H — Android Packaging + Field Qualification
+
+**Status:** LATER
 
 **Purpose:** qualify the product for real field use rather than merely producing a build.
 
@@ -316,12 +340,12 @@ These are intentionally deferred so they do not destabilize the local-first fiel
 
 ## 5. Architecture stop rule
 
-A later Gate must not reopen a closed Gate merely for elegance. Reopening is justified only by a concrete executable contradiction, following the precedent used during Gate 5L review.
+A later Gate must not reopen a closed Gate merely for elegance. Reopening is justified only by a concrete executable contradiction, following the repository closed-Gate correction policy.
 
 ## 6. Next action
 
-After Gate 6A documentation is merged, the next executable design/implementation task is:
+After Gate 6B merged and closed, the next executable design/implementation Gate in the adopted sequence is:
 
-> **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
+> **Gate 6C — Evidence Storage + Camera/File Pipeline — NEXT / NOT_STARTED**
 
-No UI-first shortcut is adopted.
+This post-merge reconciliation does not start Gate 6C. A separate scoped authorization is required before implementation.

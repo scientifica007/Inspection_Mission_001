@@ -8,31 +8,37 @@
 
 - Repository: `scientifica007/Inspection_Mission_001`.
 - Governing branch: `main`.
-- آخر merge منتجي قبل طبقة handoff: `f142791520fd95dda23c5e6a9c1decd0f2602b6f` — Merge Gate 6A product runtime architecture.
-- merge تصحيح Gate 5B الضيق: `608314ae62721af44d8ed4f50c1c618ac469fc66` — MERGED / RESOLVED.
+- Gate 6A product architecture merge: `f142791520fd95dda23c5e6a9c1decd0f2602b6f`.
+- Gate 5B narrow correction merge: `608314ae62721af44d8ed4f50c1c618ac469fc66` — MERGED / RESOLVED.
+- Gate 6B PR: `#17`.
+- Gate 6B implementation branch: `implementation/gate6b-android-runtime-proof-v1`.
+- Gate 6B reviewed branch head: `04dcf001e5494c38258c7112619ea1d508af694c`.
+- Gate 6B merge SHA: `0905c6111269d62480e7ccadc31786bef29f3c51`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A مغلقة/معتمدة كما هو موثق في history. Gate 5B يتضمن التصحيح الضيق المدمج لـ`SqlResult.lastInsertRowid`.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
-الحالة: **`IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`**.
-
-فرع التنفيذ: `implementation/gate6b-android-runtime-proof-v1`.
+الحالة: **`CLOSED / MERGED`**.
 
 Q12: **`PHYSICAL_PASS_REVIEW_ACCEPTED`**.
 
-`closure_authorized=false`.
+`closure_authorized=true` بعد independent review + project-owner merge approval + PR #17 merge.
 
 SQLite candidate: `@capacitor-community/sqlite@8.1.1`.
 
 - device qualification: **PASS**؛
-- final Gate-6B adoption/closure: **pending PR / owner approval / merge**؛
-- candidate لم تصبح merged project authority بعد.
+- final Gate-6B status: **ADOPTED_BY_CLOSED_GATE6B**؛
+- primary `SqlAdapter` contract وcanonical schema/bootstrap تبقى السلطات الحاكمة في نطاقاتها.
 
-Gate 6C: **`NOT_STARTED`**.
+### Gate 6C — Evidence Storage + Camera/File Pipeline
+
+الحالة: **`NEXT / NOT_STARTED`**.
+
+لم يبدأ تنفيذ Gate 6C في مصالحة الإغلاق هذه.
 
 ## 3) Adapter Qualification الفيزيائية المقبولة على `87135cfe...`
 
@@ -87,7 +93,7 @@ cleanupComplete=true
 nativeClosed=true
 ```
 
-هذا يثبت physical genuine differential native locking requirement كما هو معرّف في Q12: writer B مستقل، نفس الملف الفيزيائي مثبت، preflight write ناجحة، A يمسك literal `BEGIN IMMEDIATE`، B يعيد BUSY أصليًا من SQLCipher أثناء القفل، locked marker لا يظهر، ثم نفس B ينجح بعد release ويُرى marker ويُنظف ويُغلق.
+هذا يثبت physical genuine differential native locking requirement كما هو معرّف في Q12.
 
 ## 4) قرار إعادة استخدام Application-Core / Restart evidence
 
@@ -107,9 +113,9 @@ nativeClosed=true
 - Visit rediscovered from SQLite only: `1`؛
 - Phase A/B state hashes: exact match.
 
-هذا **evidence reuse based on demonstrated non-drift**، وليس ادعاءً بأن APK `89d405d...` وAPK `87135cfe...` نفس binary؛ هما ليستا نفس binary.
+هذا **evidence reuse based on demonstrated non-drift**، وليس ادعاءً بأن APK `89d405d...` وAPK `87135cfe...` نفس binary. القيمة الحاكمة هي **`same_binary=false`**.
 
-من `89d405d...` إلى `87135cfe...` لم يحدث drift في المسارات ذات الصلة بإعادة استخدام هذه الأدلة:
+من `89d405d...` إلى `87135cfe...` لم يحدث drift في:
 
 - `src/application/**`;
 - `src/bootstrap/**`;
@@ -117,7 +123,7 @@ nativeClosed=true
 - `docs/schema/schema.sql`;
 - `bootstrap/v1/checklist-v1.json`.
 
-التغيير التنفيذي الذي أضيف بعد `89d405d...` كان متعلقًا بإثبات Q12 داخل proof runner/native diagnostic boundary؛ لم يغير Application-Core أو restart semantic path أو primary adapter/canonical authorities. لذلك لا يُطلب إعادة Application-Core Proof أو Restart Phase A/B.
+لذلك بقيت Application-Core وrestart evidence مقبولة دون إعادة اختبار على binary `871`.
 
 ## 5) الأدلة التاريخية المحفوظة — لا يعاد تصنيفها
 
@@ -162,11 +168,11 @@ Canonical hashes:
 - canonical schema وcanonical bootstrap لا يُعدلان لتلائم driver.
 - diagnostic Q12 writer ليس product architecture.
 - Q12 classifier semantics لم تُضعف.
-- Gate 6B تبقى **IN_PROGRESS** وغير مدمجة، `closure_authorized=false`.
-- Gate 6C تبقى **NOT_STARTED**.
+- Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
+- Gate 6C **NEXT / NOT_STARTED**.
 
 ## 8) الحالة التالية
 
-لا يوجد physical retest جديد مطلوب ضمن evidence المقبولة الحالية.
+لا يوجد physical retest جديد مطلوب لإغلاق Gate 6B؛ الإغلاق أصبح مستندًا إلى evidence المقبولة + PR #17 + owner-approved merge + Fresh Read main.
 
-المتبقي لإغلاق Gate 6B هو مسار governance: review/owner approval ثم PR/merge عندما يُؤذن به. هذا الملف لا يفتح PR ولا يغلق Gate 6B ولا يبدأ Gate 6C.
+المرحلة التالية في الـRoadmap هي Gate 6C، لكنها **لم تبدأ** في هذا العمل وتحتاج scope/authorization مستقلًا قبل أي implementation.

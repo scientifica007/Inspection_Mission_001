@@ -8,6 +8,9 @@
     "last_product_architecture_merge_sha": "f142791520fd95dda23c5e6a9c1decd0f2602b6f",
     "last_product_architecture_merge_title": "Merge Gate 6A product runtime architecture",
     "last_gate5b_correction_merge_sha": "608314ae62721af44d8ed4f50c1c618ac469fc66",
+    "last_gate6b_merge_sha": "0905c6111269d62480e7ccadc31786bef29f3c51",
+    "last_gate6b_merge_title": "Merge Gate 6B Android SQLite adapter physical qualification",
+    "last_gate6b_pr": 17,
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -35,7 +38,8 @@
     "5J",
     "5K",
     "5L",
-    "6A"
+    "6A",
+    "6B"
   ],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
@@ -77,7 +81,8 @@
     "local_authority": "SQLite",
     "server_required_for_field_v1": false,
     "sync_required_for_field_v1": false,
-    "sqlite_driver_selection": "DEVICE_QUALIFIED_GATE6B_CANDIDATE_PENDING_FINAL_ADOPTION_MERGE"
+    "sqlite_driver_selection": "@capacitor-community/sqlite@8.1.1",
+    "sqlite_driver_status": "ADOPTED_BY_CLOSED_GATE6B"
   },
   "implementation_workflow": {
     "classification": "PROJECT",
@@ -92,19 +97,31 @@
   "gate_6b": {
     "id": "6B",
     "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
-    "status": "IN_PROGRESS",
-    "device_proof_status": "PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE",
+    "status": "CLOSED",
+    "merge_status": "MERGED",
+    "device_proof_status": "PHYSICAL_QUALIFICATION_PASS",
     "implementation_branch": "implementation/gate6b-android-runtime-proof-v1",
     "governing_base_sha": "608314ae62721af44d8ed4f50c1c618ac469fc66",
+    "reviewed_branch_head": "04dcf001e5494c38258c7112619ea1d508af694c",
+    "pr": 17,
+    "merge_sha": "0905c6111269d62480e7ccadc31786bef29f3c51",
     "sqlite_candidate": "@capacitor-community/sqlite@8.1.1",
-    "sqlite_candidate_status": "DEVICE_QUALIFICATION_PASS_PENDING_GATE6B_FINAL_ADOPTION_MERGE",
+    "sqlite_candidate_status": "ADOPTED_BY_CLOSED_GATE6B",
     "physical_device_proof_executed": true,
     "physical_device_qualification_status": "PASS",
     "physical_schema_bootstrap_status": "PASS",
     "application_core_device_proof_status": "PASS_ACCEPTED_BY_NON_DRIFT_EVIDENCE_REUSE",
     "physical_restart_status": "PASS_ACCEPTED_BY_NON_DRIFT_EVIDENCE_REUSE",
     "q12_status": "PHYSICAL_PASS_REVIEW_ACCEPTED",
-    "closure_authorized": false,
+    "closure_authorized": true,
+    "closure_provenance": {
+      "pr": 17,
+      "implementation_branch": "implementation/gate6b-android-runtime-proof-v1",
+      "reviewed_branch_head": "04dcf001e5494c38258c7112619ea1d508af694c",
+      "merge_sha": "0905c6111269d62480e7ccadc31786bef29f3c51",
+      "physical_qualification_target": "87135cfe80ae3de79a34e941828249fc6889139c",
+      "external_physical_evidence": "https://drive.google.com/drive/folders/18siSZGeoUtmFsfz5H4ozKsrp3tbpVwkS?usp=drive_link"
+    },
     "physical_evidence": {
       "adapter_qualification_pass": {
         "tested_sha": "87135cfe80ae3de79a34e941828249fc6889139c",
@@ -274,93 +291,45 @@
         "q12_semantics_weakened": false
       }
     },
-    "next_physical_action": "NONE_REQUIRED_BY_ACCEPTED_REVIEW_DECISION",
-    "next_governance_action": "Pending independent/owner approval to open PR and merge Gate 6B; this reconciliation does not open the PR."
+    "next_physical_action": "NONE_REQUIRED_GATE6B_CLOSED",
+    "next_governance_action": "NONE_GATE6B_CLOSED_MERGED"
   },
   "next_gate": {
-    "id": "6B",
-    "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
-    "status": "IN_PROGRESS",
-    "device_proof_status": "PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE"
+    "id": "6C",
+    "name": "Evidence Storage + Camera/File Pipeline",
+    "status": "NOT_STARTED",
+    "role": "NEXT"
   },
-  "gate_6c_status": "NOT_STARTED",
+  "gate_6c_status": "NEXT_NOT_STARTED",
   "roadmap": [
-    "6B Android Shell + Native SQLite Adapter / Device Runtime Proof",
-    "6C Evidence Storage + Camera/File Pipeline",
-    "6D Arabic RTL Field UI + End-to-End Visit Workflow",
-    "6E ExternalSystemTracking application capability",
-    "6F Deterministic Report Model / Snapshot Generation",
-    "6G DOCX + PDF + Artifact Save/Share",
-    "6H Android Packaging + Field Qualification",
+    "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
+    "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
+    "6C Evidence Storage + Camera/File Pipeline — NEXT / NOT_STARTED",
+    "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER",
+    "6E ExternalSystemTracking application capability — LATER",
+    "6F Deterministic Report Model / Snapshot Generation — LATER",
+    "6G DOCX + PDF + Artifact Save/Share — LATER",
+    "6H Android Packaging + Field Qualification — LATER",
     "FIELD-USABLE v1"
   ],
   "field_usable_v1": false,
   "test_baselines": {
-    "gate6b_host_adapter_contract": {
-      "passed": 16,
-      "failed": 0
-    },
-    "gate6b_schema_execution": {
-      "passed": 8,
-      "failed": 0
-    },
-    "gate6b_q12_diagnostic_classifier": {
-      "passed": 20,
-      "failed": 0
-    },
-    "gate5l": {
-      "passed": 94,
-      "failed": 0
-    },
-    "gate5k": {
-      "passed": 82,
-      "failed": 0
-    },
-    "gate5j": {
-      "passed": 75,
-      "failed": 0
-    },
-    "gate5i": {
-      "passed": 48,
-      "failed": 0
-    },
-    "gate5h": {
-      "passed": 66,
-      "failed": 0
-    },
-    "gate5g": {
-      "passed": 41,
-      "failed": 0
-    },
-    "gate5f": {
-      "passed": 30,
-      "failed": 0
-    },
-    "gate5e": {
-      "passed": 79,
-      "failed": 0
-    },
-    "gate5d": {
-      "passed": 60,
-      "failed": 0
-    },
-    "gate5c": {
-      "passed": 55,
-      "failed": 0
-    },
-    "gate5b": {
-      "passed": 32,
-      "failed": 0,
-      "scope": "bootstrap/reference-data regression"
-    },
-    "gate5b_adapter_normalization": {
-      "passed": 6,
-      "failed": 0
-    },
-    "schema": {
-      "passed": 100,
-      "failed": 0
-    }
+    "gate6b_host_adapter_contract": {"passed": 16, "failed": 0},
+    "gate6b_schema_execution": {"passed": 8, "failed": 0},
+    "gate6b_q12_diagnostic_classifier": {"passed": 20, "failed": 0},
+    "gate5l": {"passed": 94, "failed": 0},
+    "gate5k": {"passed": 82, "failed": 0},
+    "gate5j": {"passed": 75, "failed": 0},
+    "gate5i": {"passed": 48, "failed": 0},
+    "gate5h": {"passed": 66, "failed": 0},
+    "gate5g": {"passed": 41, "failed": 0},
+    "gate5f": {"passed": 30, "failed": 0},
+    "gate5e": {"passed": 79, "failed": 0},
+    "gate5d": {"passed": 60, "failed": 0},
+    "gate5c": {"passed": 55, "failed": 0},
+    "gate5b": {"passed": 32, "failed": 0, "scope": "bootstrap/reference-data regression"},
+    "gate5b_adapter_normalization": {"passed": 6, "failed": 0},
+    "schema": {"passed": 100, "failed": 0}
   },
   "canonical_hashes": {
     "docs/schema/schema.sql": "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7",

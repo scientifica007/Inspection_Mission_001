@@ -97,6 +97,9 @@ Recompute the expected cell set deterministically from the **captured universe**
 ### 6.2 No volatile authority
 No in-memory cache or sidecar is ever the source of truth for scope, selections, HUMAN decisions, or state. Any process kill is reconstructed identically by §2–§6.
 
+### 6.3 Read-snapshot barrier (Gate 5L implementation note)
+The executable `currentVisitState` (§4.11, APPLICATION-CORE) is a multi-SELECT reconstruction, so §1.2's "a `BEGIN` when a consistent multi-statement read is needed" applies. The adopted Gate-5B adapter seam exposes `beginImmediate()` and no separate deferred-read opener; to keep the closed seam untouched, the service runs every SELECT of one reconstruction inside a single **`BEGIN IMMEDIATE … COMMIT` unit that contains only SELECT statements** (zero INSERT/UPDATE/DELETE, no run() calls). Under the v1 single-inspector architecture (one serialized write path, §1.3) this is a conservative snapshot/serialization barrier for the read set — not a domain write — and it guarantees one coherent SQLite snapshot across the whole reconstruction; a later Gate may add a dedicated deferred-read method to the seam if the concurrency profile ever warrants it. Any read failure ROLLBACKs; the connection is never left inside a transaction.
+
 ---
 
 ## 7) Backup / portability note (v1)

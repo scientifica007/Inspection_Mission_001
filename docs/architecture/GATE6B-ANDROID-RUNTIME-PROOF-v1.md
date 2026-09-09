@@ -306,7 +306,9 @@ Workflow: `.github/workflows/gate6b-android-runtime-proof.yml`.
 
 The generated `package-lock.json` and native `android/` project were produced by official npm/Capacitor tooling and persisted in commit `2902612aae9a9cfdea69e388e29d47a32a4e6337`.
 
-Pre-final validation run `34381006105` on implementation SHA `9059a9c5548617f94c1d8ce2864198f572395aa6` established before repository-hygiene cleanup:
+Pre-final validation run `34381006105` on implementation SHA `9059a9c5548617f94c1d8ce2864198f572395aa6` established that all host/domain/schema/build steps passed; its only failure was repository whitespace hygiene. That generated whitespace was normalized rather than excluded from validation.
+
+Final full validation run `34382038733` tested SHA `05523e9b40518e2ea3bee507578b9c1841824e6d` and completed **SUCCESS**. It established:
 
 - Gate 6B host adapter contract **16 / 0**;
 - Gate 5B adapter normalization **6 / 0**;
@@ -322,13 +324,28 @@ Pre-final validation run `34381006105` on implementation SHA `9059a9c5548617f94c
 - Gate 5K **82 / 0**;
 - Gate 5L **94 / 0**;
 - Schema **100 / 0**;
-- Vite build PASS;
+- Gate-6B runtime-layer typecheck PASS;
+- Vite production build PASS;
 - Capacitor Android sync PASS;
-- Gradle `assembleDebug` PASS (`BUILD SUCCESSFUL`).
+- Gradle `assembleDebug` PASS (`BUILD SUCCESSFUL`, 126 actionable tasks);
+- `git diff --check origin/main...HEAD` PASS;
+- no drift from `main` in `src/application`, `src/bootstrap`, `docs/schema/schema.sql`, or `bootstrap/v1/checklist-v1.json` PASS;
+- synthetic debug APK upload PASS.
 
-That run's only failure was `git diff --check` on whitespace generated in `android/build.gradle`, CRLF in generated `gradlew.bat`, and Markdown hard-break spaces. The files are normalized on the branch rather than weakening or excluding the hygiene check. Final branch CI is expected to rerun the complete matrix after this documentation/hygiene commit.
+The same run recorded canonical asset SHA-256 values:
 
-CI also enforces no `node:*` and no Capacitor/plugin imports in `src/application`/`src/bootstrap`, and exact no-diff from `main` for `src/application`, `src/bootstrap`, canonical schema, and canonical bootstrap authority.
+- schema: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`;
+- bootstrap: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
+
+APK artifact from run `34382038733`:
+
+- artifact id: `10116316595`;
+- name: `gate6b-device-proof-debug-apk-run-34382038733`;
+- artifact ZIP size: `9,176,710` bytes;
+- artifact digest: `sha256:f60e7d6e2fd2ea8e13bcad3ef3f238f553037a87979f0cbb11f68eda0e5551ee`;
+- synthetic/proof capability only; no operational data.
+
+CI additionally enforces no `node:*` and no Capacitor/plugin imports in `src/application`/`src/bootstrap`.
 
 ### TypeScript check boundary
 

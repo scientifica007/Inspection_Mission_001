@@ -1,0 +1,55 @@
+name: hnt002-adversarial-review
+
+on:
+  push:
+    branches:
+      - experiment/hnt002-chatgpt-review-harness-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out review branch with only its local ancestry
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 4
+
+      - name: Verify frozen target ancestry, scope, and review-only hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=17803cd96f1c83be60528fb2544b9d7e7a6c7526
+          TARGET=efb9af5fc83a831e4d36f8752116f44ccab0cb59
+          test "$(git rev-parse ${TARGET}^)" = "$BASE"
+          test "$(git merge-base "$BASE" "$TARGET")" = "$BASE"
+          git diff --check "$BASE" "$TARGET"
+          printf '%s\n' \
+            .github/workflows/sqladapter-host-qualification.yml \
+            tests/sqladapter-qualification/node-host-runner.ts \
+            tests/sqladapter-qualification/qualification-contract.ts > /tmp/expected-target-files
+          git diff --name-only "$BASE" "$TARGET" | sort > /tmp/actual-target-files
+          sort -o /tmp/expected-target-files /tmp/expected-target-files
+          diff -u /tmp/expected-target-files /tmp/actual-target-files
+
+          git diff --name-only "$TARGET" HEAD | while IFS= read -r path; do
+            case "$path" in
+              tests/review/hnt002/*|.github/workflows/hnt002-*.yml|docs/experiments/*) ;;
+              *) echo "Non-review path changed on review branch: $path" >&2; exit 1 ;;
+            esac
+          done
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Re-run frozen target HOST qualification
+        run: node --experimental-strip-types tests/sqladapter-qualification/node-host-runner.ts
+
+      - name: Run HNT-002 adversarial reproducers
+        run: node --experimental-strip-types tests/review/hnt002/adversarial-repros.ts

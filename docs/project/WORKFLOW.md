@@ -221,7 +221,9 @@ GitHub ليس storage للتشغيل الميداني الحقيقي.
 - Default implementation workflow: `ChatGPT + GitHub + GitHub Actions`.
 - Harness/local execution agent: `ON_DEMAND_ONLY`.
 - تصحيح Gate 5B الضيق حول `SqlResult.lastInsertRowid` أصبح **MERGED / RESOLVED** في `main` عند merge SHA `608314ae62721af44d8ed4f50c1c618ac469fc66`؛ لا يُعاد فتح Gate 5B بسبب Gate 6B.
-- Gate 6B بدأت على `implementation/gate6b-android-runtime-proof-v1` وحالتها `IN_PROGRESS / DEVICE_PROOF_PENDING`.
-- GitHub-hosted CI وAndroid debug build وhost qualification لا تعادل physical-device proof ولا تغلق Gate 6B.
-- Gate 6B لا تُغلق قبل تنفيذ evidence على جهاز Android فعلي ومراجعتها مستقلًا.
-- لا تبدأ Gate 6C أو UI ميدانية أو Evidence أو reports قبل اجتياز Gate 6B وفق الـRoadmap الحاكمة، إلا إذا غيّر المالك الـRoadmap بقرار صريح موثق.
+- Gate 6B مستمرة على `implementation/gate6b-android-runtime-proof-v1` وحالتها **`IN_PROGRESS / PARTIAL_PASS_Q12_PENDING`**.
+- physical Android Q1→Q11، Application-Core proof، وclean real Force Stop restart A→B نُفذت وPASS على corrected SHA `89d405d6254108ce735125638ccdb2fb2e67c568`؛ هذه أدلة جهاز حقيقية وليست CI/emulator evidence.
+- Q12 genuine competing writer أصبح **`IMPLEMENTED_PENDING_PHYSICAL_RETEST`** ويحتاج `Run Adapter Qualification` على APK الجديد قبل أي verdict فيزيائي للتنفيذ الجديد.
+- GitHub-hosted CI وAndroid debug build وhost qualification لا تثبت Q12 فيزيائيًا ولا تغلق Gate 6B.
+- Gate 6B لا تُغلق قبل Q12 physical verdict ومراجعة الأدلة/قرار الإغلاق المستقل؛ `closure_authorized=false`.
+- Gate 6C ما تزال **`NOT_STARTED`**؛ لا تبدأ UI ميدانية أو Evidence أو reports قبل اجتياز Gate 6B وفق الـRoadmap الحاكمة، إلا إذا غيّر المالك الـRoadmap بقرار صريح موثق.

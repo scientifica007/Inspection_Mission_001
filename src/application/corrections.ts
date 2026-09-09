@@ -62,7 +62,12 @@
 
 import type { SqlAdapter, SqlResult, SqlValue } from "../bootstrap/adapter.ts";
 import { APP_ERR, DomainError } from "./errors.ts";
-import { parseApplicabilityRule } from "./applicability.ts";
+import {
+    evaluateApplicability,
+    type ApplicabilityOutcome,
+    type ContextKind,
+    type VisitType,
+} from "./applicability.ts";
 import {
     FINDING_DEFECT_TYPES,
     FINDING_IMPACTS,
@@ -223,9 +228,30 @@ interface CellSnapshot {
     visitStatus: string;
     visitFinalizedAt: string | null;
     visitInstitutionId: number;
+    /** durable visit.visit_type — an input of the contextual applicability evaluation */
+    visitType: VisitType;
+    /**
+     * durable context kind: INSTITUTION when subject_id IS NULL, else the
+     * durable inspected_subject.subject_type — the second input of the
+     * contextual applicability evaluation (never a caller-supplied value).
+     */
+    contextKind: ContextKind;
     itemCode: string;
     responseModel: string;
     applicabilityRule: string;
+}
+
+/**
+ * The cell's CONTEXTUAL pinned applicability outcome (adopted evaluator,
+ * APPLICATION-CORE §5.3): ONLY the pinned applicability_rule, the durable
+ * Visit.visit_type and the durable context kind. The definition's ROOT
+ * decision_kind alone is never sufficient — a HUMAN_CONFIRMATION definition
+ * excluded for a context by visit_type/subject_kinds is contextually
+ * NOT_APPLICABLE (its NA is automatic, AUTO-NA, with no correction
+ * transition).
+ */
+function contextualOutcomeOf(s: CellSnapshot): ApplicabilityOutcome {
+    return evaluateApplicability(s.applicabilityRule, s.contextKind, s.visitType);
 }
 
 interface AllowedValueSnapshot {
@@ -650,12 +676,13 @@ export class CorrectionsService {
             }
         } else {
             targetClass = "COMPLIANT"; // NA carries no answered value
-            const rule = parseApplicabilityRule(s.applicabilityRule);
-            if (rule.decisionKind !== "HUMAN_CONFIRMATION") {
+            const outcome = contextualOutcomeOf(s);
+            if (outcome.outcome !== "HUMAN_CONFIRMATION") {
                 throw config(
-                    `${op}: response ${s.responseId} (${s.itemCode}) pins decision_kind '${rule.decisionKind}'; an NA target is ` +
-                        "reachable only on a HUMAN_CONFIRMATION cell through the explicit NOT_APPLICABLE decision — AUTO " +
-                        "cells never use the HUMAN reversal path",
+                    `${op}: response ${s.responseId} (${s.itemCode}) has contextual applicability outcome '${outcome.outcome}'; ` +
+                        "an NA target is reachable only on a cell whose CONTEXTUAL outcome is HUMAN_CONFIRMATION " +
+                        "(explicit NOT_APPLICABLE decision) — AUTO cells (including a HUMAN_CONFIRMATION definition " +
+                        "excluded for this context) never use the HUMAN reversal path",
                 );
             }
         }
@@ -992,13 +1019,14 @@ export class CorrectionsService {
                     "a correction applies only to a dispositioned cell (initial dispositions record the first answer)",
             );
         }
-        const rule = parseApplicabilityRule(s.applicabilityRule);
+        const outcome = contextualOutcomeOf(s);
         if (s.overlayState === "NA") {
-            if (rule.decisionKind !== "HUMAN_CONFIRMATION") {
+            if (outcome.outcome !== "HUMAN_CONFIRMATION") {
                 throw config(
-                    `${op}: response ${s.responseId} (${s.itemCode}) is AUTO-NA; the deterministic NOT_APPLICABLE outcome ` +
-                        "has no correction transition while its rule/context/visit-type inputs are immutable (AUTO cells " +
-                        "never use the HUMAN reversal path)",
+                    `${op}: response ${s.responseId} (${s.itemCode}) has contextual applicability outcome '${outcome.outcome}'; ` +
+                        "the deterministic NOT_APPLICABLE outcome has no correction transition while its rule/context/" +
+                        "visit-type inputs are immutable — AUTO-NA cells (including a HUMAN_CONFIRMATION definition " +
+                        "excluded for this context) never use the HUMAN reversal path",
                 );
             }
             if (targetKind === "notApplicable") {
@@ -1027,14 +1055,15 @@ export class CorrectionsService {
     }
 
     private assertHumanGates(s: CellSnapshot, request: CellCorrectionRequest, op: string): void {
-        const rule = parseApplicabilityRule(s.applicabilityRule);
-        const human = rule.decisionKind === "HUMAN_CONFIRMATION";
+        const outcome = contextualOutcomeOf(s);
+        const human = outcome.outcome === "HUMAN_CONFIRMATION";
         const target = request.target;
         if (!human) {
             if (request.humanDecision !== undefined || request.decision !== undefined) {
                 throw config(
-                    `${op}: response ${s.responseId} (${s.itemCode}) pins decision_kind '${rule.decisionKind}'; HUMAN ` +
-                        "decision parameters never apply to an AUTO cell",
+                    `${op}: response ${s.responseId} (${s.itemCode}) has contextual applicability outcome '${outcome.outcome}'; ` +
+                        "HUMAN decision parameters never apply to a cell that is not contextually HUMAN_CONFIRMATION " +
+                        "(the definition's ROOT decision_kind alone does not decide this)",
                 );
             }
             return;
@@ -1099,11 +1128,13 @@ export class CorrectionsService {
                 throw config(`${op}: reconciliation rows belong only to SCHEDULE responses`);
             }
         } else if (target.kind === "notApplicable") {
-            const rule = parseApplicabilityRule(s.applicabilityRule);
-            if (rule.decisionKind !== "HUMAN_CONFIRMATION") {
+            const outcome = contextualOutcomeOf(s);
+            if (outcome.outcome !== "HUMAN_CONFIRMATION") {
                 throw config(
-                    `${op}: response ${s.responseId} (${s.itemCode}) pins decision_kind '${rule.decisionKind}'; an NA ` +
-                        "terminal correction is valid only through the HUMAN NOT_APPLICABLE decision",
+                    `${op}: response ${s.responseId} (${s.itemCode}) has contextual applicability outcome '${outcome.outcome}'; ` +
+                        "an NA terminal correction is valid only through the HUMAN NOT_APPLICABLE decision on a cell " +
+                        "whose CONTEXTUAL outcome is HUMAN_CONFIRMATION (the definition's ROOT decision_kind alone does " +
+                        "not decide this)",
                 );
             }
         } else {
@@ -1797,12 +1828,14 @@ export class CorrectionsService {
                     cr.overlay_state, cr.answered_value_id, cr.note, cr.not_inspected_reason, cr.finding_id,
                     cr.recorded_at, cr.recorded_by,
                     v.status AS visit_status, v.finalized_at AS visit_finalized_at,
-                    v.institution_id AS visit_institution_id,
+                    v.institution_id AS visit_institution_id, v.visit_type AS visit_type,
+                    CASE WHEN cr.subject_id IS NULL THEN 'INSTITUTION' ELSE subj.subject_type END AS context_kind,
                     d.item_code, d.response_model, d.applicability_rule,
                     av.semantic_class AS answered_class
                FROM checklist_response cr
                JOIN visit v ON v.visit_id = cr.visit_id
                JOIN checklist_item_definition d ON d.item_definition_id = cr.item_definition_id
+               LEFT JOIN inspected_subject subj ON subj.subject_id = cr.subject_id
                LEFT JOIN checklist_allowed_value av ON av.allowed_value_id = cr.answered_value_id
               WHERE cr.visit_id = ? AND cr.item_definition_id = ? AND ${subjectWhere}`,
             params,
@@ -1815,6 +1848,15 @@ export class CorrectionsService {
             );
         }
         const r = rows[0];
+        // unrepresentable at rest (FK + no-delete trigger): a subject-context
+        // cell whose inspected_subject row is gone — surfaced, never silently
+        // treated as an institution-context cell.
+        if (r.subject_id !== null && (r.context_kind === null || r.context_kind === undefined)) {
+            throw new DomainError(
+                APP_ERR.CONFIG,
+                `corrections: response ${Number(r.response_id)} references a missing inspected_subject row (corruption)`,
+            );
+        }
         return {
             responseId: Number(r.response_id),
             visitId: Number(r.visit_id),
@@ -1831,6 +1873,8 @@ export class CorrectionsService {
             visitStatus: String(r.visit_status),
             visitFinalizedAt: r.visit_finalized_at === null ? null : String(r.visit_finalized_at),
             visitInstitutionId: Number(r.visit_institution_id),
+            visitType: String(r.visit_type) as VisitType,
+            contextKind: (r.subject_id === null ? "INSTITUTION" : String(r.context_kind)) as ContextKind,
             itemCode: String(r.item_code),
             responseModel: String(r.response_model),
             applicabilityRule: String(r.applicability_rule),

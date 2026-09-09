@@ -659,6 +659,62 @@ async function tS1_ordinaryCorrections(): Promise<void> {
         const st = await rowStateOf(w.db, rid);
         assert(st.overlayState === "NA", "AUTO-NA durable state untouched");
     });
+
+    await ok("G5E-78: contextual AUTO-NA (HUMAN_CONFIRMATION definition excluded by subject_kinds) cannot be reversed", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const subjectId = await addWorkshopSubject(w, visitId, "W1");
+        // CHK-020's root decision_kind is HUMAN_CONFIRMATION but its rule
+        // subject_kinds=[INSTITUTION]: in a WORKSHOP context the adopted
+        // evaluator returns NOT_APPLICABLE, so Gate 5C materialized an
+        // AUTOMATIC NA — a root-decision_kind-only check must NOT let the
+        // HUMAN reversal touch it.
+        const c20 = await cellOf(w.db, visitId, subjectId, "CHK-020");
+        const rid = await responseIdOf(w.db, c20);
+        const before = await rowStateOf(w.db, rid);
+        assert(before.overlayState === "NA", "precondition: the WORKSHOP cell was materialized as automatic NA");
+        const findingsBefore = await count(w.db, "SELECT count(*) AS c FROM finding");
+        const followUpsBefore = await count(w.db, "SELECT count(*) AS c FROM follow_up");
+
+        // the exact reported reproduction: answer with humanDecision='APPLICABLE'
+        await rejectsCode(APP_ERR.CONFIG, async () =>
+            w.corr.correctSingle({ cell: c20, request: applicableReq(await answerReq(w.db, "CHK-020", "AVAILABLE")) }),
+        );
+        // reasoned NOT_INSPECTED reversal is equally refused
+        await rejectsCode(APP_ERR.CONFIG, async () =>
+            w.corr.correctSingle({ cell: c20, request: applicableReq(notInspectedReq("إعادة فحص")) }),
+        );
+        // an NA target on the automatic NA is not a correction either
+        await rejectsCode(APP_ERR.CONFIG, async () =>
+            w.corr.correctSingle({ cell: c20, request: notApplicableReq("NOT_APPLICABLE") }),
+        );
+
+        const after = await rowStateOf(w.db, rid);
+        assert(after.overlayState === "NA" && after.answeredValueId === null && after.notInspectedReason === null, "durable cell remains automatic NA");
+        assert(after.recordedAt === before.recordedAt && after.recordedBy === before.recordedBy, "scope-entry audit untouched");
+        assert(
+            (await count(w.db, "SELECT count(*) AS c FROM finding")) === findingsBefore &&
+                (await count(w.db, "SELECT count(*) AS c FROM follow_up")) === followUpsBefore,
+            "no Finding / FollowUp / source side effect",
+        );
+    });
+
+    await ok("G5E-79: genuine HUMAN reversal in an applicable context still works both ways", async () => {
+        const w = await freshWorld();
+        const visitId = await standardCreate(w);
+        const c20 = await cellOf(w.db, visitId, null, "CHK-020");
+        const rid = await responseIdOf(w.db, c20);
+        await w.disp.resolveHumanApplicability({ cell: c20 });
+        assert((await rowStateOf(w.db, rid)).overlayState === "NA", "precondition: HUMAN-decided NA");
+        // NA -> answered with the explicit APPLICABLE decision
+        const res1 = await w.corr.correctSingle({ cell: c20, request: applicableReq(await answerReq(w.db, "CHK-020", "AVAILABLE")) });
+        assert(res1.applied === true, "institution-context HUMAN reversal applied");
+        assert((await rowStateOf(w.db, rid)).answeredValueId === await valueIdOf(w.db, "CHK-020", "AVAILABLE"), "answered after reversal");
+        // answered -> NA with the explicit NOT_APPLICABLE decision
+        const res2 = await w.corr.correctSingle({ cell: c20, request: notApplicableReq("NOT_APPLICABLE") });
+        assert(res2.applied === true, "answered -> NA reversal applied");
+        assert((await rowStateOf(w.db, rid)).overlayState === "NA", "NA after the explicit reversal");
+    });
 }
 
 // ---------------------------------------------------------------------------

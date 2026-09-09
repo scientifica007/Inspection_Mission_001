@@ -67,5 +67,9 @@ jobs:
           grep -RIn --exclude-dir=.git 'lastInsertRowid' src dev tests || true
           echo '=== .run call sites in runtime code ==='
           grep -RIn --exclude-dir=.git -E '\.run\(' src dev || true
-          echo '=== potentially relevant INSERT variants in runtime code ==='
-          grep -RIn --exclude-dir=.git -E 'INSERT[[:space:]]+OR[[:space:]]+IGNORE|INSERT[[:space:]].*ON[[:space:]]+CONFLICT|\bREPLACE\b|WITH[[:space:]].*INSERT' src dev || true
+          echo '=== runtime INSERT statements ==='
+          grep -RIn --exclude-dir=.git -E 'INSERT[[:space:]]+(OR[[:space:]]+[A-Z]+[[:space:]]+)?INTO|^[[:space:]]*REPLACE[[:space:]]+INTO' src/bootstrap src/application || true
+          echo '=== potentially complex INSERT variants in runtime code ==='
+          grep -RIn --exclude-dir=.git -E 'INSERT[[:space:]]+OR[[:space:]]+IGNORE|INSERT[[:space:]].*ON[[:space:]]+CONFLICT|^[[:space:]]*REPLACE[[:space:]]|WITH[[:space:]].*INSERT' src/bootstrap src/application || true
+          echo '=== run-call context ==='
+          grep -RIn --exclude-dir=.git -B2 -A10 -E '\.run\(' src/bootstrap src/application || true

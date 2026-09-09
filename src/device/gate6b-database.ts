@@ -1,5 +1,7 @@
 import { CapacitorSQLite, SQLiteConnection, type SQLiteDBConnection } from "@capacitor-community/sqlite";
 import { Capacitor } from "@capacitor/core";
+import { CANONICAL_SCHEMA_SQL } from "../gate6b/assets.ts";
+import { withCanonicalSchemaExecution } from "../gate6b/canonical-schema-execution.ts";
 import { CapacitorSqliteAdapter } from "./capacitor-sqlite-adapter.ts";
 
 export const GATE6B_PROOF_DB_NAME = "inspection_gate6b_runtime_proof_v1";
@@ -32,7 +34,8 @@ async function obtainConnection(database: string): Promise<SQLiteDBConnection> {
 
 export async function openGate6BDatabase(database = GATE6B_PROOF_DB_NAME): Promise<OpenGate6BDatabase> {
   assertNativeAndroid();
-  const connection = await obtainConnection(database);
+  const nativeConnection = await obtainConnection(database);
+  const connection = withCanonicalSchemaExecution(nativeConnection, CANONICAL_SCHEMA_SQL);
 
   // Project contract: set and verify on EVERY authoritative open/reopen.
   await connection.execute("PRAGMA foreign_keys = ON;", false);

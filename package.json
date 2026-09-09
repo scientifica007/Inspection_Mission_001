@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.gate6b.json --noEmit",
     "typecheck:legacy-full": "tsc -p tsconfig.json --noEmit",
     "cap:sync": "cap sync android",
-    "gate6b:host": "node --experimental-strip-types tests/gate6b_adapter_contract.ts"
+    "gate6b:host": "node --experimental-strip-types tests/gate6b_adapter_contract.ts",
+    "gate6b:schema-host": "node --experimental-strip-types tests/gate6b_schema_execution_regression.ts"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "8.1.1",

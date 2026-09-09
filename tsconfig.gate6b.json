@@ -8,6 +8,7 @@
     "src/device/capacitor-sqlite-adapter.ts",
     "src/device/gate6b-database.ts",
     "src/gate6b/assets.ts",
+    "src/gate6b/canonical-schema-execution.ts",
     "src/gate6b/hash.ts",
     "src/gate6b/schema-inventory.ts",
     "src/gate6b/proof-types.ts",

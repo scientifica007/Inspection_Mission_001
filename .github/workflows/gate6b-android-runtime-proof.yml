@@ -92,6 +92,9 @@ jobs:
       - name: Gate 6B host adapter contract 16/0
         run: npm run gate6b:host
 
+      - name: Gate 6B canonical schema execution regression 8/0
+        run: npm run gate6b:schema-host
+
       - name: Gate 5B adapter normalization 6/0
         run: node tests/gate5b_adapter_regression.ts
 

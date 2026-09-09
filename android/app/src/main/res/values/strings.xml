@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Gate 6B Device Proof</string>
+    <string name="title_activity_main">Gate 6B Device Proof</string>
+    <string name="package_name">com.scientifica.inspection.gate6bproof</string>
+    <string name="custom_url_scheme">com.scientifica.inspection.gate6bproof</string>
+</resources>

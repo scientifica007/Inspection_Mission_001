@@ -22,6 +22,7 @@
 6. `docs/architecture/PRODUCT-ROADMAP-v1.md` — ترتيب مراحل المنتج بعد Application Core.
 7. `docs/architecture/PRODUCT-ARCHITECTURE-v1.md` — المعمارية المعتمدة للمنتج.
 8. `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md` — عقد Gate 6B للـdevice/native SQLite adapter.
+9. عند العمل على Gate 6B: `docs/architecture/GATE6B-ANDROID-RUNTIME-PROOF-v1.md` و`docs/architecture/GATE6B-Q12-COMPETING-WRITER-PROOF-v1.md`.
 
 ثم اقرأ الملفات المعيارية الخاصة بالمهمة التي تعمل عليها فقط.
 
@@ -56,11 +57,14 @@
 
 راجع `docs/project/CURRENT-STATE.md` و`.json` بدل الاعتماد على هذا القسم وحده.
 
-الخلاصة الحالية عند إنشاء طبقة handoff هذه:
+الخلاصة الحالية:
 
 - Gates 1→5L: مغلقة/معتمدة/مدمجة.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap: مغلقة/معتمدة/مدمجة.
-- **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof: NEXT / NOT STARTED.**
+- **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof: IN_PROGRESS / PARTIAL_PASS_Q12_PENDING.**
+- Physical Android Q1→Q11، Application-Core proof، وclean Force Stop restart A→B: منفذة وPASS على corrected SHA `89d405d...`.
+- Q12 genuine competing writer: **IMPLEMENTED_PENDING_PHYSICAL_RETEST**؛ لا توجد device PASS للتنفيذ الجديد بعد.
+- Gate 6C: **NOT_STARTED**.
 - Field-usable v1: **غير مكتملة بعد**.
 
 لا تبدأ Gate لاحقة قبل إغلاق الحالية وفق `docs/project/WORKFLOW.md`.
@@ -86,7 +90,7 @@ GitHub هو ذاكرة **الهندسة والقرارات والعقود**، و
 
 1. اقرأ HEAD الحي لـ`main`.
 2. اقرأ `CURRENT-STATE.md` و`CURRENT-STATE.json`.
-3. اقرأ الـRoadmap والعقد الخاص بالـGate التالية.
+3. اقرأ الـRoadmap والعقد الخاص بالـGate الحالية/التالية.
 4. اقرأ فقط العقود والملفات المغلقة ذات الصلة المباشرة.
 5. إذا ظهر تعارض بين وثيقة مختصرة وartifact تنفيذي حاكم، لا تخمّن: حقق التعارض وبلّغ عنه.
 
@@ -94,16 +98,9 @@ GitHub هو ذاكرة **الهندسة والقرارات والعقود**، و
 
 لا تُفتح Gate مغلقة لمجرد التحسين أو إعادة التصميم.
 
-يُسمح بتصحيح ضيق داخل Gate مغلقة فقط إذا ظهر **contradiction تنفيذي ملموس وقابل للتكرار** مع عقد معتمد. عندئذ:
-
-- يُوثق سبب إعادة الفتح؛
-- يظل التصحيح في أضيق نطاق ممكن؛
-- تُعاد regression baselines المتأثرة؛
-- لا تتحول المراجعة إلى redesign عام.
+يُسمح بتصحيح ضيق داخل Gate مغلقة فقط إذا ظهر **contradiction تنفيذي ملموس وقابل للتكرار** مع عقد معتمد. عندئذ يُوثق السبب، يبقى التصحيح في أضيق نطاق، تعاد regressions المتأثرة، ولا تتحول المراجعة إلى redesign عام.
 
 ## 9) كيف تستلم المشروع عمليًا
-
-إذا كنت AI أو مهندسًا جديدًا ولا تعرف أي شيء عن المحادثات السابقة، فيجب أن يكون هذا كافيًا:
 
 ```text
 Fresh Read main

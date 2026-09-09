@@ -95,6 +95,9 @@ jobs:
       - name: Gate 6B canonical schema execution regression 8/0
         run: npm run gate6b:schema-host
 
+      - name: Gate 6B Q12 classifier regression 13/0
+        run: npm run gate6b:q12-host
+
       - name: Gate 5B adapter normalization 6/0
         run: node tests/gate5b_adapter_regression.ts
 
@@ -139,6 +142,21 @@ jobs:
 
       - name: Sync Android
         run: npx cap sync android
+
+      - name: Assert Q12 uses the single pinned SQLCipher 4.17.0 runtime
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "implementation 'net.zetetic:sqlcipher-android:4.17.0@aar'" ../node_modules/@capacitor-community/sqlite/android/build.gradle
+          grep -F "implementation 'net.zetetic:sqlcipher-android:4.17.0@aar'" app/build.gradle
+          ./gradlew -q :app:dependencies --configuration debugRuntimeClasspath > /tmp/g6b-debug-runtime.txt
+          mapfile -t sqlcipher_versions < <(grep -oE 'net\.zetetic:sqlcipher-android:[0-9]+\.[0-9]+\.[0-9]+' /tmp/g6b-debug-runtime.txt | sort -u)
+          printf 'resolved SQLCipher coordinates: %s\n' "${sqlcipher_versions[*]:-NONE}"
+          if [[ ${#sqlcipher_versions[@]} -ne 1 || "${sqlcipher_versions[0]}" != "net.zetetic:sqlcipher-android:4.17.0" ]]; then
+            echo "Gate 6B Q12 requires exactly one SQLCipher version: 4.17.0"
+            exit 1
+          fi
 
       - name: Build Android debug APK
         working-directory: android

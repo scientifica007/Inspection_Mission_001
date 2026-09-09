@@ -18,6 +18,7 @@ import {
 } from "../device/gate6b-database.ts";
 import { CANONICAL_BOOTSTRAP, CANONICAL_BOOTSTRAP_TEXT, CANONICAL_SCHEMA_SQL, GATE6B_PACKAGE_VERSIONS } from "./assets.ts";
 import { canonicalProofJson, sha256Hex } from "./hash.ts";
+import { runQ12CompetingWriterProof } from "./q12-device-proof.ts";
 import {
   actualInventory,
   canonicalInventoryCountIsAdopted,
@@ -47,9 +48,6 @@ function pass(id: string, evidence: string): QualificationCase {
 }
 function fail(id: string, evidence: string): QualificationCase {
   return { id, status: "FAIL", evidence };
-}
-function blocked(id: string, evidence: string): QualificationCase {
-  return { id, status: "BLOCKED", evidence };
 }
 
 async function baseOutput(opened: OpenGate6BDatabase, phase: string): Promise<Omit<Gate6BProofOutput, "qualification" | "visitIdentifierRecoveredFromSqlite" | "currentVisitStateZeroWrite" | "overallResult">> {
@@ -361,7 +359,7 @@ async function adapterQualificationCases(): Promise<{ opened: OpenGate6BDatabase
       : fail("Q10_PERSISTENCE", `persistence marker count=${persisted}`));
 
     cases.push(pass("Q11_NO_NODE_DEPENDENCY", "device adapter + proof runner execute in Android WebView and import existing runtime-neutral core; companion CI statically rejects node:* imports under src/application and src/bootstrap"));
-    cases.push(blocked("Q12_COMPETING_WRITE", "UNRESOLVED DEVICE-QUALIFICATION ITEM: @capacitor-community/sqlite Android native layer permits only one RW_<database> connection name and rejects a second RW connection to the same file; no fake Promise-timeout lock proof is claimed. Literal BEGIN IMMEDIATE and transaction=false ownership are separately exercised by Q4/Q5."));
+    cases.push(await runQ12CompetingWriterProof(opened));
   } catch (error) {
     cases.push(fail("ADAPTER_QUALIFICATION_INTERNAL", error instanceof Error ? error.message : String(error)));
   }

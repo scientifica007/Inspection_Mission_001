@@ -58,7 +58,7 @@ export function Gate6BProofApp() {
         <h1>GATE 6B DEVICE PROOF — NOT FIELD UI</h1>
         <p>
           Diagnostic shell for the provisional native SQLite adapter and the existing runtime-neutral Application Core.
-          Gate 6B remains open until physical-device kill/restart evidence is executed and independently reviewed.
+          Physical Q1-Q11 and Force Stop restart evidence exist; Gate 6B remains open pending the new genuine Q12 competing-writer device qualification and independent review.
         </p>
         <div className={`runtime ${nativeAndroid ? "ok" : "warn"}`}>
           Runtime: {Capacitor.getPlatform()} {nativeAndroid ? "— native Android proof enabled" : "— proof actions require native Android"}

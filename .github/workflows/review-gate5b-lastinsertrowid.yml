@@ -57,6 +57,24 @@ jobs:
       - name: Schema regression
         run: python3 tests/gate4a_regression.py
 
+      - name: Validate project-state JSON and Gate state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/project/CURRENT-STATE.json >/dev/null
+          python3 - <<'PY'
+          import json
+          with open('docs/project/CURRENT-STATE.json', encoding='utf-8') as f:
+              state = json.load(f)
+          assert state['pre_gate_6b']['status'] == 'RESOLVED'
+          assert state['pre_gate_6b']['gate_6b_technical_start_blocked'] is False
+          assert state['next_gate']['id'] == '6B'
+          assert state['next_gate']['status'] == 'NOT_STARTED'
+          assert state['implementation_workflow']['default_executor'] == 'ChatGPT'
+          assert state['implementation_workflow']['harness_status'] == 'ON_DEMAND_ONLY'
+          assert state['test_baselines']['gate5b_adapter_normalization'] == {'passed': 6, 'failed': 0, 'scope': 'NodeSqliteAdapter SqlResult.lastInsertRowid normalization'}
+          PY
+
       - name: Re-check audited runtime SQL shapes
         shell: bash
         run: |

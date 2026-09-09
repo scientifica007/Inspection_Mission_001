@@ -12,23 +12,28 @@
 - Prompt handoff خارجي؛
 - فرع feature قديم؛
 - نسخة محلية غير محدثة؛
-- تقرير Harness وحده دون مراجعة artifact الفعلي عندما تكون المهمة implementation-sensitive.
+- تقرير implementation agent وحده دون مراجعة artifact الفعلي عندما تكون المهمة implementation-sensitive.
 
 الـ`main` الحي + artifacts داخله هما المرجع الرسمي.
 
 ## 2) دورة العمل القياسية
 
+الـdefault implementation workflow الحالي هو قرار `PROJECT` من مالك المشروع:
+
+**ChatGPT + GitHub + GitHub Actions**
+
+والدورة التشغيلية المعتادة هي:
+
 ```text
 Fresh Read main
-→ identify exactly one scoped Gate/task
-→ create a dedicated branch
-→ implementation/design inside that scope only
-→ run focused tests
-→ adversarial review
-→ limited correction if required
-→ APPROVED FOR COMMIT
-→ commit/push
-→ verify remote branch/head/diff
+→ Reviewing / Planning AI يحدد exactly one scoped Gate/task
+→ create a dedicated GitHub branch
+→ Independent ChatGPT Implementation Agent ينفذ داخل النطاق فقط
+→ GitHub Actions + focused tests / required regressions
+→ implementation report
+→ Reviewing / Planning AI يقرأ actual diff/files/CI
+→ adversarial review / limited correction if required
+→ Project Owner approval
 → PR to main
 → merge
 → Fresh Read main
@@ -38,35 +43,57 @@ Fresh Read main
 
 لا تتجاوز خطوة review أو remote verification في المهام الحساسة.
 
+عندما تكون الاستقلالية في المراجعة مهمة، يجب أن يكون Reviewing/Planning AI والـIndependent ChatGPT Implementation Agent دورين منفصلين.
+
+يمكن استبدال ChatGPT implementation agent بimplementation agent آخر إذا اقتضت المهمة ذلك؛ القرار الحالي default workflow وليس قيدًا معماريًا دائمًا.
+
 ## 3) أدوار العمل
 
 ### Project Owner
 
 - يعتمد القرارات المعمارية والمتطلبات PROJECT.
 - يوافق على فتح Gate جديدة أو إعادة فتح Gate مغلقة عند وجود سبب تنفيذي ملموس.
+- يعتمد تغيير الـdefault tooling/workflow.
+- يوافق على PR/main بعد اكتمال التنفيذ والمراجعة.
 - ينفذ عادةً Git المحلي الروتيني عندما يكون العمل محليًا: switch/fetch/pull/status/add/commit/push وحذف الفروع المنتهية.
 
-### Reviewing AI / Maintainer
+### Reviewing / Planning AI
 
 - يبدأ دائمًا بـFresh Read من `main`.
 - يحدد Gate الحالية وحدودها.
-- يكتب implementation brief / Harness prompt ضيقًا.
-- يراجع final report وactual files/diff عند الحاجة.
-- لا يصدر `APPROVED FOR COMMIT` من التقرير وحده إذا كانت correctness تعتمد على التنفيذ الفعلي.
+- يكتب implementation brief / prompt ضيقًا.
+- يحدد required tests/CI evidence.
+- يراجع final report وactual files/diff/CI.
+- لا يصدر acceptance recommendation من التقرير وحده إذا كانت correctness تعتمد على التنفيذ الفعلي.
+- يطلب correction ضيقًا عند الحاجة.
 - يتحقق من remote branch بعد push.
-- ينشئ PR/merge عندما يكون مخولًا بذلك.
+- يرفع recommendation للمالك، وينشئ PR/merge فقط عندما يكون مخولًا بذلك.
 - يجري Fresh Read نهائية بعد merge.
 
-### Harness / Implementation Agent
+### Independent ChatGPT Implementation Agent — DEFAULT
 
-- ينفذ المهمة المحددة فقط.
+- ينفذ المهمة المحددة فقط على dedicated GitHub branch.
+- يستخدم GitHub وGitHub Actions كمسار التنفيذ/التحقق الافتراضي.
 - لا يقرر roadmap جديدة من تلقاء نفسه.
 - لا يعيد فتح Gate مغلقة دون contradiction تنفيذي موثق وموافقة المالك.
 - لا يبدأ Gate لاحقة.
-- لا ينفذ Git operations الروتينية إلا إذا طُلب منه صراحةً.
-- يتوقف بعد التقرير النهائي للمراجعة.
+- يشغّل focused tests وrequired regressions ضمن النطاق.
+- يقدّم final implementation report يتضمن branch/SHA/diff/CI.
+- يتوقف بعد التسليم للمراجعة ولا يدمج إلى `main` دون owner approval/authorization.
 
-يمكن استبدال Harness بأي implementation agent آخر، لكن نفس الحدود تنطبق.
+### Alternative implementation / local execution agent
+
+يمكن استبدال الـdefault executor بأي implementation agent آخر عند الحاجة، مع بقاء نفس حدود النطاق والمراجعة والـbranch discipline.
+
+Harness أو أي local execution agent **ليس مكوّنًا روتينيًا افتراضيًا**. يُستخدم **ON_DEMAND_ONLY** عندما تتطلب المهمة فعليًا قدرة محلية/فيزيائية لا توفرها GitHub-hosted CI بكفاءة، مثل:
+
+- physical Android phone؛
+- ADB / USB؛
+- real local-device lifecycle؛
+- hardware-specific reproduction؛
+- local filesystem/device behavior unavailable in GitHub-hosted execution.
+
+استخدام local agent عند الحاجة لا يغيّر سلطة `main` ولا يعفي من حفظ الأدلة القابلة للمراجعة في GitHub.
 
 ## 4) قاعدة الفروع
 
@@ -125,6 +152,8 @@ Gate 5E contextual AUTO-NA correction مثال معتمد على هذا الاس
 
 ملفات `sources/` لا تُعدل عند اشتقاق requirement أو design.
 
+قرارات أدوات التنفيذ والـdefault workflow تصنّف `PROJECT` ما لم يوجد مصدر رسمي مستقل يقول غير ذلك.
+
 ## 7) مراجعة implementation-sensitive Gates
 
 عند مراجعة core logic / transaction / reconstruction / persistence:
@@ -137,6 +166,7 @@ Gate 5E contextual AUTO-NA correction مثال معتمد على هذا الاس
 - أعد تشغيل focused suite، ويفضل baselines المرتبطة.
 - افحص `git diff --check`.
 - تأكد من أن status لا يحتوي ملفات غير متوقعة.
+- افحص GitHub Actions الفعلية عندما تكون جزءًا من acceptance evidence.
 
 إذا كانت correction comment-only محددة الموضع بعد مراجعة تنفيذية مكتملة، يكفي focused regression + diff check ما لم يظهر سبب جديد.
 
@@ -146,6 +176,7 @@ Gate 5E contextual AUTO-NA correction مثال معتمد على هذا الاس
 - لا تُضعف test سابقة لتسهيل Gate جديدة.
 - أي baseline جديدة يجب أن تكون additive أو مفسرة بقرار owner-authorized واضح.
 - schema regression تبقى جزءًا من cross-cutting verification عند التعديلات القريبة من DB semantics.
+- GitHub Actions هي CI الافتراضية، لكنها لا تستبدل physical-device proof عندما يكون ذلك جزءًا من عقد Gate.
 
 ## 9) Remote verification قبل merge
 
@@ -154,8 +185,9 @@ Gate 5E contextual AUTO-NA correction مثال معتمد على هذا الاس
 1. تحقق أن remote feature branch يشير إلى commit المتوقع.
 2. تحقق أنه ahead/behind من `main` كما هو متوقع.
 3. راجع changed files؛ لا ملفات زائدة.
-4. ثبّت expected head SHA عند merge إذا كانت الأداة تدعم ذلك.
-5. بعد merge اقرأ `main` الحي وتحقق من merge commit.
+4. راجع required GitHub Actions/statuses.
+5. ثبّت expected head SHA عند merge إذا كانت الأداة تدعم ذلك.
+6. بعد merge اقرأ `main` الحي وتحقق من merge commit.
 
 لا تعتبر `git push` وحدها إغلاقًا للـGate.
 
@@ -163,8 +195,8 @@ Gate 5E contextual AUTO-NA correction مثال معتمد على هذا الاس
 
 - مزامن النسخة المحلية مع `main`.
 - تحقق من HEAD/status.
-- يمكن حذف feature branch محليًا وبعيدًا بعد التأكد من الدمج.
-- حدّث `CURRENT-STATE` عندما يتغير: آخر Gate مغلقة، Gate التالية، baselines أو roadmap.
+- يمكن حذف feature branch محليًا وبعيدًا بعد التأكد من الدمج، ما لم يكن الفرع محفوظًا كexperiment evidence بقرار صريح.
+- حدّث `CURRENT-STATE` عندما يتغير: آخر Gate مغلقة، Gate التالية، baselines، roadmap أو default workflow.
 - إذا أصبح README أو START-HERE stale، أصلحه قبل تراكم drift.
 
 ## 11) حدود البيانات الحساسة
@@ -183,8 +215,10 @@ GitHub ليس storage للتشغيل الميداني الحقيقي.
 
 ## 12) المرحلة الحالية
 
-عند كتابة هذا الملف:
-
 - Gate 6A مغلقة.
-- Gate 6B هي التالية و`NOT_STARTED`.
+- HNT-001/HNT-002 tooling experiment: `CLOSED`.
+- Default implementation workflow: `ChatGPT + GitHub + GitHub Actions`.
+- Harness/local execution agent: `ON_DEMAND_ONLY`.
+- توجد **PENDING NARROW CLOSED-GATE CORRECTION REVIEW** حول `SqlResult.lastInsertRowid` non-INSERT behavior في `NodeSqliteAdapter`.
+- Gate 6B هي Gate المنتج التالية و`NOT_STARTED`، لكن لا يبدأ تنفيذها التقني قبل حسم المراجعة الضيقة أعلاه.
 - لا تبدأ Gate 6C أو UI أو Evidence أو reports قبل اجتياز Gate 6B وفق الـRoadmap الحاكمة، إلا إذا غيّر المالك الـRoadmap بقرار صريح موثق.

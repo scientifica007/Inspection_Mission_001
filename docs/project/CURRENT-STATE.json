@@ -67,6 +67,66 @@
     "sync_required_for_field_v1": false,
     "sqlite_driver_selection": "DEFERRED_TO_GATE_6B_PROOF"
   },
+  "implementation_workflow": {
+    "classification": "PROJECT",
+    "default_executor": "ChatGPT",
+    "execution_platform": "GitHub",
+    "ci": "GitHub Actions",
+    "reviewing_role": "Reviewing/Planning AI",
+    "independent_executor_role": "Independent ChatGPT Implementation Agent",
+    "independent_role_separation_when_review_matters": true,
+    "harness_status": "ON_DEMAND_ONLY",
+    "local_agent_policy": "Use Harness or another local execution agent only when a concrete task materially requires local/physical capabilities unavailable or inefficient in GitHub-hosted CI.",
+    "decision_basis": "HNT-001/HNT-002 + explicit project-owner decision"
+  },
+  "tooling_experiment": {
+    "status": "CLOSED",
+    "id": "HNT-001/HNT-002",
+    "governing_base_sha": "17803cd96f1c83be60528fb2544b9d7e7a6c7526",
+    "decision": "CHATGPT_GITHUB_DEFAULT",
+    "candidate_adoption": "NONE",
+    "final_evaluation_document": "docs/experiments/HNT-001-HNT-002-FINAL-EVALUATION.md",
+    "branches": {
+      "hnt001_chatgpt_candidate": {
+        "branch": "experiment/chatgpt-sqladapter-qualification-v1",
+        "sha": "d56c7bf3955e575af66b5c8219d6d3c59563ea47"
+      },
+      "hnt001_harness_candidate": {
+        "branch": "experiment/harness-sqladapter-qualification-v1",
+        "sha": "efb9af5fc83a831e4d36f8752116f44ccab0cb59"
+      },
+      "hnt002_chatgpt_review_of_harness": {
+        "branch": "experiment/hnt002-chatgpt-review-harness-v1",
+        "sha": "c43ef51ea40f31ce9a5818f999265a71686a069a",
+        "verdict": "FAIL — BLOCKER",
+        "findings": {
+          "blocker": 1,
+          "major": 3,
+          "minor": 1,
+          "note": 4
+        }
+      },
+      "hnt002_harness_review_of_chatgpt": {
+        "branch": "experiment/hnt002-harness-review-chatgpt-v1",
+        "sha": "33260dc53f12bb8db3af8631dcc7c6e7001e962b",
+        "verdict": "FAIL — MAJOR DEFECTS",
+        "findings": {
+          "blocker": 0,
+          "major": 1,
+          "minor": 4,
+          "note": 6
+        }
+      }
+    },
+    "experimental_branch_policy": "Preserve as evidence; no merge-as-is and no cleanup/deletion without a separate owner decision."
+  },
+  "pre_gate_6b": {
+    "status": "PENDING_NARROW_CORRECTION_REVIEW",
+    "issue": "SqlResult.lastInsertRowid non-insert behavior in NodeSqliteAdapter",
+    "classification": "POTENTIAL_CLOSED_GATE_EXECUTABLE_CONTRADICTION",
+    "gate_6b_technical_start_blocked": true,
+    "required_resolution_path": "Owner-authorized narrow closed-Gate correction review before Gate 6B technical implementation."
+  },
   "next_gate": {
     "id": "6B",
     "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
@@ -84,18 +144,54 @@
   ],
   "field_usable_v1": false,
   "test_baselines": {
-    "gate5l": { "passed": 94, "failed": 0 },
-    "gate5k": { "passed": 82, "failed": 0 },
-    "gate5j": { "passed": 75, "failed": 0 },
-    "gate5i": { "passed": 48, "failed": 0 },
-    "gate5h": { "passed": 66, "failed": 0 },
-    "gate5g": { "passed": 41, "failed": 0 },
-    "gate5f": { "passed": 30, "failed": 0 },
-    "gate5e": { "passed": 79, "failed": 0 },
-    "gate5d": { "passed": 60, "failed": 0 },
-    "gate5c": { "passed": 55, "failed": 0 },
-    "gate5b": { "passed": 32, "failed": 0 },
-    "schema": { "passed": 100, "failed": 0 }
+    "gate5l": {
+      "passed": 94,
+      "failed": 0
+    },
+    "gate5k": {
+      "passed": 82,
+      "failed": 0
+    },
+    "gate5j": {
+      "passed": 75,
+      "failed": 0
+    },
+    "gate5i": {
+      "passed": 48,
+      "failed": 0
+    },
+    "gate5h": {
+      "passed": 66,
+      "failed": 0
+    },
+    "gate5g": {
+      "passed": 41,
+      "failed": 0
+    },
+    "gate5f": {
+      "passed": 30,
+      "failed": 0
+    },
+    "gate5e": {
+      "passed": 79,
+      "failed": 0
+    },
+    "gate5d": {
+      "passed": 60,
+      "failed": 0
+    },
+    "gate5c": {
+      "passed": 55,
+      "failed": 0
+    },
+    "gate5b": {
+      "passed": 32,
+      "failed": 0
+    },
+    "schema": {
+      "passed": 100,
+      "failed": 0
+    }
   },
   "closed_gate_reopen_policy": "Only for a concrete reproducible executable contradiction; correction must be narrowly scoped and regressions rerun.",
   "repository_exclusions": [

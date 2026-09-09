@@ -1,0 +1,60 @@
+# ============================================================================
+# SqlAdapter Qualification Harness v1 — persistent CI for the HOST qualification
+# suite plus every adopted closed regression baseline.
+#
+# Experiment HNT-001: the reusable HOST-side qualification harness
+# (tests/sqladapter-qualification/) turns the host-testable portion of
+# DEVICE-ADAPTER-CONTRACT-v1 into executable infrastructure. This workflow:
+#   1. runs the focused HOST qualification suite (reference host candidate:
+#      node:sqlite via dev/NodeSqliteAdapter);
+#   2. re-runs every adopted application-core regression baseline exactly as
+#      documented in docs/project/TEST-BASELINES.md (gate5b..gate5l);
+#   3. re-runs the adopted schema regression (gate4a).
+#
+# The workflow is HOST-side only: it proves nothing about Android app-private
+# storage, Capacitor/WebView lifecycle, process kill, reboot, camera/filesystem,
+# or device-specific transaction behaviour (Gate-6B / device work).
+#
+# Runs on standard free GitHub-hosted infrastructure and requires no secrets.
+#
+# fetch-depth: 0 is REQUIRED — the closed Gate-5B provenance tests resolve the
+# artifact's recorded generating Git commit from repository history, which a
+# shallow (depth 1) checkout would hide.
+# ============================================================================
+
+name: sqladapter-host-qualification
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host-qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository (full history for Gate-5B provenance)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 22 (adopted dev/test host toolchain)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: SqlAdapter Qualification Harness v1 — HOST suite
+        run: node --experimental-strip-types tests/sqladapter-qualification/node-host-runner.ts
+
+      - name: Adopted application-core regressions (Gate 5B .. 5L)
+        run: |
+          for f in gate5l gate5k gate5j gate5i gate5h gate5g gate5f gate5e gate5d gate5c gate5b; do
+            node --experimental-strip-types tests/${f}_regression.ts || exit 1
+          done
+
+      - name: Adopted schema regression (Gate 4A)
+        run: python3 tests/gate4a_regression.py

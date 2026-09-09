@@ -1,0 +1,34 @@
+{
+  "name": "inspection-mission-gate6b-proof",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.gate6b.json --noEmit",
+    "typecheck:legacy-full": "tsc -p tsconfig.json --noEmit",
+    "cap:sync": "cap sync android",
+    "gate6b:host": "node --experimental-strip-types tests/gate6b_adapter_contract.ts",
+    "gate6b:schema-host": "node --experimental-strip-types tests/gate6b_schema_execution_regression.ts",
+    "gate6b:q12-host": "node --experimental-strip-types tests/gate6b_q12_regression.ts"
+  },
+  "dependencies": {
+    "@capacitor-community/sqlite": "8.1.1",
+    "@capacitor/android": "8.5.1",
+    "@capacitor/core": "8.5.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "6.1.1",
+    "typescript": "5.9.3",
+    "vite": "8.2.2"
+  }
+}

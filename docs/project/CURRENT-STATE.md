@@ -6,162 +6,136 @@
 
 ## 1) المرجع الحاكم
 
-- Repository: `scientifica007/Inspection_Mission_001`
-- Governing branch: `main`
-- آخر merge منتجي قبل طبقة handoff: `f142791520fd95dda23c5e6a9c1decd0f2602b6f` — **Merge Gate 6A product runtime architecture**.
-- عند قراءة هذا الملف لاحقًا لا تعتبر الـSHA أعلاه HEAD الحالي تلقائيًا؛ اقرأ `main` الحي أولًا.
+- Repository: `scientifica007/Inspection_Mission_001`.
+- Governing branch: `main`.
+- آخر merge منتجي قبل طبقة handoff: `f142791520fd95dda23c5e6a9c1decd0f2602b6f` — Merge Gate 6A product runtime architecture.
+- merge تصحيح Gate 5B الضيق: `608314ae62721af44d8ed4f50c1c618ac469fc66` — MERGED / RESOLVED.
+- لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-### مغلقة / معتمدة / مدمجة
+Gates 1→5L و6A مغلقة/معتمدة كما هو موثق في history. Gate 5B يتضمن التصحيح الضيق المدمج لـ`SqlResult.lastInsertRowid`.
 
-- Gate 1 — Requirements.
-- Gate 2 — Checklist Design.
-- Gate 3 — Logical Data Model.
-- Gate 4 — Physical / Executable Schema.
-- Gate 4A — Applicability Bridge.
-- Gate 4B — Finding VOIDED lifecycle.
-- Gate 4 Revision 6 — owner-authorized narrow reconciliation correction.
-- Gate 5A — Application Core Contracts.
-- Gate 5B — Bootstrap، مع **owner-authorized narrow `lastInsertRowid` normalization correction** موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`.
-- Gate 5C — Visit Scope Composition.
-- Gate 5D — Initial Response Disposition.
-- Gate 5E — Corrections / Finding Source Lifecycle، مع التصحيح الضيق المعتمد لـcontextual AUTO-NA.
-- Gate 5F — T7 Observation→Finding ensure-accounted.
-- Gate 5G — OBS-1 `createAdHocObservation`.
-- Gate 5H — T8 Finding Status Transitions.
-- Gate 5I — T9 `createCorrectiveAction`.
-- Gate 5J — T10 CorrectiveAction Status Transitions.
-- Gate 5K — T11 `finalizeVisit`.
-- Gate 5L — `currentVisitState` / restart reconstruction.
-- Gate 6A — Product Runtime Architecture & Delivery Roadmap.
+### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
-### التالية
+الحالة: **`IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`**.
 
-**Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
+فرع التنفيذ: `implementation/gate6b-android-runtime-proof-v1`.
 
-الحالة: `NOT_STARTED`.
+Q12: **`PHYSICAL_PASS_REVIEW_ACCEPTED`**.
 
-لا توجد Gate تنفيذية لاحقة معتمدة قبل نجاح 6B.
+`closure_authorized=false`.
 
-تم حسم التناقض الضيق السابق لـGate 6B حول `SqlResult.lastInsertRowid` للـnon-INSERT في `NodeSqliteAdapter` عبر التصحيح الضيق المصرح به من المالك. حالة pre-Gate-6B لهذا البند الآن: **RESOLVED**، و`gate_6b_technical_start_blocked = false` لهذا السبب تحديدًا.
+SQLite candidate: `@capacitor-community/sqlite@8.1.1`.
 
-هذا التصحيح لم يغيّر عقد `SqlAdapter` ولم يبدأ Gate 6B.
+- device qualification: **PASS**؛
+- final Gate-6B adoption/closure: **pending PR / owner approval / merge**؛
+- candidate لم تصبح merged project authority بعد.
 
-## 2A) إغلاق تجربة HNT-001 / HNT-002 وقرار أدوات التنفيذ
+Gate 6C: **`NOT_STARTED`**.
 
-تم إغلاق تجربة HNT-001/HNT-002 وحفظ أدلتها في الفروع التجريبية ووثيقة:
+## 3) Adapter Qualification الفيزيائية المقبولة على `87135cfe...`
 
-`docs/experiments/HNT-001-HNT-002-FINAL-EVALUATION.md`
+تم تنفيذ Adapter Qualification حقيقية على Android ضد:
 
-قرار مالك المشروع من نوع `PROJECT`:
+`87135cfe80ae3de79a34e941828249fc6889139c`
 
-- **Default implementation workflow:** `ChatGPT + GitHub + GitHub Actions`.
-- الـReviewing/Planning AI والـIndependent ChatGPT Implementation Agent أدوار منفصلة عندما تكون الاستقلالية في المراجعة مهمة.
-- Harness أو أي local execution agent: **ON_DEMAND_ONLY** عند وجود حاجة فعلية لقدرات محلية/فيزيائية لا توفرها GitHub-hosted CI بكفاءة، مثل Android فعلي أو ADB/USB أو lifecycle محلي أو hardware-specific reproduction.
-- لم يُعتمد أي HNT-001 candidate كـproduct artifact.
-- لا يُدمج أي HNT candidate كما هو.
-- تبقى الفروع التجريبية أدلة محفوظة إلى أن يصدر قرار منفصل بشأن تنظيفها/حذفها.
+External accepted evidence folder:
 
-## 3) ما أصبح موجودًا فعليًا
+`https://drive.google.com/drive/folders/18siSZGeoUtmFsfz5H4ozKsrp3tbpVwkS?usp=drive_link`
 
-### Data / schema
+النتيجة: **`overallResult=PASS`**.
 
-- SQLite 3 هو المخزن المحلي الحاكم.
-- 15 logical entities.
-- 15 physical tables.
-- 44 triggers.
-- 1 view.
-- 24 explicit indexes.
-- schema regression baseline: **100 / 0**.
+Q1→Q11: PASS.
 
-### Application Core
-
-الـCore التنفيذي يغطي:
-
-- T0→T11.
-- OBS-1.
-- checklist applicability / HUMAN confirmation semantics.
-- corrections and source lifecycle.
-- Finding lifecycle including terminal `VOIDED` and `RESOLVED` semantics.
-- optional 0..* CorrectiveActions per Finding.
-- append-only FollowUp.
-- Visit finalization.
-- restart reconstruction بواسطة `currentVisitState` من SQLite durable rows فقط.
-
-الحالة التشغيلية لا تعتمد على process memory كسلطة.
-
-### Gate-5B adapter seam correction
-
-- `NodeSqliteAdapter.run()` لم يعد يسرّب stale connection `lastInsertRowid` بعد UPDATE/DELETE/no-op INSERT.
-- `SqlResult` contract بقي دون تغيير: rowid رقمي فقط عندما تنفذ العملية INSERT فعليًا؛ خلاف ذلك `null`.
-- regression جديدة: `tests/gate5b_adapter_regression.ts` = **6 / 0**.
-- Gate-5B bootstrap/reference-data regression الأصلية بقيت **32 / 0**.
-
-## 4) قرارات domain أساسية لا تُعاد اختراعها
-
-- Visit بعد finalization غير قابلة لإعادة الفتح؛ reinspection = Visit جديدة.
-- الحقيقة التاريخية الميدانية لا تُستبدل بسبب remediation لاحق.
-- ChecklistResponse مثبتة إلى exact definition version؛ current ACTIVE لا يعيد تفسير Visit قديمة.
-- `result_class` مشتق، وليس source of truth.
-- Finding قد تأتي من ChecklistResponse غير مطابقة أو AdHocObservation.
-- `urgency` و`impact` مستقلان وإلزاميان.
-- CorrectiveActions اختيارية؛ Finding يمكن أن تُرفع مباشرة بلا Action.
-- إذا وجدت Actions، لا تُرفع Finding بينما Action ما زالت OPEN/IN_TREATMENT.
-- T10 لا يرفع Finding تلقائيًا.
-- T11 يقفل field truth فقط؛ لا يشترط رفع جميع Findings/Actions.
-- FollowUp وremediation قد يستمران بعد Visit finalization.
-- `VOIDED != RESOLVED`، وكلتاهما terminal.
-- source-less OPEN Finding حالة فساد `E_ORPHAN_FINDING`؛ zero-source VOIDED تاريخ صالح.
-
-## 5) معمارية المنتج المعتمدة بعد Gate 6A
-
-- Android-first.
-- Capacitor Web Native shell.
-- React + Vite + TypeScript baseline للواجهة الميدانية.
-- الـApplication Core تبقى runtime-neutral / WebView-compatible TypeScript.
-- SQLite تبقى السلطة المحلية.
-- لا server ولا sync مطلوبين لـField-usable v1.
-- لا يعتمد SQLite plugin نهائي قبل Device Runtime Proof يثبت تطابقه مع `SqlAdapter` الحالي.
-- Evidence pipeline تسبق full UI.
-- التقرير يبنى من deterministic report snapshot/model؛ DOCX/PDF renderers downstream.
-
-راجع:
-
-- `docs/architecture/PRODUCT-ARCHITECTURE-v1.md`
-- `docs/architecture/PRODUCT-ROADMAP-v1.md`
-- `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md`
-
-## 6) Roadmap الحاكمة حتى Field-usable v1
+Q8:
 
 ```text
-6A  Product Runtime Architecture & Delivery Roadmap       CLOSED
- ↓
-6B  Android Shell + Native SQLite Adapter / Runtime Proof NEXT
- ↓
-6C  Evidence Storage + Camera/File Pipeline
- ↓
-6D  Arabic RTL Field UI + End-to-End Visit Workflow
- ↓
-6E  ExternalSystemTracking application capability
- ↓
-6F  Deterministic Report Model / Snapshot Generation
- ↓
-6G  DOCX + PDF + Artifact Save/Share
- ↓
-6H  Android Packaging + Field Qualification
- ↓
-FIELD-USABLE v1
+PASS
+15 tables / 44 triggers / 1 view / 24 indexes
+integrity_check=ok
 ```
 
-P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، multi-user/sync/server، external APIs، وما يُعتمد لاحقًا بقرار مالك المشروع.
+Q9:
 
-## 7) Baselines الاختبارات الحالية
+```text
+PASS
+24 definitions
+second bootstrap 24 no-ops
+P0=20
+P1=4
+allowed_values=48
+```
 
-آخر baselines التنفيذية المعتمدة، مع إضافة التصحيح الضيق لـGate 5B:
+Q12:
+
+```text
+PASS
+samePhysicalFile=true
+databaseBasename=inspection_gate6b_adapter_probe_v1SQLite.db
+nativeEngine=sqlcipher-android-4.17.0
+preflightWrite=SUCCESS
+preflightMarkerCount=1
+primaryBeginImmediate=true
+duringPrimaryLock=BUSY/android.database.sqlite.SQLiteDatabaseLockedException/code=5
+busyTimeoutMs=0
+lockedMarkerCount=0
+primaryRelease=true
+postReleaseWrite=SUCCESS
+postReleaseMarkerCount=1
+cleanupComplete=true
+nativeClosed=true
+```
+
+هذا يثبت physical genuine differential native locking requirement كما هو معرّف في Q12: writer B مستقل، نفس الملف الفيزيائي مثبت، preflight write ناجحة، A يمسك literal `BEGIN IMMEDIATE`، B يعيد BUSY أصليًا من SQLCipher أثناء القفل، locked marker لا يظهر، ثم نفس B ينجح بعد release ويُرى marker ويُنظف ويُغلق.
+
+## 4) قرار إعادة استخدام Application-Core / Restart evidence
+
+المراجعة المستقلة قبلت إعادة استخدام الأدلة الفيزيائية الموجودة على:
+
+`89d405d6254108ce735125638ccdb2fb2e67c568`
+
+الأدلة المقبولة:
+
+- Application-Core Proof: PASS؛
+- `currentVisitState` zero-write: before=121 / after=121 / delta=0؛
+- T11: PASS؛
+- state hash: `9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405`؛
+- final real Force Stop / Restart: PASS؛
+- Phase A: `DEVICE_PROOF_READY`؛
+- Phase B بعد real Android Force Stop: PASS؛
+- Visit rediscovered from SQLite only: `1`؛
+- Phase A/B state hashes: exact match.
+
+هذا **evidence reuse based on demonstrated non-drift**، وليس ادعاءً بأن APK `89d405d...` وAPK `87135cfe...` نفس binary؛ هما ليستا نفس binary.
+
+من `89d405d...` إلى `87135cfe...` لم يحدث drift في المسارات ذات الصلة بإعادة استخدام هذه الأدلة:
+
+- `src/application/**`;
+- `src/bootstrap/**`;
+- `src/device/capacitor-sqlite-adapter.ts`;
+- `docs/schema/schema.sql`;
+- `bootstrap/v1/checklist-v1.json`.
+
+التغيير التنفيذي الذي أضيف بعد `89d405d...` كان متعلقًا بإثبات Q12 داخل proof runner/native diagnostic boundary؛ لم يغير Application-Core أو restart semantic path أو primary adapter/canonical authorities. لذلك لا يُطلب إعادة Application-Core Proof أو Restart Phase A/B.
+
+## 5) الأدلة التاريخية المحفوظة — لا يعاد تصنيفها
+
+- Build `5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc`: Q1-Q7/Q10/Q11 PASS، Q8 FAIL بـ`Execute: not an error (code 0)`، Q9 لم يصل إليها التنفيذ، Q12 BLOCKED، overall FAIL.
+- Corrected build `89d405d...`: Q1-Q11 PASS، Application-Core PASS، clean real Force Stop restart PASS، Q12 BLOCKED قبل وجود genuine writer B.
+- Build `c3cc890b35d7f9612214559f83d8091f98e96a68`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open`; diagnostics القديمة أسقطت native rejection detail، ولذلك root cause في ذلك التشغيل بقيت غير معروفة.
+- Build `7ebe780b1caffeb1a9240ff4010e5483e1c70b7b`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open/set_busy_timeout`; السبب مثبت كـinvalid `execSQL` transport للـrow-producing busy-timeout PRAGMA. `samePhysicalFile=false` في ذلك التشغيل كانت unestablished default لأن native open توقف قبل `database_list/same_file_check`؛ lock differential لم يُصل إليه.
+- restart negative control: Phase B بعد `Reset Synthetic Proof DB` فشلت لأن durable DB/schema/Visit حُذفت؛ تبقى negative evidence وليست product defect.
+
+هذه النتائج التاريخية لا يعاد تحويلها إلى PASS بعد نجاح `87135cfe...`.
+
+## 6) Baselines الحالية
 
 | Suite | Baseline |
 |---|---:|
+| Gate 6B host adapter contract | 16 / 0 |
+| Gate 6B canonical-schema execution | 8 / 0 |
+| Gate 6B Q12 diagnostic/classifier | 20 / 0 |
 | Gate 5L | 94 / 0 |
 | Gate 5K | 82 / 0 |
 | Gate 5J | 75 / 0 |
@@ -176,37 +150,23 @@ P1 بعد ذلك: CSV/XLSX، indicators/aggregation، deadlines/reminders، mult
 | Gate 5B adapter normalization | 6 / 0 |
 | Schema | 100 / 0 |
 
-إجمالي تغطية Gate 5B التنفيذية الحالية عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع إبقاء العدّين منفصلين حتى لا تختلط مسؤولية bootstrap/reference-data بمسؤولية adapter normalization.
+Canonical hashes:
 
-التفاصيل والأوامر في `docs/project/TEST-BASELINES.md`.
+- `docs/schema/schema.sql`: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`;
+- `bootstrap/v1/checklist-v1.json`: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
 
-## 8) حدود GitHub المقصودة
+## 7) ثوابت لا تتغير
 
-المستودع يحفظ الذاكرة الهندسية:
+- SQLite هي local authority؛ process memory ليست authority.
+- `src/application/**` و`src/bootstrap/**` تبقيان runtime-neutral.
+- canonical schema وcanonical bootstrap لا يُعدلان لتلائم driver.
+- diagnostic Q12 writer ليس product architecture.
+- Q12 classifier semantics لم تُضعف.
+- Gate 6B تبقى **IN_PROGRESS** وغير مدمجة، `closure_authorized=false`.
+- Gate 6C تبقى **NOT_STARTED**.
 
-- sources النصية المرجعية؛
-- requirements؛
-- schemas؛
-- design/architecture؛
-- source code؛
-- tests؛
-- bootstrap/templates/synthetic fixtures؛
-- history عبر commits وPRs.
+## 8) الحالة التالية
 
-ولا يحفظ البيانات التشغيلية الحقيقية مثل الصور، Evidence الفعلية، البيانات الشخصية/الحساسة، production SQLite databases أو سجلات التفتيش الحقيقية.
+لا يوجد physical retest جديد مطلوب ضمن evidence المقبولة الحالية.
 
-## 9) المهمة التالية عند الاستلام
-
-لا تبدأ UI ولا Evidence ولا reports مباشرة.
-
-التناقض الضيق السابق لـGate 6B حول `SqlResult.lastInsertRowid` أصبح **RESOLVED** عبر:
-
-`docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`
-
-بعد اعتماد/دمج هذا التصحيح وفق review/owner/PR workflow، تبقى المهمة المنتجية التالية هي تخطيط/تنفيذ **Gate 6B** وفق `DEVICE-ADAPTER-CONTRACT-v1.md` باستخدام الـdefault workflow:
-
-`ChatGPT + GitHub + GitHub Actions`
-
-واستخدم Harness/local execution agent فقط عند ظهور حاجة فعلية لقدرات محلية/فيزيائية غير مناسبة لـGitHub-hosted CI.
-
-حالة Gate 6B نفسها تبقى `NOT_STARTED` حتى يبدأها المالك/المراجع في مهمة مستقلة؛ هذه correction لا تبدأها.
+المتبقي لإغلاق Gate 6B هو مسار governance: review/owner approval ثم PR/merge عندما يُؤذن به. هذا الملف لا يفتح PR ولا يغلق Gate 6B ولا يبدأ Gate 6C.

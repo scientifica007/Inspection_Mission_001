@@ -7,7 +7,8 @@
   "state_basis": {
     "last_product_architecture_merge_sha": "f142791520fd95dda23c5e6a9c1decd0f2602b6f",
     "last_product_architecture_merge_title": "Merge Gate 6A product runtime architecture",
-    "sha_policy": "Do not treat this embedded SHA as the current branch HEAD; always read live main first."
+    "last_gate5b_correction_merge_sha": "608314ae62721af44d8ed4f50c1c618ac469fc66",
+    "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
     "DIRECT": "Explicitly stated in an official source.",
@@ -38,9 +39,10 @@
   ],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
-      "status": "IMPLEMENTED_PENDING_REVIEW_MERGE",
+      "status": "MERGED_RESOLVED",
       "authorization": "PROJECT_OWNER_AUTHORIZED_NARROW_CLOSED_GATE_CORRECTION",
       "governing_base_sha": "25cd1ed248b3962a9fefc6cc1c1115bf27961551",
+      "merge_sha": "608314ae62721af44d8ed4f50c1c618ac469fc66",
       "record": "docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md",
       "technical_validation_commit": "6a4b1dddf8426bb1a2a43520d5c41f7b3be4a363",
       "github_actions_run": 34359830705
@@ -75,7 +77,7 @@
     "local_authority": "SQLite",
     "server_required_for_field_v1": false,
     "sync_required_for_field_v1": false,
-    "sqlite_driver_selection": "DEFERRED_TO_GATE_6B_PROOF"
+    "sqlite_driver_selection": "DEVICE_QUALIFIED_GATE6B_CANDIDATE_PENDING_FINAL_ADOPTION_MERGE"
   },
   "implementation_workflow": {
     "classification": "PROJECT",
@@ -85,64 +87,203 @@
     "reviewing_role": "Reviewing/Planning AI",
     "independent_executor_role": "Independent ChatGPT Implementation Agent",
     "independent_role_separation_when_review_matters": true,
-    "harness_status": "ON_DEMAND_ONLY",
-    "local_agent_policy": "Use Harness or another local execution agent only when a concrete task materially requires local/physical capabilities unavailable or inefficient in GitHub-hosted CI.",
-    "decision_basis": "HNT-001/HNT-002 + explicit project-owner decision"
+    "harness_status": "ON_DEMAND_ONLY"
   },
-  "tooling_experiment": {
-    "status": "CLOSED",
-    "id": "HNT-001/HNT-002",
-    "governing_base_sha": "17803cd96f1c83be60528fb2544b9d7e7a6c7526",
-    "decision": "CHATGPT_GITHUB_DEFAULT",
-    "candidate_adoption": "NONE",
-    "final_evaluation_document": "docs/experiments/HNT-001-HNT-002-FINAL-EVALUATION.md",
-    "branches": {
-      "hnt001_chatgpt_candidate": {
-        "branch": "experiment/chatgpt-sqladapter-qualification-v1",
-        "sha": "d56c7bf3955e575af66b5c8219d6d3c59563ea47"
+  "gate_6b": {
+    "id": "6B",
+    "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
+    "status": "IN_PROGRESS",
+    "device_proof_status": "PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE",
+    "implementation_branch": "implementation/gate6b-android-runtime-proof-v1",
+    "governing_base_sha": "608314ae62721af44d8ed4f50c1c618ac469fc66",
+    "sqlite_candidate": "@capacitor-community/sqlite@8.1.1",
+    "sqlite_candidate_status": "DEVICE_QUALIFICATION_PASS_PENDING_GATE6B_FINAL_ADOPTION_MERGE",
+    "physical_device_proof_executed": true,
+    "physical_device_qualification_status": "PASS",
+    "physical_schema_bootstrap_status": "PASS",
+    "application_core_device_proof_status": "PASS_ACCEPTED_BY_NON_DRIFT_EVIDENCE_REUSE",
+    "physical_restart_status": "PASS_ACCEPTED_BY_NON_DRIFT_EVIDENCE_REUSE",
+    "q12_status": "PHYSICAL_PASS_REVIEW_ACCEPTED",
+    "closure_authorized": false,
+    "physical_evidence": {
+      "adapter_qualification_pass": {
+        "tested_sha": "87135cfe80ae3de79a34e941828249fc6889139c",
+        "timestamp": "2026-09-09T22:59:17.756Z",
+        "external_evidence_folder": "https://drive.google.com/drive/folders/18siSZGeoUtmFsfz5H4ozKsrp3tbpVwkS?usp=drive_link",
+        "overall": "PASS",
+        "q1_q11": "PASS",
+        "q8": "PASS",
+        "q8_inventory": "15 tables / 44 triggers / 1 view / 24 indexes / integrity_check=ok",
+        "q9": "PASS",
+        "q9_inventory": "24 definitions; second bootstrap 24 no-ops; P0=20; P1=4; allowed_values=48",
+        "q12": "PASS",
+        "q12_evidence": {
+          "samePhysicalFile": true,
+          "databaseBasename": "inspection_gate6b_adapter_probe_v1SQLite.db",
+          "nativeEngine": "sqlcipher-android-4.17.0",
+          "preflightWrite": "SUCCESS",
+          "preflightMarkerCount": 1,
+          "primaryBeginImmediate": true,
+          "duringPrimaryLock": "BUSY/android.database.sqlite.SQLiteDatabaseLockedException/code=5",
+          "busyTimeoutMs": 0,
+          "lockedMarkerCount": 0,
+          "primaryRelease": true,
+          "postReleaseWrite": "SUCCESS",
+          "postReleaseMarkerCount": 1,
+          "cleanupComplete": true,
+          "nativeClosed": true
+        },
+        "review_status": "ACCEPTED"
       },
-      "hnt001_harness_candidate": {
-        "branch": "experiment/harness-sqladapter-qualification-v1",
-        "sha": "efb9af5fc83a831e4d36f8752116f44ccab0cb59"
+      "application_core": {
+        "tested_sha": "89d405d6254108ce735125638ccdb2fb2e67c568",
+        "overall": "PASS",
+        "visit": 1,
+        "zero_write_before": 121,
+        "zero_write_after": 121,
+        "zero_write_delta": 0,
+        "t11": "PASS",
+        "state_hash_sha256": "9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405"
       },
-      "hnt002_chatgpt_review_of_harness": {
-        "branch": "experiment/hnt002-chatgpt-review-harness-v1",
-        "sha": "c43ef51ea40f31ce9a5818f999265a71686a069a",
-        "verdict": "FAIL — BLOCKER",
-        "findings": {
-          "blocker": 1,
-          "major": 3,
-          "minor": 1,
-          "note": 4
-        }
+      "final_restart": {
+        "tested_sha": "89d405d6254108ce735125638ccdb2fb2e67c568",
+        "phase_a_timestamp": "2026-09-09T20:38:14.309Z",
+        "phase_a_overall": "DEVICE_PROOF_READY",
+        "phase_a_visit": 1,
+        "phase_a_zero_write": {
+          "before": 121,
+          "after": 121,
+          "delta": 0
+        },
+        "phase_b_timestamp": "2026-09-09T20:41:35.702Z",
+        "phase_b_overall": "PASS",
+        "phase_b_visit": 1,
+        "phase_b_zero_write": {
+          "before": 0,
+          "after": 0,
+          "delta": 0
+        },
+        "state_hash_sha256": "9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405",
+        "real_force_stop": true,
+        "visit_rediscovered_from_sqlite_only": 1,
+        "phase_a_b_state_hash_exact_match": true,
+        "reset_uninstall_or_clear_between_phases": false,
+        "screenshots_committed_to_github": false
       },
-      "hnt002_harness_review_of_chatgpt": {
-        "branch": "experiment/hnt002-harness-review-chatgpt-v1",
-        "sha": "33260dc53f12bb8db3af8631dcc7c6e7001e962b",
-        "verdict": "FAIL — MAJOR DEFECTS",
-        "findings": {
-          "blocker": 0,
-          "major": 1,
-          "minor": 4,
-          "note": 6
-        }
+      "evidence_reuse_decision": {
+        "status": "REVIEW_ACCEPTED",
+        "source_sha": "89d405d6254108ce735125638ccdb2fb2e67c568",
+        "q12_target_sha": "87135cfe80ae3de79a34e941828249fc6889139c",
+        "same_binary": false,
+        "basis": "Evidence reuse is accepted because the relevant Application-Core, bootstrap, primary-adapter and canonical-authority paths did not drift between the tested runtime states; this does not assert binary identity.",
+        "unchanged_paths": [
+          "src/application/**",
+          "src/bootstrap/**",
+          "src/device/capacitor-sqlite-adapter.ts",
+          "docs/schema/schema.sql",
+          "bootstrap/v1/checklist-v1.json"
+        ],
+        "application_core_retest_required": false,
+        "restart_phase_a_b_retest_required": false
+      },
+      "pre_correction": {
+        "tested_sha": "5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc",
+        "q1_q7": "PASS",
+        "q8": "FAIL",
+        "q8_error": "Execute: not an error (code 0)",
+        "q9": "NOT_REACHED",
+        "q10": "PASS",
+        "q11": "PASS",
+        "q12": "BLOCKED",
+        "overall": "FAIL"
+      },
+      "corrected_adapter_qualification_89d": {
+        "tested_sha": "89d405d6254108ce735125638ccdb2fb2e67c568",
+        "capacitor": "8.5.1",
+        "sqlite_plugin": "@capacitor-community/sqlite@8.1.1",
+        "sqlite_engine": "3.53.3",
+        "schema_sha256": "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7",
+        "bootstrap_sha256": "d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd",
+        "q1_q11": "PASS",
+        "q12": "BLOCKED",
+        "overall": "BLOCKED"
+      },
+      "q12_native_open_blocked_c3cc": {
+        "tested_sha": "c3cc890b35d7f9612214559f83d8091f98e96a68",
+        "overall": "BLOCKED",
+        "q1_q11": "PASS",
+        "q12": "BLOCKED",
+        "q12_stage": "native_open",
+        "q12_detail": "Error",
+        "same_physical_file_field": false,
+        "same_physical_file_interpretation": "UNESTABLISHED_DEFAULT_BECAUSE_NATIVE_OPEN_REJECTED; NOT_A_POST_OPEN_SAME_FILE_CONTRADICTION",
+        "lock_differential_reached": false,
+        "root_cause": "UNKNOWN_BECAUSE_PREVIOUS_INSTRUMENTATION_DISCARDED_NATIVE_REJECTION_DETAIL"
+      },
+      "q12_busy_timeout_transport_blocked": {
+        "tested_sha": "7ebe780b1caffeb1a9240ff4010e5483e1c70b7b",
+        "overall": "BLOCKED",
+        "q1_q11": "PASS",
+        "q8": "PASS",
+        "q8_inventory": "15 tables / 44 triggers / 1 view / 24 indexes / integrity_check=ok",
+        "q9": "PASS",
+        "q9_inventory": "24 definitions; second bootstrap 24 no-ops; P0=20; P1=4; allowed_values=48",
+        "q12": "BLOCKED",
+        "q12_stage": "native_open/set_busy_timeout",
+        "native_stage": "set_busy_timeout",
+        "exception_class": "android.database.sqlite.SQLiteException",
+        "exception_message": "unknown error (code 0): Queries can be performed using SQLiteDatabase query or rawQuery methods only.",
+        "capacitor_code": "G6B_Q12_NATIVE_OPEN_SET_BUSY_TIMEOUT",
+        "same_physical_file_field": false,
+        "same_physical_file_interpretation": "UNESTABLISHED_DEFAULT_BECAUSE_NATIVE_OPEN_ABORTED_BEFORE_DATABASE_LIST_AND_SAME_FILE_CHECK; NOT_A_POST_OPEN_SAME_FILE_CONTRADICTION",
+        "lock_differential_reached": false,
+        "root_cause": "Q12_DIAGNOSTIC_WRITER_BUSY_TIMEOUT_PRAGMA_INCORRECTLY_TRANSPORTED_THROUGH_EXECSQL_INSTEAD_OF_QUERY_RAWQUERY",
+        "interpretation": "DIAGNOSTIC_WRITER_TRANSPORT_DEFECT_ONLY; NOT_EVIDENCE_OF_SQLCIPHER_INCOMPATIBILITY_PRIMARY_ADAPTER_FAILURE_SAME_FILE_FAILURE_BEGIN_IMMEDIATE_FAILURE_OR_LOCK_SEMANTICS_FAILURE"
+      },
+      "negative_control": "An earlier Phase B after Reset Synthetic Proof DB failed because durable DB/schema/Visit had been removed; retained as negative evidence, not a product defect."
+    },
+    "q12_implementation": {
+      "primary": "existing CapacitorSqliteAdapter",
+      "competing_writer": "diagnostic-only native Capacitor Android plugin",
+      "native_engine": "net.zetetic:sqlcipher-android:4.17.0@aar",
+      "same_file_source": "primary PRAGMA database_list main path",
+      "busy_policy_ms": 0,
+      "busy_timeout_transport": "QUERY_RAWQUERY_SCALARLONG_SET_AND_INDEPENDENT_READBACK",
+      "busy_timeout_setter_must_return_zero": true,
+      "busy_timeout_readback_must_return_zero": true,
+      "native_lock_classification": [
+        "SQLITE_BUSY/SQLiteDatabaseLockedException",
+        "SQLITE_LOCKED/SQLiteTableLockedException"
+      ],
+      "physical_result": "PASS_ON_87135CFE_REVIEW_ACCEPTED",
+      "diagnostic_hardening": {
+        "status": "IMPLEMENTED",
+        "preserves_error_name_message_code": true,
+        "native_open_stages": [
+          "validate_target",
+          "load_sqlcipher",
+          "open_database",
+          "set_busy_timeout",
+          "read_busy_timeout",
+          "read_sqlite_version",
+          "database_list",
+          "same_file_check",
+          "probe_table_read"
+        ],
+        "linkage_error_handled": true,
+        "q12_semantics_weakened": false
       }
     },
-    "experimental_branch_policy": "Preserve as evidence; no merge-as-is and no cleanup/deletion without a separate owner decision."
-  },
-  "pre_gate_6b": {
-    "status": "RESOLVED",
-    "issue": "SqlResult.lastInsertRowid non-insert behavior in NodeSqliteAdapter",
-    "classification": "OWNER_AUTHORIZED_NARROW_CLOSED_GATE_CORRECTION",
-    "gate_6b_technical_start_blocked": false,
-    "resolution": "NodeSqliteAdapter normalization corrected to preserve existing SqlResult semantics; focused Gate-5B adapter regression 6/0 and all adopted higher baselines green.",
-    "correction_record": "docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md"
+    "next_physical_action": "NONE_REQUIRED_BY_ACCEPTED_REVIEW_DECISION",
+    "next_governance_action": "Pending independent/owner approval to open PR and merge Gate 6B; this reconciliation does not open the PR."
   },
   "next_gate": {
     "id": "6B",
     "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
-    "status": "NOT_STARTED"
+    "status": "IN_PROGRESS",
+    "device_proof_status": "PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE"
   },
+  "gate_6c_status": "NOT_STARTED",
   "roadmap": [
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof",
     "6C Evidence Storage + Camera/File Pipeline",
@@ -155,6 +296,18 @@
   ],
   "field_usable_v1": false,
   "test_baselines": {
+    "gate6b_host_adapter_contract": {
+      "passed": 16,
+      "failed": 0
+    },
+    "gate6b_schema_execution": {
+      "passed": 8,
+      "failed": 0
+    },
+    "gate6b_q12_diagnostic_classifier": {
+      "passed": 20,
+      "failed": 0
+    },
     "gate5l": {
       "passed": 94,
       "failed": 0
@@ -202,17 +355,16 @@
     },
     "gate5b_adapter_normalization": {
       "passed": 6,
-      "failed": 0,
-      "scope": "NodeSqliteAdapter SqlResult.lastInsertRowid normalization"
-    },
-    "gate5b_total_across_suites": {
-      "passed": 38,
       "failed": 0
     },
     "schema": {
       "passed": 100,
       "failed": 0
     }
+  },
+  "canonical_hashes": {
+    "docs/schema/schema.sql": "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7",
+    "bootstrap/v1/checklist-v1.json": "d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd"
   },
   "closed_gate_reopen_policy": "Only for a concrete reproducible executable contradiction; correction must be narrowly scoped and regressions rerun.",
   "repository_exclusions": [
@@ -221,7 +373,8 @@
     "personal or sensitive data",
     "production SQLite databases",
     "real operational inspection records",
-    "secrets and API keys"
+    "secrets and API keys",
+    "device serial numbers"
   ],
   "handoff_entrypoint": "START-HERE.md"
 }

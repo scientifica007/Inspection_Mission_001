@@ -51,7 +51,7 @@
 - Gate 5A→5L — Application Core، بما يشمل T0→T11 وOBS-1 و`currentVisitState` لإعادة البناء بعد restart من SQLite وحدها.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap.
 
-Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، دون تغيير عقد `SqlAdapter`.
+Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، وقد أصبحت **MERGED / RESOLVED** دون تغيير عقد `SqlAdapter`.
 
 قاعدة البيانات المحلية الحاكمة للنسخة أحادية المفتش هي SQLite 3، ولا تعتمد الحالة التشغيلية على process memory.
 
@@ -74,36 +74,32 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
 - React + Vite + TypeScript كواجهة ميدانية افتراضية.
 - SQLite تبقى السلطة المحلية للبيانات.
 - لا server ولا sync مطلوبين للنسخة الميدانية الأولى.
-- لا يتم اعتماد SQLite plugin نهائيًا قبل إثبات تطابقه مع عقد الـadapter الحالي على جهاز Android فعلي.
+- اعتماد SQLite plugin نهائيًا يتطلب Gate-6B review/owner approval/merge؛ اجتياز device qualification وحده لا يساوي merged project authority.
 
-## الخطوة التنفيذية التالية على مستوى المنتج
+## المرحلة التنفيذية الحالية على مستوى المنتج
 
 **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
 
-الحالة: **NOT STARTED**.
+الحالة: **`IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`**.
 
-تم حسم الـpre-Gate-6B blocker السابق حول `SqlResult.lastInsertRowid` عبر التصحيح الضيق المصرح به من المالك. لا يزال Gate 6B نفسه غير مبدوء؛ يبدأ فقط في مهمة مستقلة بعد اعتماد/دمج التصحيح وفق workflow المشروع.
+فرع التنفيذ: `implementation/gate6b-android-runtime-proof-v1`.
 
-هدف Gate 6B هو إثبات أن الـApplication Core الحالية تعمل على Android الحقيقي بنفس semantics المعتمدة، مع:
+تم تنفيذ Adapter Qualification على Android فعلي ضد SHA `87135cfe80ae3de79a34e941828249fc6889139c`، والنتيجة المقبولة بعد المراجعة المستقلة هي **PASS لـQ1→Q12**. Q12 أثبتت writer B مستقلًا على نفس SQLite file، و`BEGIN IMMEDIATE` على A، وBUSY أصليًا من SQLCipher أثناء القفل، ثم نجاح writer نفسه بعد release.
 
-- `BEGIN IMMEDIATE` فعلي؛
-- transaction boundaries صحيحة؛
-- rollback و`changes` صحيحين؛
-- `foreign_keys=ON`؛
-- schema/bootstrap على الجهاز؛
-- persistence بعد app/process restart؛
-- إعادة بناء الزيارة بواسطة `currentVisitState` من نفس SQLite file.
+أدلة Application-Core وreal Force Stop/Restart من `89d405d...` تبقى مقبولة بإعادة استخدام evidence مبنية على ثبوت عدم drift في `src/application/**`, `src/bootstrap/**`, primary `CapacitorSqliteAdapter`, canonical schema وcanonical bootstrap حتى target `87135cfe...`. البناءان ليسا نفس APK binary.
 
-لا تبدأ UI كاملة أو Evidence أو reports قبل اجتياز هذا runtime proof.
+`@capacitor-community/sqlite@8.1.1` اجتاز device qualification، لكن اعتماد Gate 6B النهائي ما يزال pending PR / owner approval / merge. `closure_authorized=false`.
+
+لا تبدأ UI كاملة أو Evidence أو reports قبل إغلاق Gate 6B.
 
 ## Roadmap حتى Field-usable v1
 
 ```text
 6A  Product Runtime Architecture & Delivery Roadmap       CLOSED
  ↓
-6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   NEXT
+6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE
  ↓
-6C  Evidence Storage + Camera/File Pipeline
+6C  Evidence Storage + Camera/File Pipeline               NOT_STARTED
  ↓
 6D  Arabic RTL Field UI + End-to-End Visit Workflow
  ↓
@@ -165,4 +161,5 @@ GitHub يخزن:
 - بيانات شخصية أو حساسة؛
 - قواعد SQLite إنتاجية؛
 - سجلات تفتيش تشغيلية حقيقية؛
-- أسرار أو API keys.
+- أسرار أو API keys؛
+- device serial numbers.

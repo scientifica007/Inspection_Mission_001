@@ -2,11 +2,28 @@
 
 مشروع تطبيق ميداني محلي أولًا لدعم مهام التفتيش، وجمع المعاينات والملاحظات والأدلة، ومتابعة النقائص والإجراءات التصحيحية، ثم إنتاج المخرجات والتقارير.
 
+## ابدأ من هنا عند استلام المشروع
+
+إذا كنت إنسانًا أو ذكاءً اصطناعيًا جديدًا على المشروع، ابدأ بـ:
+
+**`START-HERE.md`**
+
+ثم اتبع ترتيب القراءة المحدد فيه. طبقة الذاكرة التشغيلية المختصرة موجودة في:
+
+- `docs/project/CURRENT-STATE.md`
+- `docs/project/CURRENT-STATE.json`
+- `docs/project/WORKFLOW.md`
+- `docs/project/TEST-BASELINES.md`
+
+هذه الملفات مخصصة لجعل المشروع قابلًا للتسليم والاستمرار من GitHub وحده دون الرجوع إلى تاريخ محادثات ChatGPT.
+
 ## الذاكرة الرسمية للمشروع
 
 الفرع الحاكم هو `main` في هذا المستودع. قبل أي قرار جوهري يجب إجراء Fresh Read من الحالة الحية في GitHub.
 
 لا تُعد ذاكرة ChatGPT أو ملخصات المحادثات مرجعًا رسميًا للحالة التنفيذية للمشروع.
+
+إذا تعارض أي handoff خارجي مع `main` الحي، فـ`main` هو المرجع.
 
 ## المصادر المرجعية الحالية
 
@@ -32,14 +49,17 @@
 - Gate 3 — Logical Data Model.
 - Gate 4 / 4A / 4B — Physical Schema + Applicability + Finding VOIDED lifecycle.
 - Gate 5A→5L — Application Core، بما يشمل T0→T11 وOBS-1 و`currentVisitState` لإعادة البناء بعد restart من SQLite وحدها.
+- Gate 6A — Product Runtime Architecture & Delivery Roadmap.
 
 قاعدة البيانات المحلية الحاكمة للنسخة أحادية المفتش هي SQLite 3، ولا تعتمد الحالة التشغيلية على process memory.
 
-## مرحلة المنتج الحالية — Gate 6A
+الحالة التفصيلية الحية المختصرة: `docs/project/CURRENT-STATE.md` و`docs/project/CURRENT-STATE.json`.
 
-بعد اكتمال Application Core، انتقل المشروع إلى مرحلة تحويل القلب المنطقي إلى منتج Android ميداني قابل للاستخدام.
+## معمارية المنتج المعتمدة
 
-وثائق المعمارية والـRoadmap المعتمدة لهذه المرحلة:
+بعد اكتمال Application Core، انتقل المشروع إلى تحويل القلب المنطقي إلى منتج Android ميداني قابل للاستخدام.
+
+وثائق المعمارية والـRoadmap المعتمدة:
 
 - `docs/architecture/PRODUCT-ARCHITECTURE-v1.md`
 - `docs/architecture/PRODUCT-ROADMAP-v1.md`
@@ -58,6 +78,8 @@
 
 **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
 
+الحالة: **NOT STARTED**.
+
 الهدف هو إثبات أن الـApplication Core الحالية تعمل على Android الحقيقي بنفس semantics المعتمدة، مع:
 
 - `BEGIN IMMEDIATE` فعلي؛
@@ -73,9 +95,9 @@
 ## Roadmap حتى Field-usable v1
 
 ```text
-6A  Product Runtime Architecture & Delivery Roadmap
+6A  Product Runtime Architecture & Delivery Roadmap       CLOSED
  ↓
-6B  Android Shell + Native SQLite Adapter / Device Runtime Proof
+6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   NEXT
  ↓
 6C  Evidence Storage + Camera/File Pipeline
  ↓
@@ -94,6 +116,30 @@ FIELD-USABLE v1
 
 بعد ذلك فقط تُراجع قدرات P1 مثل CSV/XLSX والمؤشرات والتجميع والمزامنة والخادم والواجهات الخارجية.
 
+## Workflow التطوير
+
+طريقة العمل الحاكمة موثقة في `docs/project/WORKFLOW.md`، وتشمل:
+
+```text
+Fresh Read main
+→ scoped Gate
+→ implementation
+→ review
+→ limited correction if needed
+→ APPROVED FOR COMMIT
+→ commit/push
+→ verify remote
+→ PR/merge
+→ Fresh Read main
+→ close Gate
+```
+
+لا تُفتح Gate مغلقة إلا عند وجود contradiction تنفيذي ملموس وقابل للتكرار، وبأضيق correction ممكن.
+
+## Baselines الاختبارات
+
+راجع `docs/project/TEST-BASELINES.md` قبل أي Gate تنفيذية. لا تُضعف regression baseline مغلقة لتسهيل feature جديدة.
+
 ## حدود المستودع
 
 GitHub يخزن:
@@ -105,7 +151,8 @@ GitHub يخزن:
 - design/architecture؛
 - docs؛
 - tests؛
-- synthetic fixtures.
+- synthetic fixtures؛
+- ذاكرة handoff وتشغيل المشروع.
 
 ولا يخزن:
 
@@ -113,4 +160,5 @@ GitHub يخزن:
 - Evidence تشغيلية حقيقية؛
 - بيانات شخصية أو حساسة؛
 - قواعد SQLite إنتاجية؛
-- سجلات تفتيش تشغيلية حقيقية.
+- سجلات تفتيش تشغيلية حقيقية؛
+- أسرار أو API keys.

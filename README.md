@@ -51,6 +51,8 @@
 - Gate 5A→5L — Application Core، بما يشمل T0→T11 وOBS-1 و`currentVisitState` لإعادة البناء بعد restart من SQLite وحدها.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap.
 
+Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، دون تغيير عقد `SqlAdapter`.
+
 قاعدة البيانات المحلية الحاكمة للنسخة أحادية المفتش هي SQLite 3، ولا تعتمد الحالة التشغيلية على process memory.
 
 الحالة التفصيلية الحية المختصرة: `docs/project/CURRENT-STATE.md` و`docs/project/CURRENT-STATE.json`.
@@ -80,9 +82,9 @@
 
 الحالة: **NOT STARTED**.
 
-لكن لا يبدأ التنفيذ التقني لـGate 6B مباشرة. توجد أولًا **PENDING NARROW CLOSED-GATE CORRECTION REVIEW** حول سلوك `SqlResult.lastInsertRowid` للـnon-INSERT في `NodeSqliteAdapter`. هذا لا يغيّر كون Gate 6B هي Gate المنتج التالية؛ بل يفرض حسم التناقض الضيق وفق workflow المشروع قبل أن تعتمد 6B على عقد `SqlAdapter`.
+تم حسم الـpre-Gate-6B blocker السابق حول `SqlResult.lastInsertRowid` عبر التصحيح الضيق المصرح به من المالك. لا يزال Gate 6B نفسه غير مبدوء؛ يبدأ فقط في مهمة مستقلة بعد اعتماد/دمج التصحيح وفق workflow المشروع.
 
-بعد حسم تلك المراجعة، يكون هدف Gate 6B إثبات أن الـApplication Core الحالية تعمل على Android الحقيقي بنفس semantics المعتمدة، مع:
+هدف Gate 6B هو إثبات أن الـApplication Core الحالية تعمل على Android الحقيقي بنفس semantics المعتمدة، مع:
 
 - `BEGIN IMMEDIATE` فعلي؛
 - transaction boundaries صحيحة؛

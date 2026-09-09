@@ -18,78 +18,116 @@ Gates 1→5L و6A مغلقة/معتمدة كما هو موثق في history. Gat
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
-الحالة: **`IN_PROGRESS / PARTIAL_PASS_Q12_PENDING`**.
+الحالة: **`IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`**.
 
 فرع التنفيذ: `implementation/gate6b-android-runtime-proof-v1`.
 
-SQLite candidate: `@capacitor-community/sqlite@8.1.1` — ما تزال **provisional**؛ لم يُغلق Gate 6B ولم يبدأ Gate 6C.
+Q12: **`PHYSICAL_PASS_REVIEW_ACCEPTED`**.
 
-الأدلة الفيزيائية المعتمدة على SHA `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى محفوظة كما هي:
+`closure_authorized=false`.
 
-- Q1→Q11: PASS، بما فيها Q8 canonical schema وQ9 canonical bootstrap؛
-- Q8: 15 tables / 44 triggers / 1 view / 24 explicit indexes / `integrity_check=ok`؛
-- Q9: first load 24 definitions، second load 24 no-ops، P0=20، P1=4، allowed_values=48؛
-- Application-Core physical proof: PASS؛
-- Gate-5L zero-write measurement: before=121 / after=121 / delta=0؛
-- T11 finalization: PASS؛
-- reconstructed state hash: `9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405`؛
-- clean physical Force Stop restart Phase A→B: PASS مع نفس state hash قبل/بعد restart.
+SQLite candidate: `@capacitor-community/sqlite@8.1.1`.
 
-Actual Android SQLite engine في تلك الأدلة: `3.53.3`.
+- device qualification: **PASS**؛
+- final Gate-6B adoption/closure: **pending PR / owner approval / merge**؛
+- candidate لم تصبح merged project authority بعد.
 
-Canonical hashes:
+Gate 6C: **`NOT_STARTED`**.
 
-- schema: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`؛
-- bootstrap: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
+## 3) Adapter Qualification الفيزيائية المقبولة على `87135cfe...`
 
-## 3) Q12 physical result على `7ebe780...`
+تم تنفيذ Adapter Qualification حقيقية على Android ضد:
 
-تم تنفيذ **Run Adapter Qualification** على هاتف Android فعلي ضد:
+`87135cfe80ae3de79a34e941828249fc6889139c`
 
-`7ebe780b1caffeb1a9240ff4010e5483e1c70b7b`
+External accepted evidence folder:
 
-النتيجة الفيزيائية: `overallResult=BLOCKED`، مع بقاء Q1→Q11 جميعها PASS. Q8 بقي PASS: 15 tables / 44 triggers / 1 view / 24 indexes / `integrity_check=ok`. Q9 بقي PASS: 24 definitions، second bootstrap 24 no-ops، P0=20، P1=4، allowed_values=48.
+`https://drive.google.com/drive/folders/18siSZGeoUtmFsfz5H4ozKsrp3tbpVwkS?usp=drive_link`
 
-Q12 كانت:
+النتيجة: **`overallResult=PASS`**.
+
+Q1→Q11: PASS.
+
+Q8:
 
 ```text
-Q12_COMPETING_WRITE = BLOCKED
-stage=native_open/set_busy_timeout
-exceptionClass=android.database.sqlite.SQLiteException
-exceptionMessage=unknown error (code 0): Queries can be performed using SQLiteDatabase query or rawQuery methods only.
-code=G6B_Q12_NATIVE_OPEN_SET_BUSY_TIMEOUT
-nativeStage=set_busy_timeout
+PASS
+15 tables / 44 triggers / 1 view / 24 indexes
+integrity_check=ok
 ```
 
-`samePhysicalFile=false` في هذا التشغيل ليست post-open contradiction. native open توقف قبل `database_list` و`same_file_check`، ولذلك بقي الحقل على القيمة الابتدائية غير المثبتة. differential lock proof لم يُصل إليه التنفيذ.
+Q9:
 
-السبب مثبت الآن: Q12 diagnostic writer كان ينقل `PRAGMA busy_timeout = 0;` عبر `execSQL`. SQLCipher Android رفض هذا النقل لأن الـPRAGMA row-producing ويجب أن يُنفذ عبر query/rawQuery. هذا **Q12 diagnostic-writer transport defect** فقط؛ ليس دليلًا على SQLCipher incompatibility، ولا primary adapter defect، ولا same-file failure، ولا `BEGIN IMMEDIATE` failure، ولا lock-semantics failure.
+```text
+PASS
+24 definitions
+second bootstrap 24 no-ops
+P0=20
+P1=4
+allowed_values=48
+```
 
-## 4) busy_timeout transport correction الحالي
+Q12:
 
-التصحيح ضيق على writer B فقط، مع إبقاء semantics Q12 دون تغيير:
+```text
+PASS
+samePhysicalFile=true
+databaseBasename=inspection_gate6b_adapter_probe_v1SQLite.db
+nativeEngine=sqlcipher-android-4.17.0
+preflightWrite=SUCCESS
+preflightMarkerCount=1
+primaryBeginImmediate=true
+duringPrimaryLock=BUSY/android.database.sqlite.SQLiteDatabaseLockedException/code=5
+busyTimeoutMs=0
+lockedMarkerCount=0
+primaryRelease=true
+postReleaseWrite=SUCCESS
+postReleaseMarkerCount=1
+cleanupComplete=true
+nativeClosed=true
+```
 
-- A يبقى existing `CapacitorSqliteAdapter`؛
-- B يبقى native writer مستقلًا؛
-- لا تعديل في Application Core أو canonical schema/bootstrap أو primary adapter؛
-- stage `set_busy_timeout` تستخدم `scalarLong(opened, "PRAGMA busy_timeout = 0;")`، أي `rawQuery` مع stepping/read للصف المعاد؛
-- قيمة setter نفسها يجب أن تكون `0` وإلا يفشل native open في `set_busy_timeout`؛
-- stage `read_busy_timeout` تقرأ `PRAGMA busy_timeout;` بصورة مستقلة، ويجب أن تكون `0` وإلا يفشل native open في `read_busy_timeout`؛
-- stages التسع تبقى منفصلة: `validate_target`, `load_sqlcipher`, `open_database`, `set_busy_timeout`, `read_busy_timeout`, `read_sqlite_version`, `database_list`, `same_file_check`, `probe_table_read`؛
-- failure قبل differential lock proof يبقى BLOCKED؛
-- post-open `samePhysicalFile=false` يبقى FAIL؛
-- BUSY/LOCKED الحقيقيان فقط يمكن أن يؤهلا during-lock step؛
-- لا Promise timeout ولا BUSY/LOCKED simulation.
+هذا يثبت physical genuine differential native locking requirement كما هو معرّف في Q12: writer B مستقل، نفس الملف الفيزيائي مثبت، preflight write ناجحة، A يمسك literal `BEGIN IMMEDIATE`، B يعيد BUSY أصليًا من SQLCipher أثناء القفل، locked marker لا يظهر، ثم نفس B ينجح بعد release ويُرى marker ويُنظف ويُغلق.
 
-Q12 status بعد هذا التصحيح: **`BUSY_TIMEOUT_TRANSPORT_CORRECTED_PENDING_PHYSICAL_RETEST`**.
+## 4) قرار إعادة استخدام Application-Core / Restart evidence
 
-## 5) الأدلة التاريخية المحفوظة
+المراجعة المستقلة قبلت إعادة استخدام الأدلة الفيزيائية الموجودة على:
 
-- Build `5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc`: Q1-Q7/Q10/Q11 PASS، Q8 FAIL بـ`Execute: not an error (code 0)`، Q9 لم يصل إليها التنفيذ، Q12 BLOCKED. هذا historical evidence للبناء المعيب ولا يُعاد تصنيفه.
+`89d405d6254108ce735125638ccdb2fb2e67c568`
+
+الأدلة المقبولة:
+
+- Application-Core Proof: PASS؛
+- `currentVisitState` zero-write: before=121 / after=121 / delta=0؛
+- T11: PASS؛
+- state hash: `9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405`؛
+- final real Force Stop / Restart: PASS؛
+- Phase A: `DEVICE_PROOF_READY`؛
+- Phase B بعد real Android Force Stop: PASS؛
+- Visit rediscovered from SQLite only: `1`؛
+- Phase A/B state hashes: exact match.
+
+هذا **evidence reuse based on demonstrated non-drift**، وليس ادعاءً بأن APK `89d405d...` وAPK `87135cfe...` نفس binary؛ هما ليستا نفس binary.
+
+من `89d405d...` إلى `87135cfe...` لم يحدث drift في المسارات ذات الصلة بإعادة استخدام هذه الأدلة:
+
+- `src/application/**`;
+- `src/bootstrap/**`;
+- `src/device/capacitor-sqlite-adapter.ts`;
+- `docs/schema/schema.sql`;
+- `bootstrap/v1/checklist-v1.json`.
+
+التغيير التنفيذي الذي أضيف بعد `89d405d...` كان متعلقًا بإثبات Q12 داخل proof runner/native diagnostic boundary؛ لم يغير Application-Core أو restart semantic path أو primary adapter/canonical authorities. لذلك لا يُطلب إعادة Application-Core Proof أو Restart Phase A/B.
+
+## 5) الأدلة التاريخية المحفوظة — لا يعاد تصنيفها
+
+- Build `5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc`: Q1-Q7/Q10/Q11 PASS، Q8 FAIL بـ`Execute: not an error (code 0)`، Q9 لم يصل إليها التنفيذ، Q12 BLOCKED، overall FAIL.
 - Corrected build `89d405d...`: Q1-Q11 PASS، Application-Core PASS، clean real Force Stop restart PASS، Q12 BLOCKED قبل وجود genuine writer B.
-- Build `c3cc890...`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open`، وكانت root cause غير معروفة لأن diagnostics القديمة أسقطت native rejection detail.
-- Build `7ebe780...`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open/set_busy_timeout`، والسبب مثبت كـinvalid `execSQL` transport للـrow-producing busy-timeout PRAGMA.
-- negative-control سابقة: Phase B بعد `Reset Synthetic Proof DB` فشلت لأن durable DB حُذفت؛ تبقى negative evidence وليست product defect.
+- Build `c3cc890b35d7f9612214559f83d8091f98e96a68`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open`; diagnostics القديمة أسقطت native rejection detail، ولذلك root cause في ذلك التشغيل بقيت غير معروفة.
+- Build `7ebe780b1caffeb1a9240ff4010e5483e1c70b7b`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open/set_busy_timeout`; السبب مثبت كـinvalid `execSQL` transport للـrow-producing busy-timeout PRAGMA. `samePhysicalFile=false` في ذلك التشغيل كانت unestablished default لأن native open توقف قبل `database_list/same_file_check`؛ lock differential لم يُصل إليه.
+- restart negative control: Phase B بعد `Reset Synthetic Proof DB` فشلت لأن durable DB/schema/Visit حُذفت؛ تبقى negative evidence وليست product defect.
+
+هذه النتائج التاريخية لا يعاد تحويلها إلى PASS بعد نجاح `87135cfe...`.
 
 ## 6) Baselines الحالية
 
@@ -112,19 +150,23 @@ Q12 status بعد هذا التصحيح: **`BUSY_TIMEOUT_TRANSPORT_CORRECTED_PEN
 | Gate 5B adapter normalization | 6 / 0 |
 | Schema | 100 / 0 |
 
+Canonical hashes:
+
+- `docs/schema/schema.sql`: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`;
+- `bootstrap/v1/checklist-v1.json`: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
+
 ## 7) ثوابت لا تتغير
 
 - SQLite هي local authority؛ process memory ليست authority.
 - `src/application/**` و`src/bootstrap/**` تبقيان runtime-neutral.
 - canonical schema وcanonical bootstrap لا يُعدلان لتلائم driver.
 - diagnostic Q12 writer ليس product architecture.
-- Gate 6B تبقى **IN_PROGRESS**، `closure_authorized=false`.
+- Q12 classifier semantics لم تُضعف.
+- Gate 6B تبقى **IN_PROGRESS** وغير مدمجة، `closure_authorized=false`.
 - Gate 6C تبقى **NOT_STARTED**.
 
-## 8) المهمة الفيزيائية التالية الوحيدة
+## 8) الحالة التالية
 
-بعد independent review، ثبّت APK الناتج عن busy-timeout transport correction وشغّل فقط:
+لا يوجد physical retest جديد مطلوب ضمن evidence المقبولة الحالية.
 
-**Run Adapter Qualification**
-
-لا يُطلب Application-Core Proof ولا Restart Phase A/B في هذه المرحلة.
+المتبقي لإغلاق Gate 6B هو مسار governance: review/owner approval ثم PR/merge عندما يُؤذن به. هذا الملف لا يفتح PR ولا يغلق Gate 6B ولا يبدأ Gate 6C.

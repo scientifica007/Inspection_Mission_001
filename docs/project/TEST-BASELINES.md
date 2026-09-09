@@ -27,7 +27,7 @@ Gate 6B لا تعيد كتابة Application Core. أضيفت suites خاصة ب
 
 إجمالي Gate 5B عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع بقاء العدّين منفصلين.
 
-Q12 host suite لا تدّعي lock proof على Android. هي تمنع false-positive classification وتثبت سلامة diagnostic transport/source invariants. Q12 PASS لا يمكن إثباتها إلا بتشغيل APK على جهاز Android فعلي.
+Q12 host suite لا تدّعي lock proof على Android؛ هي تمنع false-positive classification وتثبت سلامة diagnostic transport/source invariants. الـdevice lock proof أصبح موجودًا الآن بصورة مستقلة من تشغيل Android الفعلي المقبول على `87135cfe...`.
 
 ## 2) ملفات suites الحاكمة
 
@@ -105,25 +105,79 @@ Android Gate-6B CI additionally يجب أن ينجح في:
 - busy-timeout setter يستخدم `scalarLong()` → `rawQuery()` ويقرأ الصف المعاد؛
 - setter-returned value وreadback مستقل كلاهما ملزمان بقيمة `0`.
 
-## 5) physical Q12 evidence المرتبطة بهذا baseline
+## 5) accepted physical Q12 evidence
 
-تشغيل فعلي على SHA `7ebe780b1caffeb1a9240ff4010e5483e1c70b7b` أعاد Q12=`BLOCKED` عند `stage=native_open/set_busy_timeout` مع:
+Adapter Qualification حقيقية على Android عند:
+
+`87135cfe80ae3de79a34e941828249fc6889139c`
+
+External evidence:
+
+`https://drive.google.com/drive/folders/18siSZGeoUtmFsfz5H4ozKsrp3tbpVwkS?usp=drive_link`
+
+أعادت `overallResult=PASS`, Q1→Q11 PASS، وQ12 PASS مع:
 
 ```text
-exceptionClass=android.database.sqlite.SQLiteException
-exceptionMessage=unknown error (code 0): Queries can be performed using SQLiteDatabase query or rawQuery methods only.
-code=G6B_Q12_NATIVE_OPEN_SET_BUSY_TIMEOUT
-nativeStage=set_busy_timeout
+samePhysicalFile=true
+databaseBasename=inspection_gate6b_adapter_probe_v1SQLite.db
+nativeEngine=sqlcipher-android-4.17.0
+preflightWrite=SUCCESS
+preflightMarkerCount=1
+primaryBeginImmediate=true
+duringPrimaryLock=BUSY/android.database.sqlite.SQLiteDatabaseLockedException/code=5
+busyTimeoutMs=0
+lockedMarkerCount=0
+primaryRelease=true
+postReleaseWrite=SUCCESS
+postReleaseMarkerCount=1
+cleanupComplete=true
+nativeClosed=true
 ```
 
-Q1→Q11 بقيت PASS. `samePhysicalFile=false` لم يكن same-file contradiction؛ native open توقف قبل `database_list/same_file_check`. differential lock proof لم يُصل إليه التنفيذ.
+إذًا differential native locking requirement مثبت فيزيائيًا، وليس بواسطة host classifier أو Promise timing.
 
-السبب مثبت كـQ12 diagnostic-writer transport defect: setter للـrow-producing `PRAGMA busy_timeout` كان يستخدم `execSQL` بدل query/rawQuery. هذا ليس دليلًا ضد primary adapter أو SQLCipher lock semantics.
+Q8 في التشغيل نفسه: PASS — 15 tables / 44 triggers / 1 view / 24 indexes / `integrity_check=ok`.
 
-الـbaseline 20/0 تخص التصحيح اللاحق ولا تعيد تصنيف التشغيل الفيزيائي: تشغيل `7ebe780...` يبقى BLOCKED. المطلوب التالي بعد independent review هو physical **Run Adapter Qualification** على APK المصححة.
+Q9 في التشغيل نفسه: PASS — 24 definitions / second bootstrap 24 no-ops / P0=20 / P1=4 / allowed_values=48.
 
-## 6) قاعدة عدم الإضعاف
+## 6) historical Q12 evidence remains historical
 
-لا يجوز حذف test صحيحة أو خفض semantics سابقة لتجاوز failure. أي contradiction حقيقية في Q12 يجب أن تبقى FAIL/BLOCKED وفق contract، لا أن تُعاد صياغة `BEGIN IMMEDIATE` أو primary adapter لتناسب الاختبار.
+تشغيل `7ebe780b1caffeb1a9240ff4010e5483e1c70b7b` يبقى Q12=`BLOCKED` عند `native_open/set_busy_timeout` بسبب transport defect المثبت. لا يعاد تصنيفه بعد نجاح `87135cfe...`.
 
-Gate 6B تبقى `IN_PROGRESS`; `closure_authorized=false`; Gate 6C تبقى `NOT_STARTED`.
+تشغيل `c3cc890...` يبقى BLOCKED عند `native_open` مع diagnostics غير كافية لتحديد السبب في ذلك الوقت. pre-correction Q8 failure وrestart negative control يبقيان محفوظين كذلك.
+
+## 7) evidence reuse decision
+
+Application-Core Proof وfinal real Force Stop/Restart evidence من `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى مقبولة ولا تعاد، لأن المسارات التالية لم تنحرف حتى `87135cfe...`:
+
+- `src/application/**`;
+- `src/bootstrap/**`;
+- `src/device/capacitor-sqlite-adapter.ts`;
+- `docs/schema/schema.sql`;
+- `bootstrap/v1/checklist-v1.json`.
+
+هذا evidence reuse based on non-drift؛ **لا** يعني أن APK `89d` وAPK `871` نفس binary.
+
+## 8) canonical hashes
+
+```text
+docs/schema/schema.sql
+c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7
+
+bootstrap/v1/checklist-v1.json
+d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
+```
+
+## 9) قاعدة عدم الإضعاف والحالة الحالية
+
+لا يجوز حذف test صحيحة أو خفض semantics سابقة لتجاوز failure. أي contradiction حقيقية في Q12 يجب أن تبقى FAIL/BLOCKED وفق contract.
+
+Gate 6B: `IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`.
+
+Q12: `PHYSICAL_PASS_REVIEW_ACCEPTED`.
+
+`closure_authorized=false`.
+
+Gate 6C: `NOT_STARTED`.
+
+لا يوجد physical retest جديد مطلوب بموجب evidence المقبولة الحالية.

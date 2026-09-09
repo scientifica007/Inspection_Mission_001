@@ -15,7 +15,28 @@
     "DERIVED": "Executable/technical consequence derived from an official requirement.",
     "PROJECT": "Explicit project-owner decision or requirement; must not be attributed to official sources."
   },
-  "closed_gates": ["1", "2", "3", "4", "4A", "4B", "4-Revision-6", "5A", "5B", "5C", "5D", "5E", "5F", "5G", "5H", "5I", "5J", "5K", "5L", "6A"],
+  "closed_gates": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "4A",
+    "4B",
+    "4-Revision-6",
+    "5A",
+    "5B",
+    "5C",
+    "5D",
+    "5E",
+    "5F",
+    "5G",
+    "5H",
+    "5I",
+    "5J",
+    "5K",
+    "5L",
+    "6A"
+  ],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
       "status": "MERGED_RESOLVED",
@@ -29,7 +50,11 @@
   },
   "application_core": {
     "status": "CLOSED",
-    "coverage": ["T0-T11", "OBS-1", "currentVisitState/restart reconstruction"],
+    "coverage": [
+      "T0-T11",
+      "OBS-1",
+      "currentVisitState/restart reconstruction"
+    ],
     "authoritative_store": "SQLite 3",
     "process_memory_authoritative": false
   },
@@ -39,7 +64,10 @@
     "triggers": 44,
     "views": 1,
     "explicit_indexes": 24,
-    "schema_regression": {"passed": 100, "failed": 0}
+    "schema_regression": {
+      "passed": 100,
+      "failed": 0
+    }
   },
   "product_architecture": {
     "status": "ADOPTED",
@@ -49,7 +77,7 @@
     "local_authority": "SQLite",
     "server_required_for_field_v1": false,
     "sync_required_for_field_v1": false,
-    "sqlite_driver_selection": "PROVISIONAL_GATE6B_CANDIDATE_Q12_PENDING"
+    "sqlite_driver_selection": "DEVICE_QUALIFIED_GATE6B_CANDIDATE_PENDING_FINAL_ADOPTION_MERGE"
   },
   "implementation_workflow": {
     "classification": "PROJECT",
@@ -65,39 +93,47 @@
     "id": "6B",
     "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
     "status": "IN_PROGRESS",
-    "device_proof_status": "PARTIAL_PASS_Q12_PENDING",
+    "device_proof_status": "PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE",
     "implementation_branch": "implementation/gate6b-android-runtime-proof-v1",
     "governing_base_sha": "608314ae62721af44d8ed4f50c1c618ac469fc66",
     "sqlite_candidate": "@capacitor-community/sqlite@8.1.1",
-    "sqlite_candidate_status": "PROVISIONAL_CANDIDATE_PENDING_DEVICE_PROOF",
+    "sqlite_candidate_status": "DEVICE_QUALIFICATION_PASS_PENDING_GATE6B_FINAL_ADOPTION_MERGE",
     "physical_device_proof_executed": true,
+    "physical_device_qualification_status": "PASS",
     "physical_schema_bootstrap_status": "PASS",
-    "application_core_device_proof_status": "PASS",
-    "physical_restart_status": "PASS",
-    "q12_status": "BUSY_TIMEOUT_TRANSPORT_CORRECTED_PENDING_PHYSICAL_RETEST",
+    "application_core_device_proof_status": "PASS_ACCEPTED_BY_NON_DRIFT_EVIDENCE_REUSE",
+    "physical_restart_status": "PASS_ACCEPTED_BY_NON_DRIFT_EVIDENCE_REUSE",
+    "q12_status": "PHYSICAL_PASS_REVIEW_ACCEPTED",
     "closure_authorized": false,
     "physical_evidence": {
-      "pre_correction": {
-        "tested_sha": "5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc",
-        "q1_q7": "PASS",
-        "q8": "FAIL",
-        "q8_error": "Execute: not an error (code 0)",
-        "q9": "NOT_REACHED",
-        "q10": "PASS",
-        "q11": "PASS",
-        "q12": "BLOCKED",
-        "overall": "FAIL"
-      },
-      "corrected_adapter_qualification": {
-        "tested_sha": "89d405d6254108ce735125638ccdb2fb2e67c568",
-        "capacitor": "8.5.1",
-        "sqlite_plugin": "@capacitor-community/sqlite@8.1.1",
-        "sqlite_engine": "3.53.3",
-        "schema_sha256": "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7",
-        "bootstrap_sha256": "d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd",
+      "adapter_qualification_pass": {
+        "tested_sha": "87135cfe80ae3de79a34e941828249fc6889139c",
+        "timestamp": "2026-09-09T22:59:17.756Z",
+        "external_evidence_folder": "https://drive.google.com/drive/folders/18siSZGeoUtmFsfz5H4ozKsrp3tbpVwkS?usp=drive_link",
+        "overall": "PASS",
         "q1_q11": "PASS",
-        "q12": "BLOCKED",
-        "overall": "BLOCKED"
+        "q8": "PASS",
+        "q8_inventory": "15 tables / 44 triggers / 1 view / 24 indexes / integrity_check=ok",
+        "q9": "PASS",
+        "q9_inventory": "24 definitions; second bootstrap 24 no-ops; P0=20; P1=4; allowed_values=48",
+        "q12": "PASS",
+        "q12_evidence": {
+          "samePhysicalFile": true,
+          "databaseBasename": "inspection_gate6b_adapter_probe_v1SQLite.db",
+          "nativeEngine": "sqlcipher-android-4.17.0",
+          "preflightWrite": "SUCCESS",
+          "preflightMarkerCount": 1,
+          "primaryBeginImmediate": true,
+          "duringPrimaryLock": "BUSY/android.database.sqlite.SQLiteDatabaseLockedException/code=5",
+          "busyTimeoutMs": 0,
+          "lockedMarkerCount": 0,
+          "primaryRelease": true,
+          "postReleaseWrite": "SUCCESS",
+          "postReleaseMarkerCount": 1,
+          "cleanupComplete": true,
+          "nativeClosed": true
+        },
+        "review_status": "ACCEPTED"
       },
       "application_core": {
         "tested_sha": "89d405d6254108ce735125638ccdb2fb2e67c568",
@@ -114,15 +150,63 @@
         "phase_a_timestamp": "2026-09-09T20:38:14.309Z",
         "phase_a_overall": "DEVICE_PROOF_READY",
         "phase_a_visit": 1,
-        "phase_a_zero_write": {"before": 121, "after": 121, "delta": 0},
+        "phase_a_zero_write": {
+          "before": 121,
+          "after": 121,
+          "delta": 0
+        },
         "phase_b_timestamp": "2026-09-09T20:41:35.702Z",
         "phase_b_overall": "PASS",
         "phase_b_visit": 1,
-        "phase_b_zero_write": {"before": 0, "after": 0, "delta": 0},
+        "phase_b_zero_write": {
+          "before": 0,
+          "after": 0,
+          "delta": 0
+        },
         "state_hash_sha256": "9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405",
         "real_force_stop": true,
+        "visit_rediscovered_from_sqlite_only": 1,
+        "phase_a_b_state_hash_exact_match": true,
         "reset_uninstall_or_clear_between_phases": false,
         "screenshots_committed_to_github": false
+      },
+      "evidence_reuse_decision": {
+        "status": "REVIEW_ACCEPTED",
+        "source_sha": "89d405d6254108ce735125638ccdb2fb2e67c568",
+        "q12_target_sha": "87135cfe80ae3de79a34e941828249fc6889139c",
+        "same_binary": false,
+        "basis": "Evidence reuse is accepted because the relevant Application-Core, bootstrap, primary-adapter and canonical-authority paths did not drift between the tested runtime states; this does not assert binary identity.",
+        "unchanged_paths": [
+          "src/application/**",
+          "src/bootstrap/**",
+          "src/device/capacitor-sqlite-adapter.ts",
+          "docs/schema/schema.sql",
+          "bootstrap/v1/checklist-v1.json"
+        ],
+        "application_core_retest_required": false,
+        "restart_phase_a_b_retest_required": false
+      },
+      "pre_correction": {
+        "tested_sha": "5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc",
+        "q1_q7": "PASS",
+        "q8": "FAIL",
+        "q8_error": "Execute: not an error (code 0)",
+        "q9": "NOT_REACHED",
+        "q10": "PASS",
+        "q11": "PASS",
+        "q12": "BLOCKED",
+        "overall": "FAIL"
+      },
+      "corrected_adapter_qualification_89d": {
+        "tested_sha": "89d405d6254108ce735125638ccdb2fb2e67c568",
+        "capacitor": "8.5.1",
+        "sqlite_plugin": "@capacitor-community/sqlite@8.1.1",
+        "sqlite_engine": "3.53.3",
+        "schema_sha256": "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7",
+        "bootstrap_sha256": "d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd",
+        "q1_q11": "PASS",
+        "q12": "BLOCKED",
+        "overall": "BLOCKED"
       },
       "q12_native_open_blocked_c3cc": {
         "tested_sha": "c3cc890b35d7f9612214559f83d8091f98e96a68",
@@ -167,23 +251,37 @@
       "busy_timeout_transport": "QUERY_RAWQUERY_SCALARLONG_SET_AND_INDEPENDENT_READBACK",
       "busy_timeout_setter_must_return_zero": true,
       "busy_timeout_readback_must_return_zero": true,
-      "native_lock_classification": ["SQLITE_BUSY/SQLiteDatabaseLockedException", "SQLITE_LOCKED/SQLiteTableLockedException"],
-      "physical_result": "BLOCKED_AT_NATIVE_OPEN_SET_BUSY_TIMEOUT_ON_7EBE; ROOT_CAUSE_PROVEN_AND_TRANSPORT_CORRECTED_PENDING_RETEST",
+      "native_lock_classification": [
+        "SQLITE_BUSY/SQLiteDatabaseLockedException",
+        "SQLITE_LOCKED/SQLiteTableLockedException"
+      ],
+      "physical_result": "PASS_ON_87135CFE_REVIEW_ACCEPTED",
       "diagnostic_hardening": {
         "status": "IMPLEMENTED",
         "preserves_error_name_message_code": true,
-        "native_open_stages": ["validate_target", "load_sqlcipher", "open_database", "set_busy_timeout", "read_busy_timeout", "read_sqlite_version", "database_list", "same_file_check", "probe_table_read"],
+        "native_open_stages": [
+          "validate_target",
+          "load_sqlcipher",
+          "open_database",
+          "set_busy_timeout",
+          "read_busy_timeout",
+          "read_sqlite_version",
+          "database_list",
+          "same_file_check",
+          "probe_table_read"
+        ],
         "linkage_error_handled": true,
         "q12_semantics_weakened": false
       }
     },
-    "next_physical_action": "After independent review, Run Adapter Qualification on the busy-timeout-transport-corrected APK only"
+    "next_physical_action": "NONE_REQUIRED_BY_ACCEPTED_REVIEW_DECISION",
+    "next_governance_action": "Pending independent/owner approval to open PR and merge Gate 6B; this reconciliation does not open the PR."
   },
   "next_gate": {
     "id": "6B",
     "name": "Android Shell + Native SQLite Adapter / Device Runtime Proof",
     "status": "IN_PROGRESS",
-    "device_proof_status": "PARTIAL_PASS_Q12_PENDING"
+    "device_proof_status": "PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE"
   },
   "gate_6c_status": "NOT_STARTED",
   "roadmap": [
@@ -198,24 +296,85 @@
   ],
   "field_usable_v1": false,
   "test_baselines": {
-    "gate6b_host_adapter_contract": {"passed": 16, "failed": 0},
-    "gate6b_schema_execution": {"passed": 8, "failed": 0},
-    "gate6b_q12_diagnostic_classifier": {"passed": 20, "failed": 0},
-    "gate5l": {"passed": 94, "failed": 0},
-    "gate5k": {"passed": 82, "failed": 0},
-    "gate5j": {"passed": 75, "failed": 0},
-    "gate5i": {"passed": 48, "failed": 0},
-    "gate5h": {"passed": 66, "failed": 0},
-    "gate5g": {"passed": 41, "failed": 0},
-    "gate5f": {"passed": 30, "failed": 0},
-    "gate5e": {"passed": 79, "failed": 0},
-    "gate5d": {"passed": 60, "failed": 0},
-    "gate5c": {"passed": 55, "failed": 0},
-    "gate5b": {"passed": 32, "failed": 0, "scope": "bootstrap/reference-data regression"},
-    "gate5b_adapter_normalization": {"passed": 6, "failed": 0},
-    "schema": {"passed": 100, "failed": 0}
+    "gate6b_host_adapter_contract": {
+      "passed": 16,
+      "failed": 0
+    },
+    "gate6b_schema_execution": {
+      "passed": 8,
+      "failed": 0
+    },
+    "gate6b_q12_diagnostic_classifier": {
+      "passed": 20,
+      "failed": 0
+    },
+    "gate5l": {
+      "passed": 94,
+      "failed": 0
+    },
+    "gate5k": {
+      "passed": 82,
+      "failed": 0
+    },
+    "gate5j": {
+      "passed": 75,
+      "failed": 0
+    },
+    "gate5i": {
+      "passed": 48,
+      "failed": 0
+    },
+    "gate5h": {
+      "passed": 66,
+      "failed": 0
+    },
+    "gate5g": {
+      "passed": 41,
+      "failed": 0
+    },
+    "gate5f": {
+      "passed": 30,
+      "failed": 0
+    },
+    "gate5e": {
+      "passed": 79,
+      "failed": 0
+    },
+    "gate5d": {
+      "passed": 60,
+      "failed": 0
+    },
+    "gate5c": {
+      "passed": 55,
+      "failed": 0
+    },
+    "gate5b": {
+      "passed": 32,
+      "failed": 0,
+      "scope": "bootstrap/reference-data regression"
+    },
+    "gate5b_adapter_normalization": {
+      "passed": 6,
+      "failed": 0
+    },
+    "schema": {
+      "passed": 100,
+      "failed": 0
+    }
+  },
+  "canonical_hashes": {
+    "docs/schema/schema.sql": "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7",
+    "bootstrap/v1/checklist-v1.json": "d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd"
   },
   "closed_gate_reopen_policy": "Only for a concrete reproducible executable contradiction; correction must be narrowly scoped and regressions rerun.",
-  "repository_exclusions": ["real inspection photos", "real operational Evidence", "personal or sensitive data", "production SQLite databases", "real operational inspection records", "secrets and API keys", "device serial numbers"],
+  "repository_exclusions": [
+    "real inspection photos",
+    "real operational Evidence",
+    "personal or sensitive data",
+    "production SQLite databases",
+    "real operational inspection records",
+    "secrets and API keys",
+    "device serial numbers"
+  ],
   "handoff_entrypoint": "START-HERE.md"
 }

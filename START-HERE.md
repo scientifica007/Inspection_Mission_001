@@ -61,9 +61,11 @@
 
 - Gates 1→5L: مغلقة/معتمدة/مدمجة.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap: مغلقة/معتمدة/مدمجة.
-- **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof: IN_PROGRESS / PARTIAL_PASS_Q12_PENDING.**
-- Physical Android Q1→Q11، Application-Core proof، وclean Force Stop restart A→B: منفذة وPASS على corrected SHA `89d405d...`.
-- Q12 genuine competing writer: **IMPLEMENTED_PENDING_PHYSICAL_RETEST**؛ لا توجد device PASS للتنفيذ الجديد بعد.
+- **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof: `IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`.**
+- Adapter Qualification الفيزيائية على Android الحقيقي عند SHA `87135cfe80ae3de79a34e941828249fc6889139c`: **PASS** لـQ1→Q12، وQ12 status هي **`PHYSICAL_PASS_REVIEW_ACCEPTED`**.
+- أدلة Application-Core و`currentVisitState` zero-write وT11 وreal Force Stop/Restart من SHA `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى **مقبولة بإعادة استخدام evidence مبنية على non-drift** للمسارات ذات الصلة حتى `87135cfe...`؛ لا يعني ذلك أن APK البناءين binary متطابقتان.
+- `@capacitor-community/sqlite@8.1.1`: **device qualification = PASS**؛ الاعتماد النهائي وإغلاق Gate 6B ما يزالان pending PR / owner approval / merge.
+- `closure_authorized=false`.
 - Gate 6C: **NOT_STARTED**.
 - Field-usable v1: **غير مكتملة بعد**.
 

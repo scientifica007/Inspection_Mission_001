@@ -2,7 +2,7 @@
 
 > **Gate:** 6B — already open
 >
-> **Status:** `BUSY_TIMEOUT_TRANSPORT_CORRECTED_PENDING_PHYSICAL_RETEST`
+> **Status:** `PHYSICAL_PASS_REVIEW_ACCEPTED`
 >
 > **Branch:** `implementation/gate6b-android-runtime-proof-v1`
 >
@@ -26,7 +26,7 @@ The app also declares `compileOnly 'androidx.sqlite:sqlite:2.4.0'` because SQLCi
 
 ## 3. A and B boundaries
 
-A remains the existing `@capacitor-community/sqlite` → `CapacitorSqliteAdapter`. No Q12-specific transaction implementation is added to A. It still acquires the lock through `CapacitorSqliteAdapter.beginImmediate()` → `connection.execute("BEGIN IMMEDIATE;", false)` and releases through existing `rollback()`.
+A remains the existing `@capacitor-community/sqlite` → `CapacitorSqliteAdapter`. No Q12-specific transaction implementation is added to A. It acquires the lock through `CapacitorSqliteAdapter.beginImmediate()` → `connection.execute("BEGIN IMMEDIATE;", false)` and releases through existing `rollback()`.
 
 B is `Gate6BCompetingWriterPlugin`, a custom Capacitor Android diagnostic plugin. It owns a separate `net.zetetic.database.sqlcipher.SQLiteDatabase` instance and remains open across preflight, lock attempt, and post-release retry.
 
@@ -56,7 +56,7 @@ Before A owns any explicit transaction:
 3. A queries that marker and requires count=1.
 4. A deletes it and requires one-row cleanup.
 
-A later during-lock failure cannot therefore be accepted merely because B was incapable of opening or writing the database. B also returns its own `sqlite_version()`; the classifier requires it to equal A's recorded version.
+B also returns its own `sqlite_version()`; the classifier requires it to equal A's recorded version.
 
 ## 6. Bounded native lock behavior
 
@@ -78,9 +78,9 @@ if (busyTimeout != 0L) {
 }
 ```
 
-Both the setter-returned value and the independent readback must be exactly zero. Any other value fails closed at the corresponding diagnostic stage. No normalization or substitution is allowed.
+Both setter-returned value and independent readback must be exactly zero. Any other value fails closed at the corresponding diagnostic stage.
 
-No JavaScript Promise timeout is used. No ExecutorService, background worker, delayed writer, or orphan thread exists. Each plugin method performs one synchronous native SQLite call and resolves only after that call returns.
+No JavaScript Promise timeout is used. No ExecutorService, background worker, delayed writer, or orphan thread exists.
 
 ## 7. Native BUSY/LOCKED classification
 
@@ -89,7 +89,7 @@ In SQLCipher Android `4.17.0` JNI exception mapping:
 - `SQLITE_BUSY` → `android.database.sqlite.SQLiteDatabaseLockedException`;
 - `SQLITE_LOCKED` → `android.database.sqlite.SQLiteTableLockedException`.
 
-B classifies only those concrete outcomes as `BUSY`/`LOCKED`, recording result code 5/6 and the concrete exception class. Any other `SQLiteException` is `ERROR` and causes Q12 to remain BLOCKED rather than PASS.
+B classifies only those concrete outcomes as `BUSY`/`LOCKED`, recording result code 5/6 and the concrete exception class. Any other `SQLiteException` is `ERROR` and cannot produce PASS.
 
 ## 8. Exact differential sequence
 
@@ -106,7 +106,7 @@ B classifies only those concrete outcomes as `BUSY`/`LOCKED`, recording result c
 11. A deletes the marker.
 12. B closes deterministically.
 
-No step releases A merely to rescue B. B's zero busy timeout makes the native lock attempt finite by construction.
+No step releases A merely to rescue B.
 
 ## 9. Verdict rules — unchanged
 
@@ -116,9 +116,13 @@ Q12 = FAIL for a semantic contradiction, including a **post-open** same-physical
 
 Q12 = BLOCKED for qualification limitations, including inability to validate/open B before same-file observation is established, native preflight failure, engine mismatch, generic/unclassifiable native exception, unexpected busy policy, or incomplete cleanup/close.
 
-## 10. Physical result on `7ebe780...`
+## 10. Historical physical result on `c3cc890...`
 
-A real Android **Run Adapter Qualification** was executed on:
+A physical run on `c3cc890b35d7f9612214559f83d8091f98e96a68` kept Q1→Q11 PASS but Q12 BLOCKED at `native_open`. The instrumentation then available collapsed the rejection detail, so the root cause for that historical run remained unknown. This result remains historical and is not reclassified.
+
+## 11. Historical physical result on `7ebe780...`
+
+A real Android Adapter Qualification was executed on:
 
 `7ebe780b1caffeb1a9240ff4010e5483e1c70b7b`
 
@@ -134,17 +138,17 @@ code=G6B_Q12_NATIVE_OPEN_SET_BUSY_TIMEOUT
 nativeStage=set_busy_timeout
 ```
 
-This did **not** reach the differential lock test. `samePhysicalFile=false` remained the unestablished/default observation because native open aborted before `database_list` and `same_file_check`; it is not a successful native-open same-file contradiction.
+This did **not** reach the differential lock test. `samePhysicalFile=false` remained the unestablished/default observation because native open aborted before `database_list` and `same_file_check`.
 
-The root cause is now proven: the native Q12 writer used `opened.execSQL("PRAGMA busy_timeout = 0;")`. SQLCipher Android rejected that transport because this PRAGMA returns a row and must be executed through query/rawQuery with the returned row stepped/read.
+The root cause was proven: the native Q12 writer used `opened.execSQL("PRAGMA busy_timeout = 0;")`. SQLCipher Android rejected that transport because this PRAGMA returns a row and must be executed through query/rawQuery with the returned row stepped/read.
 
-This is a **Q12 diagnostic writer transport defect** only. It is not evidence of SQLCipher incompatibility, primary `CapacitorSqliteAdapter` failure, same-file failure, `BEGIN IMMEDIATE` failure, or lock-semantics failure.
+This was a **Q12 diagnostic writer transport defect** only, not evidence of SQLCipher incompatibility, primary `CapacitorSqliteAdapter` failure, same-file failure, `BEGIN IMMEDIATE` failure, or lock-semantics failure.
 
-## 11. Narrow busy_timeout transport correction
+## 12. Narrow busy_timeout transport correction
 
-Only the setter transport was corrected. `PRAGMA busy_timeout = 0;` now runs through the already-existing `scalarLong()` → `db.rawQuery(sql, null)` path, and the returned row is read. The setter-returned value must be `0`, and a second independent `PRAGMA busy_timeout;` readback must also be `0`.
+Only the setter transport was corrected. `PRAGMA busy_timeout = 0;` runs through the already-existing `scalarLong()` → `db.rawQuery(sql, null)` path, and the returned row is read. The setter-returned value must be `0`, and a second independent `PRAGMA busy_timeout;` readback must also be `0`.
 
-The diagnostic stages remain unchanged and meaningful:
+The diagnostic stages remain unchanged:
 
 - `validate_target`;
 - `load_sqlcipher`;
@@ -158,11 +162,11 @@ The diagnostic stages remain unchanged and meaningful:
 
 No Q12 classifier or lock semantics were changed. `src/gate6b/q12-qualification.ts` remains untouched.
 
-## 12. Host regression
+## 13. Host regression
 
-`tests/gate6b_q12_regression.ts` baseline after this correction: **20 / 0**.
+`tests/gate6b_q12_regression.ts` baseline: **20 / 0**.
 
-The original 19 cases remain intact. The new focused regression additionally proves that native Java source:
+The original 19 cases remain intact. The focused transport regression additionally proves that native Java source:
 
 - no longer uses `execSQL` for `PRAGMA busy_timeout = 0;`;
 - uses `scalarLong()` and therefore `rawQuery()` for the setter;
@@ -170,24 +174,69 @@ The original 19 cases remain intact. The new focused regression additionally pro
 - requires setter-returned value `0`;
 - requires readback value `0`.
 
-The existing cases continue to prove that generic native errors remain BLOCKED, post-open same-file mismatch remains FAIL, and only genuine BUSY/LOCKED outcomes can qualify while A holds the lock.
+The host suite still does not itself establish Android lock semantics.
 
-This host suite cannot establish Android lock semantics.
+## 14. Accepted physical PASS on `87135cfe...`
 
-## 13. Existing physical evidence retained
+A real Android Adapter Qualification executed on:
 
-Physical evidence on corrected SHA `89d405d6254108ce735125638ccdb2fb2e67c568` remains preserved: Q1-Q11 PASS, Application-Core PASS, and clean real Force Stop restart A→B PASS. The historical `c3cc890...` native-open BLOCKED run, the pre-correction Q8 failure, and restart negative control also remain preserved.
+`87135cfe80ae3de79a34e941828249fc6889139c`
 
-The `7ebe780...` result remains Q12=`BLOCKED` at `native_open/set_busy_timeout`; it is not reclassified after the correction.
+was independently reviewed and accepted with `overallResult=PASS`.
 
-## 14. Next action
+External accepted evidence folder:
 
-After green CI, APK generation, and independent review, the only requested physical action is:
+`https://drive.google.com/drive/folders/18siSZGeoUtmFsfz5H4ozKsrp3tbpVwkS?usp=drive_link`
 
-**Run Adapter Qualification**
+Q12 is **PASS** with exact evidence:
 
-on the new APK.
+```text
+samePhysicalFile=true
+databaseBasename=inspection_gate6b_adapter_probe_v1SQLite.db
+nativeEngine=sqlcipher-android-4.17.0
+preflightWrite=SUCCESS
+preflightMarkerCount=1
+primaryBeginImmediate=true
+duringPrimaryLock=BUSY/android.database.sqlite.SQLiteDatabaseLockedException/code=5
+busyTimeoutMs=0
+lockedMarkerCount=0
+primaryRelease=true
+postReleaseWrite=SUCCESS
+postReleaseMarkerCount=1
+cleanupComplete=true
+nativeClosed=true
+```
 
-Do not request Application-Core Proof or Restart Phase A/B in this step.
+This satisfies the unchanged Q12 verdict rules and physically proves the genuine differential native locking requirement.
 
-Gate 6B remains **IN_PROGRESS**, `closure_authorized=false`. Gate 6C remains **NOT_STARTED**.
+Q1→Q11 also PASS. Q8 remains 15 tables / 44 triggers / 1 view / 24 indexes / `integrity_check=ok`. Q9 remains 24 definitions / second bootstrap 24 no-ops / P0=20 / P1=4 / allowed_values=48.
+
+## 15. Existing Application-Core/restart evidence reuse
+
+The independent review accepted reuse of Application-Core and final real Force Stop/Restart evidence from `89d405d6254108ce735125638ccdb2fb2e67c568`.
+
+This is based on demonstrated non-drift through `87135cfe...` of:
+
+- `src/application/**`;
+- `src/bootstrap/**`;
+- `src/device/capacitor-sqlite-adapter.ts`;
+- `docs/schema/schema.sql`;
+- `bootstrap/v1/checklist-v1.json`.
+
+It is **not** a claim that the `89d` and `871` APKs are the same binary. They are not.
+
+No Application-Core Proof or Restart Phase A/B rerun is required by the accepted review decision.
+
+## 16. Current Gate status
+
+Q12: **`PHYSICAL_PASS_REVIEW_ACCEPTED`**.
+
+Gate 6B: **`IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`**.
+
+`@capacitor-community/sqlite@8.1.1` has passed required device qualification, but final Gate-6B adoption/closure is pending PR / owner approval / merge.
+
+`closure_authorized=false`.
+
+Gate 6C remains **`NOT_STARTED`**.
+
+No additional physical retest is requested by this document.

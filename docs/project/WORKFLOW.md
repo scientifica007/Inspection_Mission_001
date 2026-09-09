@@ -220,10 +220,12 @@ GitHub ليس storage للتشغيل الميداني الحقيقي.
 - HNT-001/HNT-002 tooling experiment: `CLOSED`.
 - Default implementation workflow: `ChatGPT + GitHub + GitHub Actions`.
 - Harness/local execution agent: `ON_DEMAND_ONLY`.
-- تصحيح Gate 5B الضيق حول `SqlResult.lastInsertRowid` أصبح **MERGED / RESOLVED** في `main` عند merge SHA `608314ae62721af44d8ed4f50c1c618ac469fc66`؛ لا يُعاد فتح Gate 5B بسبب Gate 6B.
-- Gate 6B مستمرة على `implementation/gate6b-android-runtime-proof-v1` وحالتها **`IN_PROGRESS / PARTIAL_PASS_Q12_PENDING`**.
-- physical Android Q1→Q11، Application-Core proof، وclean real Force Stop restart A→B نُفذت وPASS على corrected SHA `89d405d6254108ce735125638ccdb2fb2e67c568`؛ هذه أدلة جهاز حقيقية وليست CI/emulator evidence.
-- Q12 genuine competing writer أصبح **`IMPLEMENTED_PENDING_PHYSICAL_RETEST`** ويحتاج `Run Adapter Qualification` على APK الجديد قبل أي verdict فيزيائي للتنفيذ الجديد.
-- GitHub-hosted CI وAndroid debug build وhost qualification لا تثبت Q12 فيزيائيًا ولا تغلق Gate 6B.
-- Gate 6B لا تُغلق قبل Q12 physical verdict ومراجعة الأدلة/قرار الإغلاق المستقل؛ `closure_authorized=false`.
-- Gate 6C ما تزال **`NOT_STARTED`**؛ لا تبدأ UI ميدانية أو Evidence أو reports قبل اجتياز Gate 6B وفق الـRoadmap الحاكمة، إلا إذا غيّر المالك الـRoadmap بقرار صريح موثق.
+- تصحيح Gate 5B الضيق حول `SqlResult.lastInsertRowid` أصبح **MERGED / RESOLVED** في `main` عند merge SHA `608314ae62721af44d8ed4f50c1c618ac469fc66`.
+- Gate 6B مستمرة على `implementation/gate6b-android-runtime-proof-v1` وحالتها **`IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`**.
+- Adapter Qualification حقيقية على Android ضد `87135cfe80ae3de79a34e941828249fc6889139c` أصبحت **PASS** لـQ1→Q12 بعد independent review؛ Q12=`PHYSICAL_PASS_REVIEW_ACCEPTED`.
+- Q12 أثبتت `samePhysicalFile=true`, preflight writer success, literal `BEGIN IMMEDIATE`, genuine SQLCipher BUSY/code=5 أثناء القفل، marker absent تحت القفل، ثم نجاح writer بعد release والتنظيف والإغلاق.
+- Application-Core Proof وfinal real Force Stop/Restart من `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى accepted evidence بإعادة استخدام مبنية على non-drift في `src/application/**`, `src/bootstrap/**`, primary `CapacitorSqliteAdapter`, canonical schema وcanonical bootstrap حتى `87135cfe...`. هذا لا يعني أن APK البناءين نفس binary.
+- `@capacitor-community/sqlite@8.1.1` اجتاز device qualification، لكن final Gate-6B adoption/closure يبقى pending PR / owner approval / merge.
+- `closure_authorized=false`.
+- لا يُطلب physical retest جديد، ولا Application-Core Proof أو Restart Phase A/B جديد.
+- Gate 6C ما تزال **`NOT_STARTED`**؛ لا تبدأ UI ميدانية أو Evidence أو reports قبل إغلاق Gate 6B وفق الـRoadmap الحاكمة.

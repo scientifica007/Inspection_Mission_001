@@ -52,6 +52,14 @@
 //                             operation has no adhoc_observation row (T7 only
 //                             ensures an EXISTING observation; it never creates
 //                             one)
+// and the Gate-5J code required by the adopted T10 contract
+// (TRANSACTION-CONTRACTS §10 — transitionCorrectiveActionStatus):
+//   * E_ACTION_NOT_FOUND     — the actionId of the T10 status-transition
+//                             operation has no corrective_action row. The
+//                             taxonomy gives every entity lookup its own narrow
+//                             not-found code (mission/visit/subject/finding/
+//                             observation), so a missing ACTION gets its own —
+//                             E_FINDING_NOT_FOUND is never used for it.
 
 export const APP_ERR = {
     CONFIG: "E_CONFIG",
@@ -74,6 +82,7 @@ export const APP_ERR = {
     VOID_HAS_ACTIONS: "E_VOID_HAS_ACTIONS",
     LAST_SOURCE: "E_LAST_SOURCE",
     OBSERVATION_NOT_FOUND: "E_OBSERVATION_NOT_FOUND",
+    ACTION_NOT_FOUND: "E_ACTION_NOT_FOUND",
 } as const;
 
 export type AppErrorCode = (typeof APP_ERR)[keyof typeof APP_ERR];

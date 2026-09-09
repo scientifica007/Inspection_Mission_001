@@ -378,6 +378,24 @@ FollowUp insert failure ⇒ status update rolls back; status update failure ⇒ 
 
 **T9 create:** `INSERT INTO corrective_action(...) VALUES (... 'OPEN' ...)` — refused under a finding whose status is `RESOLVED` **or** `VOIDED` (`trg_ca_bi`). CorrectiveActions are **optional**: a Finding may be resolved without any corrective action (B9); if actions exist, Finding RESOLVED requires them all RESOLVED. Creating a corrective action is identity-creating (idempotency class B).
 
+**T9 executable shape (Gate 5I):** one `BEGIN IMMEDIATE` unit — the authoritative parent-Finding read happens **inside** the transaction (no TOCTOU window): missing ⇒ `E_FINDING_NOT_FOUND`; status `OPEN`/`IN_TREATMENT` proceed, `RESOLVED`/`VOIDED` ⇒ `E_STATE_CONFLICT` (the `trg_ca_bi` precondition is validated in-tx before the INSERT — never leaked as a raw trigger abort). **No Visit gate:** creation is allowed after origin-Visit finalization while the Finding is still OPEN/IN_TREATMENT. Payload: closed `action_type`/`responsible_role` value sets (else `E_CONFIG`), `*_other` companions required meaningful for `OTHER`, meaningful normalized `description`/`created_by`, optional `responsible_name` (blank ⇒ NULL), optional `due_date` as nullable TEXT preserved verbatim (no invented ISO date validation — the adopted contract mandates none), app-supplied strict ISO-8601 UTC `created_at` (never invented). Then:
+
+```
+BEGIN IMMEDIATE;
+-- 1) re-read the parent Finding (status gate above)
+-- 2) validate/normalize the creation payload (pure; nothing mutable read)
+-- 3) the single identity-creating INSERT — born OPEN, closure fields NULL:
+INSERT INTO corrective_action(finding_id, action_type, action_type_other, description,
+                              responsible_role, responsible_role_other, responsible_name,
+                              due_date, status, closed_at, verified_by, verification_note,
+                              created_at, created_by)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', NULL, NULL, NULL, ?, ?);
+-- require changes == 1 (B5) and a present lastInsertRowid, else ROLLBACK
+COMMIT;
+```
+
+The closure fields `closed_at`/`verified_by`/`verification_note` are **never** populated at creation (T10 owns them). T9 never alters the Finding status / `status_changed_at` / source links / Visit and never creates another row. **Class B (§12 / RECOVERY §5):** no durable request/idempotency key — no dedupe by description/type/due date/responsible person, no duplicate error code; identical payloads invoked deliberately later create distinct actions; COMMIT/ACK-loss ⇒ ambiguous outcome, never an internal second INSERT. **Creation FollowUp boundary:** the "optional FollowUp event" mentioned in RECOVERY §2 has no defined authoritative payload/semantics (when supplied, `status_target`/`status_after`, actor/audit, transition-event status, retry identity) — DATA-MODEL rule 8 ties FollowUp events to status **transitions**, and creation is not a transition; T9 therefore records the action row only and no creation FollowUp is invented (reported to the owner as an open ambiguity).
+
 **T10 transition:** same shape as T8 but `status_target='CORRECTIVE_ACTION'`, `corrective_action_id` mandatory; for `RESOLVED` the UPDATE also sets `closed_at`, `verified_by` (and optional `verification_note`) in the same statement — CHECK/`trg_ca_bu` require verified_by non-empty at RESOLVED, closure fields immutable once set. `corrective_action.status` has **no VOIDED** (Gate 4B).
 
 ```

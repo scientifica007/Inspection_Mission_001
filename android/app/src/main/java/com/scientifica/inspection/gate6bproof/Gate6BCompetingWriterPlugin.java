@@ -10,6 +10,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 import net.zetetic.database.sqlcipher.SQLiteDatabase;
 
 @CapacitorPlugin(name = "Gate6BCompetingWriter")
@@ -18,6 +19,7 @@ public final class Gate6BCompetingWriterPlugin extends Plugin {
     private static final String MARKER_PREFIX = "g6b-q12-";
     private static final String NATIVE_ENGINE = "sqlcipher-android-4.17.0";
     private static final String SQLITE_TABLE_LOCKED = "android.database.sqlite.SQLiteTableLockedException";
+    private static final String NATIVE_OPEN_CODE_PREFIX = "G6B_Q12_NATIVE_OPEN_";
     private SQLiteDatabase competingDb;
 
     @PluginMethod
@@ -28,14 +30,20 @@ public final class Gate6BCompetingWriterPlugin extends Plugin {
         }
         final String suppliedPath = call.getString("databasePath");
         if (suppliedPath == null || suppliedPath.isBlank()) {
-            call.reject("Gate6B Q12 databasePath is required");
+            rejectOpenFailure(call, "validate_target", new IllegalArgumentException("databasePath is required"), suppliedPath);
             return;
         }
 
         SQLiteDatabase opened = null;
+        String stage = "validate_target";
         try {
+            stage = "validate_target";
             final File target = validateTarget(suppliedPath);
+
+            stage = "load_sqlcipher";
             System.loadLibrary("sqlcipher");
+
+            stage = "open_database";
             opened = SQLiteDatabase.openDatabase(
                 target.getAbsolutePath(),
                 "",
@@ -43,11 +51,23 @@ public final class Gate6BCompetingWriterPlugin extends Plugin {
                 SQLiteDatabase.OPEN_READWRITE,
                 null
             );
+
+            stage = "set_busy_timeout";
             opened.execSQL("PRAGMA busy_timeout = 0;");
+
+            stage = "read_busy_timeout";
             final long busyTimeout = scalarLong(opened, "PRAGMA busy_timeout;");
+
+            stage = "read_sqlite_version";
             final String sqliteVersion = scalarText(opened, "SELECT sqlite_version();");
+
+            stage = "database_list";
             final File openedMain = mainDatabaseFile(opened);
+
+            stage = "same_file_check";
             final boolean samePhysicalFile = openedMain.getCanonicalFile().equals(target.getCanonicalFile());
+
+            stage = "probe_table_read";
             scalarLong(opened, "SELECT count(*) FROM __g6b_probe;");
 
             competingDb = opened;
@@ -60,9 +80,12 @@ public final class Gate6BCompetingWriterPlugin extends Plugin {
             result.put("busyTimeoutMs", busyTimeout);
             result.put("probeTableReadable", true);
             call.resolve(result);
+        } catch (LinkageError error) {
+            closeAfterOpenFailure(opened);
+            rejectOpenFailure(call, stage, error, suppliedPath);
         } catch (Exception error) {
-            if (opened != null && opened.isOpen()) opened.close();
-            call.reject("Gate6B Q12 native open failed: " + error.getClass().getName());
+            closeAfterOpenFailure(opened);
+            rejectOpenFailure(call, stage, error, suppliedPath);
         }
     }
 
@@ -141,7 +164,7 @@ public final class Gate6BCompetingWriterPlugin extends Plugin {
             final int fileIndex = cursor.getColumnIndexOrThrow("file");
             while (cursor.moveToNext()) {
                 if ("main".equals(cursor.getString(nameIndex))) {
-                    return new File(cursor.getString(fileIndex)).getCanonicalFile();
+                    return new File(cursor.getString(fileIndex));
                 }
             }
         }
@@ -160,6 +183,40 @@ public final class Gate6BCompetingWriterPlugin extends Plugin {
             if (!cursor.moveToFirst()) throw new SQLiteException("scalar query returned no rows");
             return cursor.getString(0);
         }
+    }
+
+    private static void closeAfterOpenFailure(SQLiteDatabase opened) {
+        if (opened == null) return;
+        try {
+            if (opened.isOpen()) opened.close();
+        } catch (Exception | LinkageError ignored) {
+            // The original staged failure remains the authoritative diagnostic.
+        }
+    }
+
+    private static void rejectOpenFailure(PluginCall call, String stage, Throwable error, String suppliedPath) {
+        final String exceptionClass = error.getClass().getName();
+        final String exceptionMessage = safeDiagnosticMessage(error, suppliedPath);
+        final String code = NATIVE_OPEN_CODE_PREFIX + stage.toUpperCase(Locale.ROOT);
+        final String message = "Gate6B Q12 native open failed; stage=" + stage
+            + "; exceptionClass=" + exceptionClass
+            + "; exceptionMessage=" + exceptionMessage;
+        JSObject data = new JSObject();
+        data.put("stage", stage);
+        data.put("exceptionClass", exceptionClass);
+        data.put("exceptionMessage", exceptionMessage);
+        call.reject(message, code, data);
+    }
+
+    private static String safeDiagnosticMessage(Throwable error, String suppliedPath) {
+        String message = error.getMessage();
+        if (message == null || message.isBlank()) return "<none>";
+        if (suppliedPath != null && !suppliedPath.isBlank()) {
+            message = message.replace(suppliedPath, "<database-path>");
+        }
+        message = message.replace('\r', ' ').replace('\n', ' ').trim();
+        if (message.length() > 512) return message.substring(0, 512) + "…";
+        return message;
     }
 
     private static JSObject writeResult(String outcome, String exceptionClass, Integer sqliteResultCode) {

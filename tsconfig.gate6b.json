@@ -14,6 +14,7 @@
     "src/gate6b/schema-inventory.ts",
     "src/gate6b/proof-types.ts",
     "src/gate6b/q12-qualification.ts",
+    "src/gate6b/q12-diagnostics.ts",
     "src/gate6b/q12-device-proof.ts",
     "vite.config.ts",
     "capacitor.config.ts"

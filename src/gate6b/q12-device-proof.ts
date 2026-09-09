@@ -10,6 +10,11 @@ import {
   type Q12NativeWriteResult,
   type Q12Observation,
 } from "./q12-qualification.ts";
+import {
+  diagnoseQ12Error,
+  q12FatalQualificationCase,
+  type Q12FatalDiagnostic,
+} from "./q12-diagnostics.ts";
 import type { QualificationCase } from "./proof-types.ts";
 
 const PREFLIGHT_MARKER = "g6b-q12-preflight";
@@ -26,9 +31,12 @@ async function markerCount(opened: OpenGate6BDatabase, marker: string): Promise<
   return Number(rows[0]?.c ?? -1);
 }
 
-function compactError(error: unknown): string {
-  if (error instanceof Error) return error.name || "Error";
-  return typeof error === "string" ? "string-error" : "unknown-error";
+function fatalFromError(status: "FAIL" | "BLOCKED", stage: string, error: unknown): Q12FatalDiagnostic {
+  const diagnostic = diagnoseQ12Error(error);
+  const exactStage = stage === "native_open" && diagnostic.nativeStage
+    ? `${stage}/${diagnostic.nativeStage}`
+    : stage;
+  return { status, stage: exactStage, detail: diagnostic.detail };
 }
 
 export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Promise<QualificationCase> {
@@ -54,7 +62,7 @@ export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Pr
 
   let nativeOpen = false;
   let primaryLocked = false;
-  let fatal: { status: "FAIL" | "BLOCKED"; stage: string; detail: string } | null = null;
+  let fatal: Q12FatalDiagnostic | null = null;
   let preflightClean = false;
   let finalMarkerClean = false;
 
@@ -76,9 +84,9 @@ export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Pr
         observation.nativeEngine = native.nativeEngine;
         observation.competingSqliteVersion = native.sqliteVersion;
         observation.busyTimeoutMs = native.busyTimeoutMs;
-        if (!native.probeTableReadable) fatal = { status: "BLOCKED", stage: "native_open", detail: "probe table not readable" };
+        if (!native.probeTableReadable) fatal = { status: "BLOCKED", stage: "native_open/probe_table_read", detail: "probe table not readable" };
       } catch (error) {
-        fatal = { status: "BLOCKED", stage: "native_open", detail: compactError(error) };
+        fatal = fatalFromError("BLOCKED", "native_open", error);
       }
     }
 
@@ -89,7 +97,7 @@ export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Pr
         const cleanup = await opened.adapter.run("DELETE FROM __g6b_probe WHERE text_value=?", [PREFLIGHT_MARKER]);
         preflightClean = cleanup.changes === 1;
       } catch (error) {
-        fatal = { status: "BLOCKED", stage: "preflight", detail: compactError(error) };
+        fatal = fatalFromError("BLOCKED", "preflight", error);
       }
     }
 
@@ -103,7 +111,7 @@ export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Pr
         observation.primaryBeginImmediate = true;
         primaryLocked = true;
       } catch (error) {
-        fatal = { status: "FAIL", stage: "primary_begin_immediate", detail: compactError(error) };
+        fatal = fatalFromError("FAIL", "primary_begin_immediate", error);
       }
     }
 
@@ -111,12 +119,16 @@ export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Pr
       try {
         observation.duringPrimaryLock = await insertGate6BCompetingMarker(LOCK_MARKER);
       } catch (error) {
-        observation.duringPrimaryLock = { outcome: "ERROR", exceptionClass: `BridgeRejected:${compactError(error)}`, sqliteResultCode: null };
+        observation.duringPrimaryLock = {
+          outcome: "ERROR",
+          exceptionClass: `BridgeRejected:${diagnoseQ12Error(error).detail}`,
+          sqliteResultCode: null,
+        };
       }
       try {
         observation.lockedMarkerCount = await markerCount(opened, LOCK_MARKER);
       } catch (error) {
-        fatal = { status: "FAIL", stage: "primary_locked_readback", detail: compactError(error) };
+        fatal = fatalFromError("FAIL", "primary_locked_readback", error);
       }
     }
 
@@ -125,7 +137,7 @@ export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Pr
         await opened.adapter.rollback();
         observation.primaryRelease = true;
       } catch (error) {
-        fatal = fatal ?? { status: "FAIL", stage: "primary_release", detail: compactError(error) };
+        fatal = fatal ?? fatalFromError("FAIL", "primary_release", error);
       } finally {
         primaryLocked = false;
       }
@@ -136,11 +148,11 @@ export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Pr
         observation.postReleaseWrite = await insertGate6BCompetingMarker(LOCK_MARKER);
         observation.postReleaseMarkerCount = await markerCount(opened, LOCK_MARKER);
       } catch (error) {
-        fatal = { status: "FAIL", stage: "post_release_write", detail: compactError(error) };
+        fatal = fatalFromError("FAIL", "post_release_write", error);
       }
     }
   } catch (error) {
-    fatal = fatal ?? { status: "BLOCKED", stage: "orchestration", detail: compactError(error) };
+    fatal = fatal ?? fatalFromError("BLOCKED", "orchestration", error);
   } finally {
     if (primaryLocked) {
       try {
@@ -172,11 +184,11 @@ export async function runQ12CompetingWriterProof(opened: OpenGate6BDatabase): Pr
   }
 
   if (fatal) {
-    return {
-      id: "Q12_COMPETING_WRITE",
-      status: fatal.status,
-      evidence: `stage=${fatal.stage}; detail=${fatal.detail}; samePhysicalFile=${observation.samePhysicalFile}; databaseBasename=${observation.databaseBasename}; nativeClosed=${observation.nativeClosed}`,
-    };
+    return q12FatalQualificationCase(fatal, {
+      samePhysicalFile: observation.samePhysicalFile,
+      databaseBasename: observation.databaseBasename,
+      nativeClosed: observation.nativeClosed,
+    });
   }
 
   const decision = classifyQ12(observation);

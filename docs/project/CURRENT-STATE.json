@@ -74,7 +74,7 @@
     "physical_schema_bootstrap_status": "PASS",
     "application_core_device_proof_status": "PASS",
     "physical_restart_status": "PASS",
-    "q12_status": "IMPLEMENTED_PENDING_PHYSICAL_RETEST",
+    "q12_status": "DIAGNOSTIC_HARDENED_PENDING_PHYSICAL_RETEST",
     "closure_authorized": false,
     "physical_evidence": {
       "pre_correction": {
@@ -124,6 +124,24 @@
         "reset_uninstall_or_clear_between_phases": false,
         "screenshots_committed_to_github": false
       },
+      "q12_native_open_blocked": {
+        "tested_sha": "c3cc890b35d7f9612214559f83d8091f98e96a68",
+        "overall": "BLOCKED",
+        "q1_q11": "PASS",
+        "q8": "PASS",
+        "q8_inventory": "15 tables / 44 triggers / 1 view / 24 indexes / integrity_check=ok",
+        "q9": "PASS",
+        "q9_inventory": "24 definitions; second bootstrap 24 no-ops; P0=20; P1=4; allowed_values=48",
+        "q12": "BLOCKED",
+        "q12_stage": "native_open",
+        "q12_detail": "Error",
+        "same_physical_file_field": false,
+        "same_physical_file_interpretation": "UNESTABLISHED_DEFAULT_BECAUSE_NATIVE_OPEN_REJECTED; NOT_A_POST_OPEN_SAME_FILE_CONTRADICTION",
+        "database_basename": "unknown",
+        "native_closed": true,
+        "lock_differential_reached": false,
+        "root_cause": "UNKNOWN_BECAUSE_PREVIOUS_INSTRUMENTATION_DISCARDED_NATIVE_REJECTION_DETAIL"
+      },
       "negative_control": "An earlier Phase B after Reset Synthetic Proof DB failed because durable DB/schema/Visit had been removed; retained as negative evidence, not a product defect."
     },
     "q12_implementation": {
@@ -133,8 +151,16 @@
       "same_file_source": "primary PRAGMA database_list main path",
       "busy_policy_ms": 0,
       "native_lock_classification": ["SQLITE_BUSY/SQLiteDatabaseLockedException", "SQLITE_LOCKED/SQLiteTableLockedException"],
-      "physical_result": "PENDING"
-    }
+      "physical_result": "BLOCKED_AT_NATIVE_OPEN_ON_C3CC; ROOT_CAUSE_UNKNOWN",
+      "diagnostic_hardening": {
+        "status": "IMPLEMENTED_PENDING_PHYSICAL_RETEST",
+        "preserves_error_name_message_code": true,
+        "native_open_stages": ["validate_target", "load_sqlcipher", "open_database", "set_busy_timeout", "read_busy_timeout", "read_sqlite_version", "database_list", "same_file_check", "probe_table_read"],
+        "linkage_error_handled": true,
+        "q12_semantics_weakened": false
+      }
+    },
+    "next_physical_action": "Run Adapter Qualification on the diagnostic-hardened APK only"
   },
   "next_gate": {
     "id": "6B",
@@ -157,7 +183,7 @@
   "test_baselines": {
     "gate6b_host_adapter_contract": {"passed": 16, "failed": 0},
     "gate6b_schema_execution": {"passed": 8, "failed": 0},
-    "gate6b_q12_classifier": {"passed": 13, "failed": 0},
+    "gate6b_q12_diagnostic_classifier": {"passed": 19, "failed": 0},
     "gate5l": {"passed": 94, "failed": 0},
     "gate5k": {"passed": 82, "failed": 0},
     "gate5j": {"passed": 75, "failed": 0},

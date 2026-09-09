@@ -24,87 +24,79 @@ Gates 1→5L و6A مغلقة/معتمدة كما هو موثق في history. Gat
 
 SQLite candidate: `@capacitor-community/sqlite@8.1.1` — ما تزال **provisional**؛ لم يُغلق Gate 6B ولم يبدأ Gate 6C.
 
-الأدلة الفيزيائية لم تعد pending بالكامل. تم تنفيذ proof على هاتف Android فعلي ضد SHA `89d405d6254108ce735125638ccdb2fb2e67c568`، والنتائج المعتمدة للتسليم الحالي هي:
+الأدلة الفيزيائية المعتمدة على SHA `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى محفوظة كما هي:
 
 - Q1→Q11: PASS، بما فيها Q8 canonical schema وQ9 canonical bootstrap؛
 - Q8: 15 tables / 44 triggers / 1 view / 24 explicit indexes / `integrity_check=ok`؛
 - Q9: first load 24 definitions، second load 24 no-ops، P0=20، P1=4، allowed_values=48؛
 - Application-Core physical proof: PASS؛
 - Gate-5L zero-write measurement: before=121 / after=121 / delta=0؛
-- T11 finalization: PASS، وpost-finalization field-truth mutation rejected؛
+- T11 finalization: PASS؛
 - reconstructed state hash: `9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405`؛
-- clean physical Force Stop restart Phase A→B: PASS مع نفس state hash قبل/بعد restart؛
-- Q12 competing writer: **IMPLEMENTED_PENDING_PHYSICAL_RETEST** بعد هذا pass؛ لا توجد device PASS بعد للتنفيذ الجديد.
+- clean physical Force Stop restart Phase A→B: PASS مع نفس state hash قبل/بعد restart.
 
-Actual Android SQLite engine في الأدلة الفيزيائية: `3.53.3`.
+Actual Android SQLite engine في تلك الأدلة: `3.53.3`.
 
 Canonical hashes:
 
-- schema: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`;
+- schema: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`؛
 - bootstrap: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
 
-### الأدلة التاريخية المحفوظة
+## 3) Q12 physical result على `c3cc890...`
 
-التشغيل الفيزيائي السابق على SHA `5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc` يبقى evidence تاريخية صحيحة للبناء المعيب: Q1-Q7/Q10/Q11 PASS، Q12 BLOCKED، Q8 FAIL برسالة `Execute: not an error (code 0)`، وQ9 لم يصل إليه التنفيذ. لا يُعاد تصنيفه ولا يُحذف.
+تم تنفيذ **Run Adapter Qualification** على هاتف Android فعلي ضد:
 
-كما توجد negative-control سابقة: تنفيذ Phase B بعد `Reset Synthetic Proof DB` فشل لأن DB/schema/Visit حُذفت. هذا ليس product defect؛ هو دليل سلبي على اعتماد Phase B الحقيقي على SQLite durable state.
+`c3cc890b35d7f9612214559f83d8091f98e96a68`
 
-## 3) physical restart evidence المعتمدة
+النتيجة الفيزيائية: `overallResult=BLOCKED`، مع بقاء Q1→Q11 جميعها PASS وQ8/Q9 بالحالة نفسها أعلاه.
 
-FINAL Phase A على SHA `89d405d...`:
+Q12 كانت:
 
-- timestamp: `2026-09-09T20:38:14.309Z`؛
-- phase: restart Phase A before Force Stop؛
-- overall: `DEVICE_PROOF_READY`؛
-- visit=1؛
-- Q8/Q9/CORE_FLOW PASS؛
-- currentVisitState before=121 / after=121 / delta=0؛
-- hash: `9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405`.
+```text
+Q12_COMPETING_WRITE = BLOCKED
+stage=native_open
+detail=Error
+samePhysicalFile=false
+databaseBasename=unknown
+nativeClosed=true
+```
 
-بعد ذلك نفّذ المالك Android Settings / App Info / **Force Stop** حقيقيًا، دون Reset أو uninstall أو clear-data بين A وB، ثم أعاد فتح التطبيق.
+هذا **ليس adapter-locking failure**، ولم يصل الاختبار إلى `BEGIN IMMEDIATE` differential lock sequence. كما أن `samePhysicalFile=false` هنا ليست post-open contradiction: الاتصال B لم يفتح بنجاح، فبقي الحقل على القيمة الابتدائية غير المثبتة.
 
-FINAL Phase B:
+السبب الجذري **غير معروف حتى الآن**. instrumentation في `c3cc890...` ضغطت JavaScript `Error` إلى `error.name` فقط، بينما native `open()` جمعت مراحل متعددة داخل catch واحد؛ لذلك ضاعت stage/class/message الفعلية. لا يجوز نسبة الفشل إلى SQLCipher أو path أو locking أو primary adapter دون دليل جديد.
 
-- timestamp: `2026-09-09T20:41:35.702Z`؛
-- phase: `RESTART_PHASE_B_AFTER_FORCE_STOP`؛
-- overall: PASS؛
-- Q8 schema reopen PASS؛
-- visit=1 أُعيد اكتشافها من SQLite markers فقط؛
-- currentVisitState before=0 / after=0 / delta=0؛
-- hash مطابق Phase A تمامًا.
+## 4) Q12 diagnostic hardening الحالي
 
-Screenshots الخاصة بـAndroid App Info/Force Stop محفوظة خارجيًا عند المالك ولا تُرفع إلى GitHub.
+تم تضييق التصحيح على instrumentation فقط، مع إبقاء semantics Q12 دون تغيير:
 
-## 4) Q12 — الوضع الحالي
+- A يبقى existing `CapacitorSqliteAdapter`؛
+- B يبقى native writer مستقلًا؛
+- لا تعديل في Application Core أو canonical schema/bootstrap أو primary adapter؛
+- JavaScript diagnostic يحتفظ بـError `name` و`message` و`code` عند توفره، ويقرأ native diagnostic data دون unsafe cast؛
+- native `open()` يعلن stages ثابتة: `validate_target`, `load_sqlcipher`, `open_database`, `set_busy_timeout`, `read_busy_timeout`, `read_sqlite_version`, `database_list`, `same_file_check`, `probe_table_read`؛
+- native rejection يخرج stage + exception class + sanitized exception message؛
+- `LinkageError` يُعالج تشخيصيًا بشكل صريح دون `catch(Throwable)`؛
+- failure قبل differential lock proof يبقى BLOCKED؛
+- post-open `samePhysicalFile=false` يبقى FAIL؛
+- BUSY/LOCKED الحقيقيان فقط يمكن أن يؤهلا during-lock step؛
+- لا Promise timeout ولا BUSY/LOCKED simulation.
 
-الـnormal plugin API يفرض connection dictionary باسم واحد `RW_<database>`، لذلك لا يمكنه إنشاء competing writer مستقل حقيقي إلى نفس الملف عبر المسار JS المعتاد.
+Q12 status بعد هذا التصحيح: **`DIAGNOSTIC_HARDENED_PENDING_PHYSICAL_RETEST`**.
 
-تمت إضافة boundary تشخيصية فقط لـGate 6B:
+## 5) الأدلة التاريخية المحفوظة
 
-- A = `@capacitor-community/sqlite` → existing `CapacitorSqliteAdapter`؛
-- B = custom Android diagnostic Capacitor plugin يفتح نفس الملف مستقلًا؛
-- B يستخدم **نفس** `net.zetetic:sqlcipher-android:4.17.0@aar`؛
-- A يحدد path الحقيقي بواسطة `PRAGMA database_list`؛
-- B لا يقبل arbitrary path، ولا ينشئ ملفًا جديدًا، ولا يصبح product adapter؛
-- B يثبت preflight write/readback قبل lock؛
-- A ينفذ existing `beginImmediate()`؛
-- B يستخدم native `PRAGMA busy_timeout=0` ويصنف `SQLITE_BUSY`/`SQLITE_LOCKED` عبر native exception classes؛
-- A يتحقق أن marker غير موجود أثناء lock؛
-- A يحرر المعاملة بـexisting rollback؛
-- نفس B write يجب أن ينجح بعد release؛
-- cleanup/close جزء إلزامي من PASS.
+- Build `5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc`: Q1-Q7/Q10/Q11 PASS، Q8 FAIL بـ`Execute: not an error (code 0)`، Q9 لم يصل إليها التنفيذ، Q12 BLOCKED. هذا historical evidence للبناء المعيب ولا يُعاد تصنيفه.
+- Corrected build `89d405d...`: Q1-Q11 PASS، Application-Core PASS، clean real Force Stop restart PASS، Q12 BLOCKED قبل وجود genuine writer B.
+- Build `c3cc890...`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open`، root cause مجهول بسبب فقدان diagnostics.
+- negative-control سابقة: Phase B بعد `Reset Synthetic Proof DB` فشلت لأن durable DB حُذفت؛ تبقى negative evidence وليست product defect.
 
-هذا التنفيذ يحتاج **physical Adapter Qualification جديدة** قبل أن يصبح Q12 PASS أو FAIL/BLOCKED على الجهاز.
-
-راجع `docs/architecture/GATE6B-Q12-COMPETING-WRITER-PROOF-v1.md`.
-
-## 5) Baselines الحالية
+## 6) Baselines الحالية
 
 | Suite | Baseline |
 |---|---:|
 | Gate 6B host adapter contract | 16 / 0 |
 | Gate 6B canonical-schema execution | 8 / 0 |
-| Gate 6B Q12 classifier | 13 / 0 |
+| Gate 6B Q12 diagnostic/classifier | 19 / 0 |
 | Gate 5L | 94 / 0 |
 | Gate 5K | 82 / 0 |
 | Gate 5J | 75 / 0 |
@@ -119,22 +111,21 @@ Screenshots الخاصة بـAndroid App Info/Force Stop محفوظة خارجي
 | Gate 5B adapter normalization | 6 / 0 |
 | Schema | 100 / 0 |
 
-## 6) ثوابت لا تتغير بهذا pass
+## 7) ثوابت لا تتغير
 
 - SQLite هي local authority؛ process memory ليست authority.
-- Application Core تغطي T0→T11 وOBS-1 وrestart reconstruction.
 - `src/application/**` و`src/bootstrap/**` تبقيان runtime-neutral.
 - canonical schema وcanonical bootstrap لا يُعدلان لتلائم driver.
-- Android-first / Capacitor / React + Vite + TypeScript هي معمارية Gate 6A المعتمدة.
-- لا server/sync مطلوبين لـField-usable v1.
 - diagnostic Q12 writer ليس product architecture.
+- Gate 6B تبقى **IN_PROGRESS**، `closure_authorized=false`.
+- Gate 6C تبقى **NOT_STARTED**.
 
-## 7) المهمة التالية
+## 8) المهمة الفيزيائية التالية الوحيدة
 
-المهمة الفيزيائية التالية الوحيدة هي تثبيت APK الجديد وتشغيل:
+ثبّت APK الناتج عن هذا diagnostic hardening وشغّل فقط:
 
 **Run Adapter Qualification**
 
-ثم حفظ proof JSON synthetic ومراجعته مستقلًا. لا يُعاد Application-Core proof أو Restart A/B تلقائيًا قبل قرار Reviewing/Planning AI بشأن admissibility للأدلة السابقة على SHA `89d405d...`.
+الهدف هو الحصول على Q12 evidence تحتوي stage/class/message الفعلية إذا بقي native open BLOCKED، أو متابعة differential lock proof إذا فتح B بنجاح.
 
-Gate 6B تبقى **IN_PROGRESS**، `closure_authorized=false`، وGate 6C **NOT_STARTED**.
+لا يُطلب Application-Core Proof ولا Restart Phase A/B في هذه المرحلة.

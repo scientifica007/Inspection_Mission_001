@@ -4,13 +4,13 @@
 
 ## 1) Gate 6B current expectation
 
-Gate 6B لا تعيد كتابة Application Core. أضيفت ثلاث suites خاصة بالـGate إلى baselines التاريخية:
+Gate 6B لا تعيد كتابة Application Core. أضيفت suites خاصة بالـGate إلى baselines التاريخية:
 
 | Suite | Passed | Failed |
 |---|---:|---:|
 | Gate 6B host adapter contract | 16 | 0 |
 | Gate 6B canonical-schema execution | 8 | 0 |
-| Gate 6B Q12 classifier/orchestration decision | 13 | 0 |
+| Gate 6B Q12 diagnostic/classifier | 19 | 0 |
 | Gate 5L | 94 | 0 |
 | Gate 5K | 82 | 0 |
 | Gate 5J | 75 | 0 |
@@ -27,7 +27,7 @@ Gate 6B لا تعيد كتابة Application Core. أضيفت ثلاث suites خ
 
 إجمالي Gate 5B عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع بقاء العدّين منفصلين.
 
-الـQ12 host suite لا تدّعي lock proof على Android. هي تمنع false-positive classification فقط. Q12 PASS لا يمكن إثباتها إلا بتشغيل APK على جهاز Android فعلي.
+Q12 host suite لا تدّعي lock proof على Android. هي تمنع false-positive classification وتثبت أن native-open diagnostics لا تنهار إلى `detail=Error`. Q12 PASS لا يمكن إثباتها إلا بتشغيل APK على جهاز Android فعلي.
 
 ## 2) ملفات suites الحاكمة
 
@@ -87,20 +87,29 @@ Android Gate-6B CI additionally يجب أن ينجح في:
 
 `tests/gate6b_q12_regression.ts` يثبت أن PASS لا تصدر إلا إذا تحققت كل الشروط: same physical file، same native engine/version، preflight write/readback، primary BEGIN IMMEDIATE، native BUSY/LOCKED أثناء lock، locked marker count=0، release طبيعي، same write succeeds after release، post-release count=1، cleanup complete، native close complete.
 
-ويثبت تحديدًا أن الحالات التالية لا يمكن أن تتحول إلى PASS:
+ويثبت تحديدًا أن:
 
-- generic native error؛
-- same-file mismatch؛
-- preflight failure؛
-- competing write succeeds while A owns lock؛
-- locked marker visible؛
-- post-release write/cardinality failure؛
-- engine mismatch؛
-- nonzero/unexpected busy policy؛
-- native resource or marker cleanup failure.
+- generic native error يبقى BLOCKED؛
+- post-open same-file mismatch يبقى FAIL؛
+- preflight failure لا يمكن أن PASS؛
+- competing write success أثناء lock = FAIL؛
+- locked marker visibility = FAIL؛
+- post-release write/cardinality failure = FAIL؛
+- engine mismatch / unexpected busy policy / cleanup failure لا يمكن أن PASS؛
+- `Error.name` و`Error.message` محفوظان، وCapacitor `code` وnative `stage/exceptionClass/exceptionMessage` تُحفظ عند توفرها؛
+- native-open failure يظل BLOCKED؛
+- BUSY وLOCKED فقط هما during-lock outcomes المقبولان لمسار PASS؛
+- Java source يحتوي stages التشخيصية التسع؛
+- `LinkageError` يُعالج صراحةً ولا يوجد `catch(Throwable)`.
 
-## 5) قاعدة عدم الإضعاف
+## 5) physical Q12 evidence المرتبطة بهذا baseline
+
+تشغيل فعلي على SHA `c3cc890b35d7f9612214559f83d8091f98e96a68` أعاد Q12=`BLOCKED` عند `stage=native_open` مع `detail=Error`. لم يصل الاختبار إلى differential lock proof، والسبب الجذري غير معروف لأن instrumentation السابقة أسقطت native rejection detail.
+
+الـbaseline 19/0 تخص diagnostic hardening اللاحق ولا تعيد تصنيف ذلك التشغيل. المطلوب التالي هو physical **Run Adapter Qualification** على APK التشخيصي الجديد.
+
+## 6) قاعدة عدم الإضعاف
 
 لا يجوز حذف test صحيحة أو خفض semantics سابقة لتجاوز failure. أي contradiction حقيقية في Q12 يجب أن تبقى FAIL/BLOCKED وفق contract، لا أن تُعاد صياغة `BEGIN IMMEDIATE` أو primary adapter لتناسب الاختبار.
 
-Gate 6B تبقى `IN_PROGRESS`; physical evidence السابقة على SHA `89d405d...` محفوظة، وQ12 الجديدة تحتاج physical Adapter Qualification على APK الجديد.
+Gate 6B تبقى `IN_PROGRESS`; `closure_authorized=false`; Gate 6C تبقى `NOT_STARTED`.

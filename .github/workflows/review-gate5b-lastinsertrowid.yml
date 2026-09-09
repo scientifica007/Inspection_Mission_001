@@ -1,4 +1,4 @@
-name: Gate 5B lastInsertRowid correction probe
+name: Gate 5B lastInsertRowid correction validation
 
 on:
   push:
@@ -10,9 +10,9 @@ permissions:
   contents: read
 
 jobs:
-  probe:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout full history
         uses: actions/checkout@v4
@@ -24,52 +24,60 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Confirm production/test inputs still equal governing main
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Focused Gate 5B adapter normalization regression
+        run: node --experimental-strip-types tests/gate5b_adapter_regression.ts
+
+      - name: Gate 5B bootstrap regression
+        run: node --experimental-strip-types tests/gate5b_regression.ts
+
+      - name: Gate 5C through Gate 5L regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suite in \
+            gate5c_regression.ts \
+            gate5d_regression.ts \
+            gate5e_regression.ts \
+            gate5f_regression.ts \
+            gate5g_regression.ts \
+            gate5h_regression.ts \
+            gate5i_regression.ts \
+            gate5j_regression.ts \
+            gate5k_regression.ts \
+            gate5l_regression.ts
+          do
+            node --experimental-strip-types "tests/${suite}"
+          done
+
+      - name: Schema regression
+        run: python3 tests/gate4a_regression.py
+
+      - name: Re-check audited runtime SQL shapes
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'Authoritative runtime INSERT statements:'
+          grep -RIn --exclude-dir=.git -E 'INSERT[[:space:]]+(OR[[:space:]]+[A-Z]+[[:space:]]+)?INTO|^[[:space:]]*REPLACE[[:space:]]+INTO' src/bootstrap src/application || true
+          if grep -RIn --exclude-dir=.git -E 'INSERT[[:space:]]+OR[[:space:]]+IGNORE|INSERT[[:space:]].*ON[[:space:]]+CONFLICT|^[[:space:]]*REPLACE[[:space:]]|WITH[[:space:]].*INSERT' src/bootstrap src/application; then
+            echo 'Unsupported complex runtime INSERT shape appeared; narrow correction assumption must be reviewed.' >&2
+            exit 1
+          fi
+
+      - name: Diff and scope hygiene
         shell: bash
         run: |
           set -euo pipefail
           BASE=25cd1ed248b3962a9fefc6cc1c1115bf27961551
-          git diff --exit-code "$BASE" -- dev/node-sqlite-adapter.ts src/bootstrap/adapter.ts tests/gate5b_regression.ts
-
-      - name: Reproduce unmodified-main SqlResult behavior
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --experimental-strip-types --input-type=module <<'EOF'
-          import { DatabaseSync } from 'node:sqlite';
-          import { NodeSqliteAdapter } from './dev/node-sqlite-adapter.ts';
-
-          const raw = new DatabaseSync(':memory:');
-          raw.exec('CREATE TABLE probe (id INTEGER PRIMARY KEY, value TEXT UNIQUE NOT NULL)');
-          const db = new NodeSqliteAdapter(raw);
-
-          const insert1 = await db.run('INSERT INTO probe(value) VALUES (?)', ['first']);
-          const update = await db.run('UPDATE probe SET value = ? WHERE id = ?', ['updated', insert1.lastInsertRowid]);
-          const zeroUpdate = await db.run('UPDATE probe SET value = ? WHERE id = ?', ['missing', 999999]);
-          const deleteResult = await db.run('DELETE FROM probe WHERE id = ?', [insert1.lastInsertRowid]);
-          const insert2 = await db.run('INSERT INTO probe(value) VALUES (?)', ['second']);
-          const ignored = await db.run('INSERT OR IGNORE INTO probe(value) VALUES (?)', ['second']);
-
-          console.log('INSERT1', JSON.stringify(insert1));
-          console.log('UPDATE', JSON.stringify(update));
-          console.log('ZERO_UPDATE', JSON.stringify(zeroUpdate));
-          console.log('DELETE', JSON.stringify(deleteResult));
-          console.log('INSERT2', JSON.stringify(insert2));
-          console.log('INSERT_OR_IGNORE_NOOP', JSON.stringify(ignored));
-          raw.close();
-          EOF
-
-      - name: Inventory SqlAdapter run and rowid usage
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo '=== lastInsertRowid consumers ==='
-          grep -RIn --exclude-dir=.git 'lastInsertRowid' src dev tests || true
-          echo '=== .run call sites in runtime code ==='
-          grep -RIn --exclude-dir=.git -E '\.run\(' src dev || true
-          echo '=== runtime INSERT statements ==='
-          grep -RIn --exclude-dir=.git -E 'INSERT[[:space:]]+(OR[[:space:]]+[A-Z]+[[:space:]]+)?INTO|^[[:space:]]*REPLACE[[:space:]]+INTO' src/bootstrap src/application || true
-          echo '=== potentially complex INSERT variants in runtime code ==='
-          grep -RIn --exclude-dir=.git -E 'INSERT[[:space:]]+OR[[:space:]]+IGNORE|INSERT[[:space:]].*ON[[:space:]]+CONFLICT|^[[:space:]]*REPLACE[[:space:]]|WITH[[:space:]].*INSERT' src/bootstrap src/application || true
-          echo '=== run-call context ==='
-          grep -RIn --exclude-dir=.git -B2 -A10 -E '\.run\(' src/bootstrap src/application || true
+          git diff --check "$BASE"...HEAD
+          git diff --name-only "$BASE"...HEAD | while IFS= read -r path; do
+            case "$path" in
+              dev/node-sqlite-adapter.ts|tests/gate5b_adapter_regression.ts|docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md|docs/project/CURRENT-STATE.md|docs/project/CURRENT-STATE.json|docs/project/TEST-BASELINES.md|README.md|.github/workflows/review-gate5b-lastinsertrowid.yml) ;;
+              *) echo "Unexpected correction path: $path" >&2; exit 1 ;;
+            esac
+          done
+          git diff --exit-code "$BASE" -- src/bootstrap/adapter.ts docs/schema/schema.sql bootstrap src/application

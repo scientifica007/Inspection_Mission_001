@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Gate-5B provenance regression intentionally resolves historical
+          # commits and checks ancestry, so CI needs full Git history.
+          fetch-depth: 0
 
       - name: Set up Node 22
         uses: actions/setup-node@v4

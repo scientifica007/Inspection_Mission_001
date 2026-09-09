@@ -135,6 +135,17 @@ test("G6B-Q12-19 linkage failures are handled narrowly without catch(Throwable)"
   if (javaSource.includes("catch (Throwable")) throw new Error("broad Throwable catch is forbidden");
 });
 
+test("G6B-Q12-20 busy_timeout setter uses rawQuery transport and fails closed on nonzero values", () => {
+  if (javaSource.includes('execSQL("PRAGMA busy_timeout = 0;")')) {
+    throw new Error("busy_timeout setter must not use execSQL");
+  }
+  contains(javaSource, 'final long configuredBusyTimeout = scalarLong(opened, "PRAGMA busy_timeout = 0;");', "query-backed busy_timeout setter");
+  contains(javaSource, 'if (configuredBusyTimeout != 0L)', "setter zero check");
+  contains(javaSource, 'final long busyTimeout = scalarLong(opened, "PRAGMA busy_timeout;");', "independent busy_timeout readback");
+  contains(javaSource, 'if (busyTimeout != 0L)', "readback zero check");
+  contains(javaSource, 'db.rawQuery(sql, null)', "scalarLong rawQuery transport");
+});
+
 console.log(`\nTOTAL: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;
 else console.log("RESULT: SUCCESS (0 failures)");

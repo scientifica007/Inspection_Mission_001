@@ -2,7 +2,7 @@
 
 > **Gate:** 6B — already open
 >
-> **Status:** `DIAGNOSTIC_HARDENED_PENDING_PHYSICAL_RETEST`
+> **Status:** `BUSY_TIMEOUT_TRANSPORT_CORRECTED_PENDING_PHYSICAL_RETEST`
 >
 > **Branch:** `implementation/gate6b-android-runtime-proof-v1`
 >
@@ -60,7 +60,25 @@ A later during-lock failure cannot therefore be accepted merely because B was in
 
 ## 6. Bounded native lock behavior
 
-B executes `PRAGMA busy_timeout = 0;` and reads the pragma back. Q12 PASS requires the effective value to be exactly zero milliseconds.
+B requires an effective native busy timeout of exactly zero milliseconds.
+
+The setter is executed as a row-producing PRAGMA through the existing `scalarLong()` helper, which uses `rawQuery()` and steps to the first returned row:
+
+```java
+stage = "set_busy_timeout";
+final long configuredBusyTimeout = scalarLong(opened, "PRAGMA busy_timeout = 0;");
+if (configuredBusyTimeout != 0L) {
+    throw new SQLiteException("PRAGMA busy_timeout setter returned nonzero value: " + configuredBusyTimeout);
+}
+
+stage = "read_busy_timeout";
+final long busyTimeout = scalarLong(opened, "PRAGMA busy_timeout;");
+if (busyTimeout != 0L) {
+    throw new SQLiteException("PRAGMA busy_timeout readback returned nonzero value: " + busyTimeout);
+}
+```
+
+Both the setter-returned value and the independent readback must be exactly zero. Any other value fails closed at the corresponding diagnostic stage. No normalization or substitution is allowed.
 
 No JavaScript Promise timeout is used. No ExecutorService, background worker, delayed writer, or orphan thread exists. Each plugin method performs one synchronous native SQLite call and resolves only after that call returns.
 
@@ -98,48 +116,35 @@ Q12 = FAIL for a semantic contradiction, including a **post-open** same-physical
 
 Q12 = BLOCKED for qualification limitations, including inability to validate/open B before same-file observation is established, native preflight failure, engine mismatch, generic/unclassifiable native exception, unexpected busy policy, or incomplete cleanup/close.
 
-## 10. Physical result on `c3cc890...`
+## 10. Physical result on `7ebe780...`
 
 A real Android **Run Adapter Qualification** was executed on:
 
-`c3cc890b35d7f9612214559f83d8091f98e96a68`
+`7ebe780b1caffeb1a9240ff4010e5483e1c70b7b`
 
 Overall result: `BLOCKED`. Q1→Q11 remained PASS. Q8 remained exact canonical PASS: 15 tables / 44 triggers / 1 view / 24 indexes / `integrity_check=ok`. Q9 remained PASS: 24 definitions, second bootstrap 24 no-ops, P0=20, P1=4, allowed_values=48.
 
 Q12 physical evidence was:
 
 ```text
-stage=native_open
-detail=Error
-samePhysicalFile=false
-databaseBasename=unknown
-nativeClosed=true
+stage=native_open/set_busy_timeout
+exceptionClass=android.database.sqlite.SQLiteException
+exceptionMessage=unknown error (code 0): Queries can be performed using SQLiteDatabase query or rawQuery methods only.
+code=G6B_Q12_NATIVE_OPEN_SET_BUSY_TIMEOUT
+nativeStage=set_busy_timeout
 ```
 
-This does **not** establish a lock failure or adapter-locking contradiction. B did not reach the real differential lock test. `samePhysicalFile=false` was the unestablished/default observation because native `open()` rejected; it was not a successful native-open same-file comparison.
+This did **not** reach the differential lock test. `samePhysicalFile=false` remained the unestablished/default observation because native open aborted before `database_list` and `same_file_check`; it is not a successful native-open same-file contradiction.
 
-The root cause is **NOT YET KNOWN**. The previous TypeScript path reduced JavaScript `Error` to `error.name`, and the native `open()` wrapped multiple operations in one catch. Therefore the physical run cannot distinguish validation, native-library linkage, database open, pragma setup/readback, version readback, database-list, same-file comparison, or probe-table readability failure.
+The root cause is now proven: the native Q12 writer used `opened.execSQL("PRAGMA busy_timeout = 0;")`. SQLCipher Android rejected that transport because this PRAGMA returns a row and must be executed through query/rawQuery with the returned row stepped/read.
 
-No SQLCipher defect, path defect, locking defect, or primary-adapter defect is claimed from this evidence.
+This is a **Q12 diagnostic writer transport defect** only. It is not evidence of SQLCipher incompatibility, primary `CapacitorSqliteAdapter` failure, same-file failure, `BEGIN IMMEDIATE` failure, or lock-semantics failure.
 
-## 11. Diagnostic hardening after the blocked run
+## 11. Narrow busy_timeout transport correction
 
-The correction is instrumentation-only.
+Only the setter transport was corrected. `PRAGMA busy_timeout = 0;` now runs through the already-existing `scalarLong()` → `db.rawQuery(sql, null)` path, and the returned row is read. The setter-returned value must be `0`, and a second independent `PRAGMA busy_timeout;` readback must also be `0`.
 
-### TypeScript rejection preservation
-
-`src/gate6b/q12-diagnostics.ts` preserves at minimum:
-
-- JavaScript Error `name`;
-- JavaScript Error `message`;
-- Capacitor `code` when present;
-- `data.stage`, `data.exceptionClass`, and `data.exceptionMessage` when present and type-safe.
-
-For native-open rejection it also derives the stage from the stage-specific Capacitor error code if `data` is unavailable. Q12 evidence therefore no longer collapses to `detail=Error`.
-
-### Native open stages
-
-`Gate6BCompetingWriterPlugin.open()` now reports one stable stage before each operation:
+The diagnostic stages remain unchanged and meaningful:
 
 - `validate_target`;
 - `load_sqlcipher`;
@@ -151,40 +156,33 @@ For native-open rejection it also derives the stage from the stage-specific Capa
 - `same_file_check`;
 - `probe_table_read`.
 
-A native-open rejection exposes deterministic stage, exception class, and sanitized exception message. The supplied app-private DB path is redacted from exception text before it is returned.
-
-### Linkage failures
-
-`LinkageError` is handled explicitly so failures such as `UnsatisfiedLinkError` are diagnosable. There is no broad `catch(Throwable)`.
-
-A linkage/open/validation failure remains BLOCKED. It cannot produce Q12 PASS.
+No Q12 classifier or lock semantics were changed. `src/gate6b/q12-qualification.ts` remains untouched.
 
 ## 12. Host regression
 
-`tests/gate6b_q12_regression.ts` baseline after diagnostic hardening: **19 / 0**.
+`tests/gate6b_q12_regression.ts` baseline after this correction: **20 / 0**.
 
-In addition to the original classifier attacks, it proves:
+The original 19 cases remain intact. The new focused regression additionally proves that native Java source:
 
-- generic `Error` retains its message;
-- Capacitor native-open rejection retains stage/class/message/code;
-- native-open failure remains BLOCKED;
-- PASS criteria are unchanged;
-- post-open same-file contradiction remains FAIL;
-- BUSY and LOCKED are the only accepted during-lock outcomes;
-- all nine native-open stages exist in the Java source;
-- `LinkageError` is caught explicitly and `catch(Throwable)` is absent.
+- no longer uses `execSQL` for `PRAGMA busy_timeout = 0;`;
+- uses `scalarLong()` and therefore `rawQuery()` for the setter;
+- independently reads back `PRAGMA busy_timeout;`;
+- requires setter-returned value `0`;
+- requires readback value `0`.
+
+The existing cases continue to prove that generic native errors remain BLOCKED, post-open same-file mismatch remains FAIL, and only genuine BUSY/LOCKED outcomes can qualify while A holds the lock.
 
 This host suite cannot establish Android lock semantics.
 
 ## 13. Existing physical evidence retained
 
-Physical evidence on corrected SHA `89d405d6254108ce735125638ccdb2fb2e67c568` remains preserved: Q1-Q11 PASS, Application-Core PASS, and clean real Force Stop restart A→B PASS. The historical pre-correction Q8 failure and restart negative control also remain preserved.
+Physical evidence on corrected SHA `89d405d6254108ce735125638ccdb2fb2e67c568` remains preserved: Q1-Q11 PASS, Application-Core PASS, and clean real Force Stop restart A→B PASS. The historical `c3cc890...` native-open BLOCKED run, the pre-correction Q8 failure, and restart negative control also remain preserved.
 
-The `c3cc890...` Q12 BLOCKED result is retained as evidence of an **undiagnosed native-open blocker**, not reclassified after the fact.
+The `7ebe780...` result remains Q12=`BLOCKED` at `native_open/set_busy_timeout`; it is not reclassified after the correction.
 
 ## 14. Next action
 
-After green CI and APK generation for this diagnostic hardening, the only requested physical action is:
+After green CI, APK generation, and independent review, the only requested physical action is:
 
 **Run Adapter Qualification**
 

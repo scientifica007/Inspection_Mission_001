@@ -53,10 +53,16 @@ public final class Gate6BCompetingWriterPlugin extends Plugin {
             );
 
             stage = "set_busy_timeout";
-            opened.execSQL("PRAGMA busy_timeout = 0;");
+            final long configuredBusyTimeout = scalarLong(opened, "PRAGMA busy_timeout = 0;");
+            if (configuredBusyTimeout != 0L) {
+                throw new SQLiteException("PRAGMA busy_timeout setter returned nonzero value: " + configuredBusyTimeout);
+            }
 
             stage = "read_busy_timeout";
             final long busyTimeout = scalarLong(opened, "PRAGMA busy_timeout;");
+            if (busyTimeout != 0L) {
+                throw new SQLiteException("PRAGMA busy_timeout readback returned nonzero value: " + busyTimeout);
+            }
 
             stage = "read_sqlite_version";
             final String sqliteVersion = scalarText(opened, "SELECT sqlite_version();");

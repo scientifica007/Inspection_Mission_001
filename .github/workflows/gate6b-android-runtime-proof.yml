@@ -95,7 +95,7 @@ jobs:
       - name: Gate 6B canonical schema execution regression 8/0
         run: npm run gate6b:schema-host
 
-      - name: Gate 6B Q12 diagnostic/classifier regression 19/0
+      - name: Gate 6B Q12 diagnostic/classifier regression 20/0
         run: npm run gate6b:q12-host
 
       - name: Gate 5B adapter normalization 6/0

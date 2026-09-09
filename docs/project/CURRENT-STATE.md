@@ -42,52 +42,53 @@ Canonical hashes:
 - schema: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`؛
 - bootstrap: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
 
-## 3) Q12 physical result على `c3cc890...`
+## 3) Q12 physical result على `7ebe780...`
 
 تم تنفيذ **Run Adapter Qualification** على هاتف Android فعلي ضد:
 
-`c3cc890b35d7f9612214559f83d8091f98e96a68`
+`7ebe780b1caffeb1a9240ff4010e5483e1c70b7b`
 
-النتيجة الفيزيائية: `overallResult=BLOCKED`، مع بقاء Q1→Q11 جميعها PASS وQ8/Q9 بالحالة نفسها أعلاه.
+النتيجة الفيزيائية: `overallResult=BLOCKED`، مع بقاء Q1→Q11 جميعها PASS. Q8 بقي PASS: 15 tables / 44 triggers / 1 view / 24 indexes / `integrity_check=ok`. Q9 بقي PASS: 24 definitions، second bootstrap 24 no-ops، P0=20، P1=4، allowed_values=48.
 
 Q12 كانت:
 
 ```text
 Q12_COMPETING_WRITE = BLOCKED
-stage=native_open
-detail=Error
-samePhysicalFile=false
-databaseBasename=unknown
-nativeClosed=true
+stage=native_open/set_busy_timeout
+exceptionClass=android.database.sqlite.SQLiteException
+exceptionMessage=unknown error (code 0): Queries can be performed using SQLiteDatabase query or rawQuery methods only.
+code=G6B_Q12_NATIVE_OPEN_SET_BUSY_TIMEOUT
+nativeStage=set_busy_timeout
 ```
 
-هذا **ليس adapter-locking failure**، ولم يصل الاختبار إلى `BEGIN IMMEDIATE` differential lock sequence. كما أن `samePhysicalFile=false` هنا ليست post-open contradiction: الاتصال B لم يفتح بنجاح، فبقي الحقل على القيمة الابتدائية غير المثبتة.
+`samePhysicalFile=false` في هذا التشغيل ليست post-open contradiction. native open توقف قبل `database_list` و`same_file_check`، ولذلك بقي الحقل على القيمة الابتدائية غير المثبتة. differential lock proof لم يُصل إليه التنفيذ.
 
-السبب الجذري **غير معروف حتى الآن**. instrumentation في `c3cc890...` ضغطت JavaScript `Error` إلى `error.name` فقط، بينما native `open()` جمعت مراحل متعددة داخل catch واحد؛ لذلك ضاعت stage/class/message الفعلية. لا يجوز نسبة الفشل إلى SQLCipher أو path أو locking أو primary adapter دون دليل جديد.
+السبب مثبت الآن: Q12 diagnostic writer كان ينقل `PRAGMA busy_timeout = 0;` عبر `execSQL`. SQLCipher Android رفض هذا النقل لأن الـPRAGMA row-producing ويجب أن يُنفذ عبر query/rawQuery. هذا **Q12 diagnostic-writer transport defect** فقط؛ ليس دليلًا على SQLCipher incompatibility، ولا primary adapter defect، ولا same-file failure، ولا `BEGIN IMMEDIATE` failure، ولا lock-semantics failure.
 
-## 4) Q12 diagnostic hardening الحالي
+## 4) busy_timeout transport correction الحالي
 
-تم تضييق التصحيح على instrumentation فقط، مع إبقاء semantics Q12 دون تغيير:
+التصحيح ضيق على writer B فقط، مع إبقاء semantics Q12 دون تغيير:
 
 - A يبقى existing `CapacitorSqliteAdapter`؛
 - B يبقى native writer مستقلًا؛
 - لا تعديل في Application Core أو canonical schema/bootstrap أو primary adapter؛
-- JavaScript diagnostic يحتفظ بـError `name` و`message` و`code` عند توفره، ويقرأ native diagnostic data دون unsafe cast؛
-- native `open()` يعلن stages ثابتة: `validate_target`, `load_sqlcipher`, `open_database`, `set_busy_timeout`, `read_busy_timeout`, `read_sqlite_version`, `database_list`, `same_file_check`, `probe_table_read`؛
-- native rejection يخرج stage + exception class + sanitized exception message؛
-- `LinkageError` يُعالج تشخيصيًا بشكل صريح دون `catch(Throwable)`؛
+- stage `set_busy_timeout` تستخدم `scalarLong(opened, "PRAGMA busy_timeout = 0;")`، أي `rawQuery` مع stepping/read للصف المعاد؛
+- قيمة setter نفسها يجب أن تكون `0` وإلا يفشل native open في `set_busy_timeout`؛
+- stage `read_busy_timeout` تقرأ `PRAGMA busy_timeout;` بصورة مستقلة، ويجب أن تكون `0` وإلا يفشل native open في `read_busy_timeout`؛
+- stages التسع تبقى منفصلة: `validate_target`, `load_sqlcipher`, `open_database`, `set_busy_timeout`, `read_busy_timeout`, `read_sqlite_version`, `database_list`, `same_file_check`, `probe_table_read`؛
 - failure قبل differential lock proof يبقى BLOCKED؛
 - post-open `samePhysicalFile=false` يبقى FAIL؛
 - BUSY/LOCKED الحقيقيان فقط يمكن أن يؤهلا during-lock step؛
 - لا Promise timeout ولا BUSY/LOCKED simulation.
 
-Q12 status بعد هذا التصحيح: **`DIAGNOSTIC_HARDENED_PENDING_PHYSICAL_RETEST`**.
+Q12 status بعد هذا التصحيح: **`BUSY_TIMEOUT_TRANSPORT_CORRECTED_PENDING_PHYSICAL_RETEST`**.
 
 ## 5) الأدلة التاريخية المحفوظة
 
 - Build `5a642ac73ddaac1df5a49840e2ea4c4c49aae6dc`: Q1-Q7/Q10/Q11 PASS، Q8 FAIL بـ`Execute: not an error (code 0)`، Q9 لم يصل إليها التنفيذ، Q12 BLOCKED. هذا historical evidence للبناء المعيب ولا يُعاد تصنيفه.
 - Corrected build `89d405d...`: Q1-Q11 PASS، Application-Core PASS، clean real Force Stop restart PASS، Q12 BLOCKED قبل وجود genuine writer B.
-- Build `c3cc890...`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open`، root cause مجهول بسبب فقدان diagnostics.
+- Build `c3cc890...`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open`، وكانت root cause غير معروفة لأن diagnostics القديمة أسقطت native rejection detail.
+- Build `7ebe780...`: Q1-Q11 PASS، Q12 BLOCKED عند `native_open/set_busy_timeout`، والسبب مثبت كـinvalid `execSQL` transport للـrow-producing busy-timeout PRAGMA.
 - negative-control سابقة: Phase B بعد `Reset Synthetic Proof DB` فشلت لأن durable DB حُذفت؛ تبقى negative evidence وليست product defect.
 
 ## 6) Baselines الحالية
@@ -96,7 +97,7 @@ Q12 status بعد هذا التصحيح: **`DIAGNOSTIC_HARDENED_PENDING_PHYSICAL
 |---|---:|
 | Gate 6B host adapter contract | 16 / 0 |
 | Gate 6B canonical-schema execution | 8 / 0 |
-| Gate 6B Q12 diagnostic/classifier | 19 / 0 |
+| Gate 6B Q12 diagnostic/classifier | 20 / 0 |
 | Gate 5L | 94 / 0 |
 | Gate 5K | 82 / 0 |
 | Gate 5J | 75 / 0 |
@@ -122,10 +123,8 @@ Q12 status بعد هذا التصحيح: **`DIAGNOSTIC_HARDENED_PENDING_PHYSICAL
 
 ## 8) المهمة الفيزيائية التالية الوحيدة
 
-ثبّت APK الناتج عن هذا diagnostic hardening وشغّل فقط:
+بعد independent review، ثبّت APK الناتج عن busy-timeout transport correction وشغّل فقط:
 
 **Run Adapter Qualification**
-
-الهدف هو الحصول على Q12 evidence تحتوي stage/class/message الفعلية إذا بقي native open BLOCKED، أو متابعة differential lock proof إذا فتح B بنجاح.
 
 لا يُطلب Application-Core Proof ولا Restart Phase A/B في هذه المرحلة.

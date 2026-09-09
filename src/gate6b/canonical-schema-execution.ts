@@ -193,10 +193,10 @@ export function segmentCanonicalSchema(sql: string): CanonicalSchemaStatement[] 
 /**
  * @capacitor-community/sqlite v8.1.1 Android splits execute() input on the
  * literal delimiter `;\n`. For one already-complete statement, insert a single
- * space between a statement semicolon and a following newline (outside quoted
- * strings/comments). SQLite semantics are unchanged, line comments retain
- * their newline boundary, and the plugin's batch splitter becomes an identity
- * operation before its Database.execute() reaches native execSQL().
+ * space between a semicolon and a following newline wherever that is SQL-safe
+ * (normal SQL or comments). Quoted values/identifiers are never rewritten.
+ * The plugin batch splitter therefore becomes an identity operation before
+ * Database.execute() reaches native execSQL().
  */
 export function prepareCanonicalStatementForCapacitorExecute(statement: string): string {
   let out = "";
@@ -208,11 +208,15 @@ export function prepareCanonicalStatementForCapacitorExecute(statement: string):
 
     if (state === "LINE_COMMENT") {
       out += ch;
+      if (ch === ";" && next === "\n") out += " ";
+      if (ch === ";" && next === "\r" && statement[i + 2] === "\n") out += " ";
       if (ch === "\n") state = "NORMAL";
       continue;
     }
     if (state === "BLOCK_COMMENT") {
       out += ch;
+      if (ch === ";" && next === "\n") out += " ";
+      if (ch === ";" && next === "\r" && statement[i + 2] === "\n") out += " ";
       if (ch === "*" && next === "/") {
         out += next;
         state = "NORMAL";
@@ -221,6 +225,9 @@ export function prepareCanonicalStatementForCapacitorExecute(statement: string):
       continue;
     }
     if (state === "SINGLE") {
+      if (ch === ";" && (next === "\n" || (next === "\r" && statement[i + 2] === "\n"))) {
+        throw new Error("Canonical schema contains plugin batch delimiter inside a single-quoted value");
+      }
       out += ch;
       if (ch === "'" && next === "'") {
         out += next;
@@ -229,6 +236,9 @@ export function prepareCanonicalStatementForCapacitorExecute(statement: string):
       continue;
     }
     if (state === "DOUBLE") {
+      if (ch === ";" && (next === "\n" || (next === "\r" && statement[i + 2] === "\n"))) {
+        throw new Error("Canonical schema contains plugin batch delimiter inside a double-quoted value");
+      }
       out += ch;
       if (ch === '"' && next === '"') {
         out += next;
@@ -237,6 +247,9 @@ export function prepareCanonicalStatementForCapacitorExecute(statement: string):
       continue;
     }
     if (state === "BACKTICK") {
+      if (ch === ";" && (next === "\n" || (next === "\r" && statement[i + 2] === "\n"))) {
+        throw new Error("Canonical schema contains plugin batch delimiter inside a backtick-quoted identifier");
+      }
       out += ch;
       if (ch === "`" && next === "`") {
         out += next;
@@ -245,6 +258,9 @@ export function prepareCanonicalStatementForCapacitorExecute(statement: string):
       continue;
     }
     if (state === "BRACKET") {
+      if (ch === ";" && (next === "\n" || (next === "\r" && statement[i + 2] === "\n"))) {
+        throw new Error("Canonical schema contains plugin batch delimiter inside a bracket-quoted identifier");
+      }
       out += ch;
       if (ch === "]") state = "NORMAL";
       continue;

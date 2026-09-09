@@ -45,7 +45,11 @@ function normalizeRow(row: Record<string, unknown>): SqlRow {
  * an Application-Core transaction remains the sole transaction boundary.
  */
 export class CapacitorSqliteAdapter implements SqlAdapter {
-  constructor(private readonly connection: SQLiteDBConnection) {}
+  private readonly connection: SQLiteDBConnection;
+
+  constructor(connection: SQLiteDBConnection) {
+    this.connection = connection;
+  }
 
   async beginImmediate(): Promise<void> {
     await this.connection.execute("BEGIN IMMEDIATE;", false);

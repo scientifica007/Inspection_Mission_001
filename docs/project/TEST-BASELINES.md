@@ -2,9 +2,9 @@
 
 > **الغرض:** آخر regression baselines المعتمدة التي يجب أن تبقى خضراء عند مواصلة المشروع. هذه الأرقام ليست بديلًا عن CI status حي.
 
-## 1) Gate 6B current expectation
+## 1) Gate 6B adopted baselines
 
-Gate 6B لا تعيد كتابة Application Core. أضيفت suites خاصة بالـGate إلى baselines التاريخية:
+Gate 6B مغلقة/مدمجة ولا تعيد كتابة Application Core. suites الخاصة بها أصبحت جزءًا من baselines التاريخية المعتمدة:
 
 | Suite | Passed | Failed |
 |---|---:|---:|
@@ -27,7 +27,7 @@ Gate 6B لا تعيد كتابة Application Core. أضيفت suites خاصة ب
 
 إجمالي Gate 5B عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع بقاء العدّين منفصلين.
 
-Q12 host suite لا تدّعي lock proof على Android؛ هي تمنع false-positive classification وتثبت سلامة diagnostic transport/source invariants. الـdevice lock proof أصبح موجودًا الآن بصورة مستقلة من تشغيل Android الفعلي المقبول على `87135cfe...`.
+Q12 host suite لا تدّعي lock proof على Android؛ الـdevice lock proof هو التشغيل الفيزيائي المقبول على `87135cfe80ae3de79a34e941828249fc6889139c`، وقد أسهم مع بقية evidence المقبولة في إغلاق Gate 6B عبر PR #17 / merge `0905c6111269d62480e7ccadc31786bef29f3c51`.
 
 ## 2) ملفات suites الحاكمة
 
@@ -72,40 +72,15 @@ node tests/gate5l_regression.ts
 python3 tests/gate4a_regression.py
 ```
 
-Android Gate-6B CI additionally يجب أن ينجح في:
-
-- Vite production build؛
-- Capacitor Android sync؛
-- dependency assertion بأن resolved `net.zetetic:sqlcipher-android` الوحيد هو `4.17.0`؛
-- Gradle `assembleDebug`؛
-- no-Node/no-Capacitor imports في `src/application` و`src/bootstrap`؛
-- no drift في `src/application`, `src/bootstrap`, `docs/schema/schema.sql`, `bootstrap/v1/checklist-v1.json`؛
-- `git diff --check`؛
-- debug APK upload.
+Gate-6B CI baseline تشمل كذلك Vite production build، Capacitor Android sync، single resolved `net.zetetic:sqlcipher-android:4.17.0`, Gradle `assembleDebug`, no-Node/no-Capacitor imports في runtime-neutral core، no drift في `src/application`, `src/bootstrap`, canonical schema/bootstrap، و`git diff --check`.
 
 ## 4) Q12 adversarial baseline
 
 `tests/gate6b_q12_regression.ts` يثبت أن PASS لا تصدر إلا إذا تحققت كل الشروط: same physical file، same native engine/version، preflight write/readback، primary BEGIN IMMEDIATE، native BUSY/LOCKED أثناء lock، locked marker count=0، release طبيعي، same write succeeds after release، post-release count=1، cleanup complete، native close complete.
 
-ويثبت تحديدًا أن:
+ويثبت أن generic native error يبقى BLOCKED، post-open same-file mismatch يبقى FAIL، competing-write success أثناء lock = FAIL، BUSY/LOCKED فقط مقبولان لمسار PASS، busy timeout setter/readback كلاهما صفر، ولا يوجد Promise timing بديل عن native lock outcome.
 
-- generic native error يبقى BLOCKED؛
-- post-open same-file mismatch يبقى FAIL؛
-- preflight failure لا يمكن أن PASS؛
-- competing write success أثناء lock = FAIL؛
-- locked marker visibility = FAIL؛
-- post-release write/cardinality failure = FAIL؛
-- engine mismatch / unexpected busy policy / cleanup failure لا يمكن أن PASS؛
-- `Error.name` و`Error.message` محفوظان، وCapacitor `code` وnative `stage/exceptionClass/exceptionMessage` تُحفظ عند توفرها؛
-- native-open failure يظل BLOCKED؛
-- BUSY وLOCKED فقط هما during-lock outcomes المقبولان لمسار PASS؛
-- Java source يحتوي stages التشخيصية التسع؛
-- `LinkageError` يُعالج صراحةً ولا يوجد `catch(Throwable)`؛
-- `PRAGMA busy_timeout = 0;` لا يُنقل عبر `execSQL`؛
-- busy-timeout setter يستخدم `scalarLong()` → `rawQuery()` ويقرأ الصف المعاد؛
-- setter-returned value وreadback مستقل كلاهما ملزمان بقيمة `0`.
-
-## 5) accepted physical Q12 evidence
+## 5) Accepted physical Q12 evidence
 
 Adapter Qualification حقيقية على Android عند:
 
@@ -134,31 +109,25 @@ cleanupComplete=true
 nativeClosed=true
 ```
 
-إذًا differential native locking requirement مثبت فيزيائيًا، وليس بواسطة host classifier أو Promise timing.
+Q8: PASS — 15 tables / 44 triggers / 1 view / 24 indexes / `integrity_check=ok`.
 
-Q8 في التشغيل نفسه: PASS — 15 tables / 44 triggers / 1 view / 24 indexes / `integrity_check=ok`.
+Q9: PASS — 24 definitions / second bootstrap 24 no-ops / P0=20 / P1=4 / allowed_values=48.
 
-Q9 في التشغيل نفسه: PASS — 24 definitions / second bootstrap 24 no-ops / P0=20 / P1=4 / allowed_values=48.
+## 6) Historical evidence remains historical
 
-## 6) historical Q12 evidence remains historical
+- `5a642ac...`: pre-correction Q8 failure remains FAIL history.
+- `89d405d...`: Q12 BLOCKED history remains BLOCKED؛ Application-Core/restart PASS evidence remains accepted separately.
+- `c3cc890...`: Q12 BLOCKED at `native_open` with insufficient diagnostics remains history.
+- `7ebe780...`: Q12 BLOCKED at `native_open/set_busy_timeout` due confirmed PRAGMA transport defect remains history.
+- restart negative control remains negative evidence, not a product defect.
 
-تشغيل `7ebe780b1caffeb1a9240ff4010e5483e1c70b7b` يبقى Q12=`BLOCKED` عند `native_open/set_busy_timeout` بسبب transport defect المثبت. لا يعاد تصنيفه بعد نجاح `87135cfe...`.
+## 7) Evidence reuse decision
 
-تشغيل `c3cc890...` يبقى BLOCKED عند `native_open` مع diagnostics غير كافية لتحديد السبب في ذلك الوقت. pre-correction Q8 failure وrestart negative control يبقيان محفوظين كذلك.
+Application-Core Proof وfinal real Force Stop/Restart evidence من `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى مقبولة لأن `src/application/**`, `src/bootstrap/**`, primary `CapacitorSqliteAdapter`, canonical schema وcanonical bootstrap لم تنحرف حتى `87135cfe...`.
 
-## 7) evidence reuse decision
+هذا evidence reuse based on non-drift؛ **`same_binary=false`** بين APK `89d` وAPK `871`.
 
-Application-Core Proof وfinal real Force Stop/Restart evidence من `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى مقبولة ولا تعاد، لأن المسارات التالية لم تنحرف حتى `87135cfe...`:
-
-- `src/application/**`;
-- `src/bootstrap/**`;
-- `src/device/capacitor-sqlite-adapter.ts`;
-- `docs/schema/schema.sql`;
-- `bootstrap/v1/checklist-v1.json`.
-
-هذا evidence reuse based on non-drift؛ **لا** يعني أن APK `89d` وAPK `871` نفس binary.
-
-## 8) canonical hashes
+## 8) Canonical hashes
 
 ```text
 docs/schema/schema.sql
@@ -170,14 +139,12 @@ d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
 
 ## 9) قاعدة عدم الإضعاف والحالة الحالية
 
-لا يجوز حذف test صحيحة أو خفض semantics سابقة لتجاوز failure. أي contradiction حقيقية في Q12 يجب أن تبقى FAIL/BLOCKED وفق contract.
+لا يجوز حذف test صحيحة أو خفض semantics سابقة لتجاوز failure.
 
-Gate 6B: `IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`.
+Gate 6B: **`CLOSED / MERGED`** عبر PR #17 / merge `0905c6111269d62480e7ccadc31786bef29f3c51`.
 
 Q12: `PHYSICAL_PASS_REVIEW_ACCEPTED`.
 
-`closure_authorized=false`.
+`@capacitor-community/sqlite@8.1.1`: `ADOPTED_BY_CLOSED_GATE6B`.
 
-Gate 6C: `NOT_STARTED`.
-
-لا يوجد physical retest جديد مطلوب بموجب evidence المقبولة الحالية.
+Gate 6C: **`NEXT / NOT_STARTED`**.

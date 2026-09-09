@@ -50,6 +50,7 @@
 - Gate 4 / 4A / 4B — Physical Schema + Applicability + Finding VOIDED lifecycle.
 - Gate 5A→5L — Application Core، بما يشمل T0→T11 وOBS-1 و`currentVisitState` لإعادة البناء بعد restart من SQLite وحدها.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap.
+- Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof — **CLOSED / MERGED** عبر PR #17 عند merge SHA `0905c6111269d62480e7ccadc31786bef29f3c51`.
 
 Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، وقد أصبحت **MERGED / RESOLVED** دون تغيير عقد `SqlAdapter`.
 
@@ -58,8 +59,6 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
 الحالة التفصيلية الحية المختصرة: `docs/project/CURRENT-STATE.md` و`docs/project/CURRENT-STATE.json`.
 
 ## معمارية المنتج المعتمدة
-
-بعد اكتمال Application Core، انتقل المشروع إلى تحويل القلب المنطقي إلى منتج Android ميداني قابل للاستخدام.
 
 وثائق المعمارية والـRoadmap المعتمدة:
 
@@ -74,42 +73,40 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
 - React + Vite + TypeScript كواجهة ميدانية افتراضية.
 - SQLite تبقى السلطة المحلية للبيانات.
 - لا server ولا sync مطلوبين للنسخة الميدانية الأولى.
-- اعتماد SQLite plugin نهائيًا يتطلب Gate-6B review/owner approval/merge؛ اجتياز device qualification وحده لا يساوي merged project authority.
+- `@capacitor-community/sqlite@8.1.1` اجتاز Gate 6B physical qualification وتم اعتماده بواسطة Gate 6B المغلقة؛ لا يغيّر ذلك سلطة `SqlAdapter` أو canonical schema/bootstrap.
 
 ## المرحلة التنفيذية الحالية على مستوى المنتج
 
-**Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof**
+**Gate 6B — CLOSED / MERGED.**
 
-الحالة: **`IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE`**.
+- implementation branch المراجَع: `implementation/gate6b-android-runtime-proof-v1`.
+- reviewed branch head: `04dcf001e5494c38258c7112619ea1d508af694c`.
+- PR: `#17`.
+- merge SHA: `0905c6111269d62480e7ccadc31786bef29f3c51`.
+- physical Adapter Qualification target: `87135cfe80ae3de79a34e941828249fc6889139c` — **PASS Q1→Q12**.
+- Q12: `PHYSICAL_PASS_REVIEW_ACCEPTED`.
+- Application-Core وreal Force Stop/Restart evidence من `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى accepted بإعادة استخدام evidence مبنية على non-drift؛ `same_binary=false` بين APK `89d` وAPK `871`.
 
-فرع التنفيذ: `implementation/gate6b-android-runtime-proof-v1`.
-
-تم تنفيذ Adapter Qualification على Android فعلي ضد SHA `87135cfe80ae3de79a34e941828249fc6889139c`، والنتيجة المقبولة بعد المراجعة المستقلة هي **PASS لـQ1→Q12**. Q12 أثبتت writer B مستقلًا على نفس SQLite file، و`BEGIN IMMEDIATE` على A، وBUSY أصليًا من SQLCipher أثناء القفل، ثم نجاح writer نفسه بعد release.
-
-أدلة Application-Core وreal Force Stop/Restart من `89d405d...` تبقى مقبولة بإعادة استخدام evidence مبنية على ثبوت عدم drift في `src/application/**`, `src/bootstrap/**`, primary `CapacitorSqliteAdapter`, canonical schema وcanonical bootstrap حتى target `87135cfe...`. البناءان ليسا نفس APK binary.
-
-`@capacitor-community/sqlite@8.1.1` اجتاز device qualification، لكن اعتماد Gate 6B النهائي ما يزال pending PR / owner approval / merge. `closure_authorized=false`.
-
-لا تبدأ UI كاملة أو Evidence أو reports قبل إغلاق Gate 6B.
+المرحلة التالية هي **Gate 6C — NEXT / NOT_STARTED**. هذا لا يعني أن Gate 6C بدأت تنفيذًا.
 
 ## Roadmap حتى Field-usable v1
 
 ```text
 6A  Product Runtime Architecture & Delivery Roadmap       CLOSED
  ↓
-6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   IN_PROGRESS / PHYSICAL_QUALIFICATION_PASS_PENDING_PR_MERGE
+6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   CLOSED / MERGED
  ↓
-6C  Evidence Storage + Camera/File Pipeline               NOT_STARTED
+6C  Evidence Storage + Camera/File Pipeline               NEXT / NOT_STARTED
  ↓
-6D  Arabic RTL Field UI + End-to-End Visit Workflow
+6D  Arabic RTL Field UI + End-to-End Visit Workflow       LATER
  ↓
-6E  ExternalSystemTracking application capability
+6E  ExternalSystemTracking application capability         LATER
  ↓
-6F  Deterministic Report Model / Snapshot Generation
+6F  Deterministic Report Model / Snapshot Generation      LATER
  ↓
-6G  DOCX + PDF + Artifact Save/Share
+6G  DOCX + PDF + Artifact Save/Share                      LATER
  ↓
-6H  Android Packaging + Field Qualification
+6H  Android Packaging + Field Qualification               LATER
  ↓
 FIELD-USABLE v1
 ```
@@ -142,24 +139,4 @@ Fresh Read main
 
 ## حدود المستودع
 
-GitHub يخزن:
-
-- requirements؛
-- schema؛
-- code؛
-- templates؛
-- design/architecture؛
-- docs؛
-- tests؛
-- synthetic fixtures؛
-- ذاكرة handoff وتشغيل المشروع.
-
-ولا يخزن:
-
-- صور تفتيش حقيقية؛
-- Evidence تشغيلية حقيقية؛
-- بيانات شخصية أو حساسة؛
-- قواعد SQLite إنتاجية؛
-- سجلات تفتيش تشغيلية حقيقية؛
-- أسرار أو API keys؛
-- device serial numbers.
+GitHub يخزن requirements/schema/code/templates/design/architecture/docs/tests/synthetic fixtures وذاكرة handoff الهندسية، ولا يخزن صور تفتيش حقيقية أو Evidence تشغيلية حقيقية أو بيانات شخصية أو قواعد SQLite إنتاجية أو أسرار/API keys أو device serial numbers.

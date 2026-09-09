@@ -370,6 +370,8 @@ COMMIT;
 ```
 FollowUp insert failure ⇒ status update rolls back; status update failure ⇒ FollowUp rolls back. `visit_id` optional context (same-institution follow-up visit or NULL).
 
+**Retry identity (Gate-5H clarification of the Class-A "identical duplicates converge" rule):** "already at target" alone is NOT idempotent success. An already-at-target retry converges (`applied: false`, no second FollowUp) only when the **durable transition-event identity** matches the requested event exactly: the canonical FollowUp row (`finding_id`, `corrective_action_id IS NULL`, `status_target='FINDING'`, `status_after` = requested target, null-safe `visit_id` == requested contextVisitId, `event_datetime`, `actor_role`, null-safe `actor_role_other`, null-safe `actor_name`, normalized `note`, normalized `recorded_by`) **plus** `finding.status_changed_at == event_datetime`. Already at target with a **different** audit event, a mismatching `status_changed_at`, or **duplicate** matching FollowUp rows ⇒ `E_STATE_CONFLICT` (a silent "current status == requested target" shortcut would absorb a DIFFERENT FollowUp event, and duplicate rows are an integrity conflict — never silent convergence). A stale retry to a target the Finding has already legitimately ADVANCED beyond (e.g. `OPEN → IN_TREATMENT` committed, then `→ RESOLVED`, then a retry requests `IN_TREATMENT`) also conflicts: never backwards, never claimed target convergence.
+
 ---
 
 ## 10) T9/T10 — CorrectiveAction (optional 0..*, Gate-4B aligned)
@@ -422,7 +424,7 @@ No state may change between the validated snapshot and finalization (same tx). N
 
 **A. Naturally state-idempotent operations** (retry after an uncertain commit converges safely):
 - answer/correct an existing materialized cell (T2/T3/T4/T5/T6) — identity is the (visit, item, context) cell;
-- Finding/Action transitions (T8/T10) with the affected-row guard + state re-read;
+- Finding/Action transitions (T8/T10) with the affected-row guard + state re-read — for T8, "identical" retry convergence requires the **exact durable transition-event identity** (the canonical FollowUp row of §9 plus `finding.status_changed_at == event_datetime`), never mere "already at target"; a different audit event ⇒ typed conflict (§9, Gate-5H clarification);
 - finalization (T11);
 - Finding creation attached to an existing response cell — **T2/T3A are already safe**: the guarded source UPDATE targets the cell's durable identity and its zero-row failure rolls back the just-inserted Finding before re-reading the existing answer/link (narrow audit: T2/T3A/T7 all satisfy this);
 - **T7 ensure-accounted** (this micro-correction): pre-reads the observation; never inserts when `observation.finding_id` is already set — an already-linked observation converges only as an IDENTICAL historical retry whose durable linked Finding matches the requested NEW-Finding semantic creation identity (origin/subject null-safe/normalized description/defect_type/defect_type_other/location/urgency/impact/created_by == request actor; `created_at` and the current status deliberately excluded — see §8), and a requested target that differs is a typed conflict with no write and no reassignment; the guarded link requires `finding_id IS NULL`, and a zero-row guard rolls back the new Finding and returns the existing link only on the identical durable target (no blind reassignment, no orphaned first Finding);

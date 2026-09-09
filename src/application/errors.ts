@@ -60,6 +60,53 @@
 //                             not-found code (mission/visit/subject/finding/
 //                             observation), so a missing ACTION gets its own —
 //                             E_FINDING_NOT_FOUND is never used for it.
+// and the Gate-5K finalization-blocker codes adopted by the authoritative
+// finalization contract (APPLICATION-CORE-v1.md §8 / TRANSACTION §11 — T11):
+// these codes are part of the adopted contract; adding them to the taxonomy
+// is implementation alignment, not a new domain decision.
+//   * E_UNRESOLVED_PENDING   — a reason-less pending cell survives into
+//                             finalization: overlay_state='NOT_INSPECTED',
+//                             answered_value_id NULL, not_inspected_reason
+//                             NULL (includes unresolved HUMAN_CONFIRMATION
+//                             cells — no pending cell may survive)
+//   * E_UNINSPECTED_NEEDS_REASON — a deliberate NOT_INSPECTED cell carries no
+//                             meaningful (non-blank) reason
+//   * E_NC_UNACCOUNTED       — a NON_COMPLIANT answered cell has no finding
+//                             link (finding_id IS NULL)
+//   * E_NC_NEEDS_NOTE        — a NON_COMPLIANT answered cell has no
+//                             meaningful (non-blank) note
+//   * E_CHK012               — a SCHEDULE reconciliation state of the Visit
+//                             violates the adopted physical/domain invariants
+//                             (rows only under SCHEDULE responses; no overlay
+//                             with rows; no COMPLIANT with a discrepancy row;
+//                             difference/type/OTHER-desc/category invariants)
+//   * E_ORPHAN_FINDING       — a Finding with origin_visit_id = this Visit is
+//                             OPEN with zero recorded sources across
+//                             checklist_response AND adhoc_observation.
+//                             VOIDED findings are EXPECTED source-less and are
+//                             never orphan blockers (Gate 4B).
+// T11 throws ONE DomainError whose `blockers` payload carries the complete
+// deterministic list (every blocker of every check — the authoritative
+// contract says run ALL finalization checks before rolling back). The
+// error's top-level `code` is the first blocker's code in the deterministic
+// §8 order; no wrapper code (e.g. E_FINALIZATION_BLOCKED) is invented.
+
+/** One structured finalization blocker (deterministic, machine-readable). */
+export interface FinalizationBlocker {
+    /** the authoritative blocker code */
+    code: AppErrorCode;
+    /** machine-readable violation discriminator (stable for tests/UI) */
+    kind: string;
+    /** durable identifiers/context needed to locate the problem */
+    visitId?: number;
+    responseId?: number | null;
+    itemDefinitionId?: number | null;
+    subjectId?: number | null;
+    itemCode?: string | null;
+    findingId?: number | null;
+    /** equipment_reconciliation_row.row_id for E_CHK012 row-level blockers */
+    rowId?: number | null;
+}
 
 export const APP_ERR = {
     CONFIG: "E_CONFIG",
@@ -83,17 +130,28 @@ export const APP_ERR = {
     LAST_SOURCE: "E_LAST_SOURCE",
     OBSERVATION_NOT_FOUND: "E_OBSERVATION_NOT_FOUND",
     ACTION_NOT_FOUND: "E_ACTION_NOT_FOUND",
+    UNRESOLVED_PENDING: "E_UNRESOLVED_PENDING",
+    UNINSPECTED_NEEDS_REASON: "E_UNINSPECTED_NEEDS_REASON",
+    NC_UNACCOUNTED: "E_NC_UNACCOUNTED",
+    NC_NEEDS_NOTE: "E_NC_NEEDS_NOTE",
+    CHK012: "E_CHK012",
+    ORPHAN_FINDING: "E_ORPHAN_FINDING",
 } as const;
 
 export type AppErrorCode = (typeof APP_ERR)[keyof typeof APP_ERR];
 
 export class DomainError extends Error {
     readonly code: AppErrorCode;
+    /** T11 only: the complete deterministic structured blocker list. */
+    readonly blockers: readonly FinalizationBlocker[] | undefined;
 
-    constructor(code: AppErrorCode, message: string) {
+    constructor(code: AppErrorCode, message: string, blockers?: readonly FinalizationBlocker[]) {
         super(message);
         this.name = "DomainError";
         this.code = code;
+        if (blockers !== undefined && blockers.length > 0) {
+            this.blockers = blockers;
+        }
     }
 }
 

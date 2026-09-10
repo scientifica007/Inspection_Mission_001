@@ -32,7 +32,7 @@
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B مغلقتان/مدمجتان كـsub-stages، بينما Gate 6C ككل ما تزال IN_PROGRESS وGate 6C-C هي المرحلة التالية ولم تبدأ.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B مغلقتان/مدمجتان كـsub-stages، بينما Gate 6C ككل ما تزال IN_PROGRESS وGate 6C-C قيد التنفيذ في حالة IMPLEMENTATION_REVIEW.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -94,9 +94,9 @@ These decisions remain **`OWNER_APPROVED / ADOPTED`**.
 
 #### Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters
 
-الحالة: **`NEXT / NOT_STARTED`**.
+الحالة: **`IN_PROGRESS / IMPLEMENTATION_REVIEW`**.
 
-لم يبدأ تنفيذ Camera/gallery/generic-file Android adapters، ولا `content://` streaming/copy spikes، ولا `appRestoredResult`، ولا durable Android EvidenceStorage. تتطلب 6C-C تفويضًا مستقلًا قبل التنفيذ.
+بدأ تنفيذ Android Camera/gallery/generic-file acquisition وdurable EvidenceStorage وتم الوصول إلى executable emulator qualification على API24 وAPI35، بما في ذلك full EvidenceService integration وstartup reconciliation. سجل الإثبات المرشح: `docs/architecture/GATE6C-C-ANDROID-EVIDENCE-QUALIFICATION-v1.md`. هذه الحالة لا تعني إغلاق Gate 6C-C ولا تمثل Gate 6C-D physical qualification.
 
 Gate 6C-D لم تبدأ.
 

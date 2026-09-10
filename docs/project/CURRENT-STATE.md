@@ -24,11 +24,15 @@
 - Gate 6C-B initial implementation checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`.
 - Gate 6C-B corrected executable validation SHA: `dadf4d90a10d7348fea0543c1885ecf5b0846578`.
 - Gate 6C-B corrected executable CI run: `34483510338` — SUCCESS.
+- Gate 6C-B final reviewed head: `ea88fac83d60b99b7d50828915173d3aa14bb5d6`.
+- Gate 6C-B final-head CI run: `34484231771` — SUCCESS.
+- Gate 6C-B PR: `#21`.
+- Gate 6C-B merge SHA: `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A مغلقة/مدمجة كـsub-stage، بينما Gate 6C ككل ما تزال IN_PROGRESS وGate 6C-B في IMPLEMENTATION_REVIEW.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B مغلقتان/مدمجتان كـsub-stages، بينما Gate 6C ككل ما تزال IN_PROGRESS وGate 6C-C هي المرحلة التالية ولم تبدأ.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -70,21 +74,31 @@ These decisions remain **`OWNER_APPROVED / ADOPTED`**.
 
 #### Gate 6C-B — Runtime-neutral Evidence orchestration + host regressions
 
-الحالة: **`IN_PROGRESS / IMPLEMENTATION_REVIEW`**.
-
-`implementation_started=true`.
+الحالة: **`CLOSED / MERGED`**.
 
 - implementation branch: `implementation/gate6c-b-evidence-orchestration-v1`;
 - governing base: `953610be8815725bb55bbdc62ac2ca375ee4ffa3`;
 - initial checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`;
 - corrected executable SHA: `dadf4d90a10d7348fea0543c1885ecf5b0846578`;
 - corrected executable CI: run `34483510338` / **SUCCESS**;
-- Gate-6C-B host regression: **85 / 0** on the corrected executable SHA;
-- typecheck, production build, canonical hash guards, historical regressions, runtime-neutrality/no-drift/dependency/synthetic-only guards and `git diff --check`: PASS on that run.
+- final reviewed head: `ea88fac83d60b99b7d50828915173d3aa14bb5d6`;
+- final-head CI: run `34484231771` / **SUCCESS**;
+- independent PR review verdict: **`MERGE-READY`**;
+- PR: `#21`;
+- merge SHA: `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`;
+- Project Owner explicitly approved the merge;
+- Gate-6C-B host regression: **85 / 0**;
+- typecheck, production build, canonical hash guards, historical regressions, runtime-neutrality/no-drift/dependency/synthetic-only guards and `git diff --check`: PASS.
 
-This is **CURRENT / CANDIDATE BRANCH EVIDENCE**, not an adopted closed baseline. Gate 6C-B is not CLOSED and has not been merged.
+بعد المراجعة المستقلة وموافقة صاحب المشروع ودمج PR #21 أصبحت نتيجة **85 / 0** baseline معتمدة لـGate 6C-B.
 
-Gate 6C-C / 6C-D have not started.
+#### Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters
+
+الحالة: **`NEXT / NOT_STARTED`**.
+
+لم يبدأ تنفيذ Camera/gallery/generic-file Android adapters، ولا `content://` streaming/copy spikes، ولا `appRestoredResult`، ولا durable Android EvidenceStorage. تتطلب 6C-C تفويضًا مستقلًا قبل التنفيذ.
+
+Gate 6C-D لم تبدأ.
 
 ### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
@@ -191,6 +205,7 @@ nativeClosed=true
 
 | Suite | Baseline |
 |---|---:|
+| Gate 6C-B Evidence host regression | 85 / 0 |
 | Gate 6B host adapter contract | 16 / 0 |
 | Gate 6B canonical-schema execution | 8 / 0 |
 | Gate 6B Q12 diagnostic/classifier | 20 / 0 |
@@ -213,7 +228,7 @@ Canonical hashes:
 - `docs/schema/schema.sql`: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`;
 - `bootstrap/v1/checklist-v1.json`: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
 
-Gate 6C-B candidate branch evidence: **85 / 0** at `dadf4d90a10d7348fea0543c1885ecf5b0846578`, CI run `34483510338` SUCCESS. This is not an adopted/closed baseline.
+Gate 6C-B adopted baseline: **85 / 0**. Proven on corrected executable `dadf4d90a10d7348fea0543c1885ecf5b0846578` / CI `34483510338` SUCCESS and final reviewed head `ea88fac83d60b99b7d50828915173d3aa14bb5d6` / CI `34484231771` SUCCESS; merged via PR #21 at `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`.
 
 ## 7) ثوابت لا تتغير
 
@@ -223,15 +238,19 @@ Gate 6C-B candidate branch evidence: **85 / 0** at `dadf4d90a10d7348fea0543c1885
 - diagnostic Q12 writer ليس product architecture.
 - Q12 classifier semantics لم تُضعف.
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
-- Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **IN_PROGRESS / IMPLEMENTATION_REVIEW**.
+- Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **NEXT / NOT_STARTED**.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
 - Gate 6C-C و6C-D **NOT_STARTED**.
 - Gate 6D **LATER / NOT_STARTED**.
 
 ## 8) الحالة التالية
 
-Gate 6C-B implementation is implemented on its candidate branch and is now awaiting independent branch review. It is not closed or merged.
+Gate 6C-B أُغلقت ودمجت عبر PR #21 بعد independent review وموافقة صريحة من Project Owner.
 
-Do not begin Gate 6C-C until Gate 6C-B receives its required review/merge governance.
+المرحلة التالية هي:
 
-Gate 6C-C و6C-D لم تبدأا. Gate 6D لم يبدأ.
+**Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters — `NEXT / NOT_STARTED`.**
+
+لا يبدأ تنفيذ 6C-C إلا بتفويض مستقل مبني على Fresh Read لـ`main` الحي وعقد Gate 6C-A المدمج وGate 6C-B المغلقة.
+
+Gate 6C-D لم تبدأ. Gate 6D لم يبدأ.

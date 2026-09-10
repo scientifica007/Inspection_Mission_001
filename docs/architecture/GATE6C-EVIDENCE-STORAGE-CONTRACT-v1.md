@@ -1,0 +1,611 @@
+# Gate 6C-A — Evidence Storage Contract & Failure Model v1
+
+> **Gate:** 6C — Evidence Storage + Camera/File Pipeline
+>
+> **Sub-stage:** 6C-A — Evidence Storage Contract & Failure Model
+>
+> **Status:** `DESIGN_REVIEW` — Gate 6C is `IN_PROGRESS`; Gate 6C is **not** closed.
+>
+> **Mode:** DESIGN / CONTRACT ONLY. No Camera, Filesystem, picker, Evidence service, UI, APK, dependency, schema, bootstrap, or physical-device implementation is introduced by this document.
+>
+> **Authoritative starting point:** live GitHub `main@0fbd9ca3db6f2a34f063a682e4f997becefb83ad`.
+>
+> **Traceability:** inherited requirements retain `DIRECT` / `DERIVED` / `PROJECT`. New choices in this document are explicitly classified; a `PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED` is not adopted merely because it appears here.
+
+## 1. Purpose and governing boundary
+
+Gate 6C-A removes ambiguity from the storage/failure contract before executable Evidence work begins. It preserves all closed Gate 5A→5L and Gate 6B semantics and does not reopen them.
+
+The governing Evidence baseline is:
+
+- `PRJ-04` is a **PROJECT / P0** requirement for phone photo/file Evidence; it is not attributed to the official source documents.
+- Evidence is optional metadata linked to an existing domain record. Inability to acquire Evidence must not block recording a Finding.
+- Evidence may be attached at record time or later. Gate 6C does not invent a `Visit.PREPARATION`-only attachment restriction.
+- Binary Evidence remains outside SQLite. SQLite stores committed Evidence metadata and a durable `storage_ref`.
+- SQLite remains the authoritative domain/ownership store. Filesystem state never becomes authority for `owner_kind` / `owner_ref`.
+- The six owner kinds remain exactly: `VISIT`, `CHECKLIST_RESPONSE`, `ADHOC_OBSERVATION`, `FINDING`, `CORRECTIVE_ACTION`, `FOLLOW_UP`.
+- Existing `trg_evidence_bi` owner-existence enforcement remains the hard database floor.
+- Existing Evidence metadata is immutable after INSERT except `note`; Evidence rows are no-delete in v1.
+- Gate 6A's adopted creation ordering remains authoritative:
+
+```text
+capture/import source
+→ durable app-private file copy
+→ metadata/hash
+→ BEGIN IMMEDIATE
+→ INSERT Evidence metadata with storage_ref
+→ COMMIT
+```
+
+SQLite and the filesystem are **not** one atomic transaction. The system therefore prefers a recoverable unreferenced file over a committed database row that points to a file that was never durably stored.
+
+## 2. Evidence source abstraction
+
+Acquisition and durable storage are separate responsibilities.
+
+A runtime-neutral acquisition result is conceptually:
+
+```ts
+type EvidenceSourceKind =
+  | "CAMERA_PHOTO"
+  | "GALLERY_MEDIA"
+  | "GENERIC_FILE";
+
+interface EvidenceSource {
+  kind: EvidenceSourceKind;
+  sourceRef: string;          // opaque, transient adapter reference/URI
+  displayName?: string;       // source/provider name when available
+  declaredMimeType?: string;  // descriptive only
+  sizeHint?: number;          // advisory only
+  capturedAt?: string;        // when meaningful/available
+}
+```
+
+The exact TypeScript type is deferred to 6C-B. The semantic rules are fixed for this Gate:
+
+1. `sourceRef` is an opaque acquisition handle. It may represent a Camera URI, gallery/media URI, Android `content://` URI, or file URI.
+2. `sourceRef` is **not** a durable `storage_ref` and must never be written into the Evidence row as one.
+3. The acquisition adapter does not INSERT Evidence rows and does not decide domain ownership.
+4. The durable-storage adapter does not launch UI or decide which owner receives Evidence.
+5. Source metadata is advisory until the durable copy is completed and statted. The final persisted object metadata is authoritative for `file_size`; MIME remains descriptive rather than a security assertion.
+6. A newly captured Camera photo, an existing gallery/media selection, and a generic imported file all enter the same persistence/orchestration pipeline after acquisition.
+
+If a source has no meaningful original filename (for example, a newly captured Camera photo), 6C-B may synthesize a user-facing `file_name` because the schema requires it. That display name is metadata only and must never be used as the physical storage key.
+
+## 3. Runtime-neutral ports
+
+### 3.1 Acquisition boundary
+
+Gate 6C-B should depend on a narrow source-acquisition abstraction rather than Capacitor objects. The conceptual operations are:
+
+```ts
+interface EvidenceSourceAcquisition {
+  takeCameraPhoto(): Promise<AcquisitionOutcome>;
+  chooseGalleryMedia(): Promise<AcquisitionOutcome>;
+  chooseGenericFile(): Promise<AcquisitionOutcome>;
+}
+```
+
+`AcquisitionOutcome` must distinguish success, cancellation, permission/access denial, source unavailability, and unsupported source. The native adapter maps platform/plugin error codes to the runtime-neutral taxonomy in §18.
+
+### 3.2 EvidenceStorage boundary
+
+`EvidenceStorage` is a narrow device-facing port comparable in architectural role to `SqlAdapter`, but it never becomes a second domain database. Its conceptual responsibilities are:
+
+```ts
+interface EvidenceStorage {
+  allocate(): Promise<EvidenceObjectAllocation>;
+  stage(source: EvidenceSource, allocation: EvidenceObjectAllocation): Promise<StagedEvidenceObject>;
+  publish(staged: StagedEvidenceObject): Promise<StoredEvidenceObject>;
+  stat(storageRef: string): Promise<StoredEvidenceStat>;
+  resolve(storageRef: string): Promise<ResolvedEvidenceHandle>;
+  listManagedObjects(): Promise<ManagedEvidenceObject[]>;
+  removeConfirmedOrphan(storageRef: string): Promise<void>;
+  verifyHash(storageRef: string, expectedHash: string): Promise<HashVerification>;
+}
+```
+
+These signatures are illustrative, not implementation. The port contract is:
+
+- `allocate()` creates a collision-resistant object identity **before** any Evidence row exists.
+- `stage()` copies/streams the source into a non-addressable incoming object and obtains durable-object metadata using bounded memory.
+- `publish()` makes a complete staged object visible under its final managed reference; it returns only after the final object is complete and stattable.
+- `stat()` / `resolve()` validate the `storage_ref` grammar and remain confined to the managed app-private root.
+- `listManagedObjects()` enumerates only the managed Evidence namespace required for reconciliation.
+- `removeConfirmedOrphan()` may remove only an object that the application has already proved is not referenced by committed SQLite Evidence metadata.
+- `verifyHash()` is streaming/bounded-memory and never requires loading the entire binary into JavaScript memory.
+
+The port must not contain UI semantics, owner-kind business rules, SQLite access, public-gallery behavior, or report/export behavior.
+
+## 4. `storage_ref` contract
+
+### 4.1 Required semantics
+
+Regardless of the exact grammar eventually approved, a committed `storage_ref` MUST:
+
+- be logical and application-relative;
+- be stable across ordinary process/app restarts;
+- resolve only inside the managed app-private Evidence store;
+- never be an absolute Android filesystem path;
+- never be a transient `content://` URI, Camera URI, gallery URI, or picker URI;
+- contain a versioned namespace so future storage migrations can be explicit;
+- contain no source filename component that can cause collision or path traversal;
+- be validated before resolution, with malformed/out-of-root references rejected as `BROKEN_STORAGE_REFERENCE`.
+
+### 4.2 Proposed canonical v1 grammar
+
+**PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED**
+
+Adopt:
+
+```text
+evidence/v1/objects/<uuid-v4>.<safe-extension>
+```
+
+with a non-addressable staging namespace:
+
+```text
+evidence/v1/.incoming/<uuid-v4>.part
+```
+
+Rationale:
+
+- `evidence/v1/` makes the logical contract version explicit;
+- `objects/` distinguishes committed physical objects from staging;
+- UUID v4 can be created before `evidence_id` exists and provides collision resistance without coupling the file name to SQLite identity;
+- `.incoming` is never a valid committed `storage_ref`, so incomplete objects are mechanically distinguishable;
+- the original/user-facing filename remains only in `evidence.file_name`.
+
+The parser must accept only the canonical grammar. It must reject absolute paths, URI schemes, `..`, empty segments, alternate separators, percent-decoded traversal, and any path outside the configured managed root.
+
+Owner review of this exact grammar is required before 6C-B treats it as adopted project policy.
+
+## 5. Physical storage directory policy
+
+The already governing architecture requires committed Evidence to be durable and app-private. It must not be placed into public Gallery or public Documents merely to store Evidence.
+
+For Android/Capacitor v8, official Filesystem documentation describes `Directory.Data` as the directory holding application files on Android and states that those files are deleted when the application is uninstalled. The same documentation says Android read/write permission requests are required only for `Directory.Documents` or `Directory.ExternalStorage`, not `Directory.Data`.
+
+Therefore:
+
+- **ALREADY GOVERNING:** committed Evidence is app-private and device-local by default.
+- **DERIVED TECHNICAL CONSEQUENCE:** an Android adapter must use an app-private persistent location that survives ordinary process/app restart and does not require broad external-storage permission solely for committed Evidence storage.
+- **TECHNICAL IMPLEMENTATION CANDIDATE:** `@capacitor/filesystem` `Directory.Data` is the preferred candidate root for Gate 6C-C because its documented Android semantics fit the contract.
+- The plugin/directory choice is a technical implementation decision, not a DIRECT source requirement.
+- `Directory.Documents`, public Gallery, or other public storage is not the committed Evidence store. A later explicit user-facing export/share operation may create a separate public copy; that is not Gate 6C storage authority.
+- **Uninstall semantics:** app-private Evidence under `Directory.Data` is deleted on uninstall. Gate 6C does not claim uninstall survival. Backup/export/restore across uninstall is deferred to a later explicit contract.
+
+The project currently does not install `@capacitor/filesystem`, `@capacitor/camera`, or `@capacitor/app`; 6C-A installs nothing.
+
+## 6. Object naming and collision policy
+
+A physical object identifier MUST be allocated before the Evidence database row because file persistence precedes the SQLite INSERT.
+
+**PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED**
+
+Use a cryptographically random UUID v4 in canonical lowercase textual form as the v1 object token.
+
+Rules independent of the exact token choice:
+
+- never derive the object key from `evidence_id`;
+- never derive the object key from the original filename;
+- never trust directory segments from imported names;
+- allocation collision must fail closed and generate a fresh token rather than overwrite;
+- the final object must be created without overwriting an existing managed object;
+- the extension is normalized separately from the original filename.
+
+For the proposed grammar, `<safe-extension>` is lowercase ASCII `a-z0-9`, one short extension segment only, with no leading dot inside the stored value and no separators. A known safe extension may be derived from trusted Camera output metadata or a conservative MIME/filename normalization. Unknown types use a neutral extension such as `bin`. The exact user-facing source filename is retained separately in `file_name` and is never concatenated into a managed path.
+
+## 7. Content-hash policy
+
+The schema deliberately permits `content_hash IS NULL`; Gate 6C-A must not rewrite that historical fact as though the database already mandates hashing.
+
+### 7.1 Proposed policy
+
+**PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED**
+
+For Evidence newly committed by Gate 6C, require SHA-256 and store:
+
+```text
+sha256:<64 lowercase hexadecimal characters>
+```
+
+Historical/pre-Gate-6C rows remain valid with `content_hash = NULL`; no schema change is proposed.
+
+Rationale: Evidence is an audit-supporting artifact, and an immutable content digest allows deterministic integrity verification without making the filesystem authoritative for ownership.
+
+### 7.2 Execution semantics if approved
+
+- Hash during the source→`.incoming` copy, before final publication and before SQLite `BEGIN IMMEDIATE`.
+- Hash incrementally/streamingly; whole-file buffering is prohibited.
+- A hashing failure before publication returns `HASH_FAILED`; no Evidence row is inserted.
+- `publish()` returns the final size and digest so the application writes immutable metadata exactly once.
+- Hash verification of an already committed object is a separate bounded-memory operation.
+- Ordinary restart reconciliation must always check reference syntax and existence/stat. Full re-hashing of every Evidence binary on every startup is **not** mandated by this contract because it can be expensive. A reconciliation/diagnostic mode must support hash verification; when performed, a mismatch is `HASH_MISMATCH` and the Evidence row/file are retained for diagnosis.
+
+If the owner does not approve mandatory hashing, the fallback contract is SHA-256 when requested/available and `content_hash = NULL` otherwise; all failure ordering and storage rules remain unchanged.
+
+## 8. Creation state machine and cross-store atomicity
+
+The canonical application flow is:
+
+```text
+0  optional early owner preflight (read-only; advisory, not the hard floor)
+1  acquire source
+2  allocate collision-resistant object token
+3  stream/copy source → evidence/v1/.incoming/<token>.part
+4  finish copy; obtain exact stat; compute hash if policy requires
+5  publish complete object → final managed object
+6  BEGIN IMMEDIATE
+7  revalidate owner inside the transaction
+8  INSERT Evidence metadata with final storage_ref
+9  COMMIT
+10 return committed Evidence result
+```
+
+The application may perform an early owner preflight to avoid an expensive copy for an obviously invalid owner, but it must revalidate in the SQLite transaction. `trg_evidence_bi` remains authoritative hard enforcement and is never bypassed.
+
+A final `storage_ref` must not be written to SQLite until the storage adapter has positively reported that the complete final object exists. A filesystem failure can never be converted into a metadata-only success.
+
+The publish operation should be implemented as a same-filesystem atomic rename/move from `.incoming` where the platform/API can prove that property. Official Capacitor Filesystem documentation exposes `rename(...)` but does not document an atomicity guarantee. Therefore:
+
+> **REQUIRES EXECUTABLE SPIKE IN 6C-C:** prove whether the selected Android adapter can provide the required complete-object publication semantics, including interruption behavior. Do not infer atomicity from the existence of a `rename` API.
+
+If the official Filesystem API cannot prove the required property, a narrow native implementation behind `EvidenceStorage` may provide it; the domain contract does not change.
+
+## 9. Exact failure model
+
+| Boundary / failure | SQLite Evidence row | Filesystem residue allowed | Required outcome / recovery |
+|---|---|---|---|
+| user cancels Camera | none | none | `USER_CANCELLED`; safe no-op |
+| user cancels gallery/file picker | none | none | `USER_CANCELLED`; safe no-op |
+| permission/access denied | none | none | `PERMISSION_DENIED`; owner record unaffected |
+| source inaccessible before durable copy | none | no final object; partial incoming possible only if copy began | `SOURCE_UNAVAILABLE`; remove incoming best-effort, startup cleanup otherwise |
+| unsupported/virtual source cannot yield bytes | none | none or partial incoming | `UNSUPPORTED_SOURCE`; no DB write |
+| copy/write fails | none | partial `.incoming` may remain | `STORAGE_WRITE_FAILED`; startup removes incomplete object |
+| hash fails | none | `.incoming` may remain | `HASH_FAILED`; no publish/DB write; cleanup incoming |
+| stat/metadata finalization fails | none | `.incoming` may remain | `STORAGE_WRITE_FAILED`; no publish/DB write |
+| final publish/rename fails | none | `.incoming`, or implementation-specific unreferenced final residue | `STORAGE_WRITE_FAILED`; no DB write; startup reconciliation cleans proven orphan |
+| process death during `.incoming` copy | none | partial `.incoming` | restart removes `.incoming` before new Evidence work |
+| process death after complete stage but before publish | none | complete `.incoming` | restart removes `.incoming` |
+| process death after final publish but before SQLite BEGIN | none | unreferenced final object | restart deletes only after proving no committed Evidence row references it |
+| SQLite `BEGIN IMMEDIATE` fails | none | unreferenced final object | `SQLITE_FAILED`; best-effort orphan cleanup or restart reconciliation |
+| owner validation fails inside transaction | none | unreferenced final object | rollback; `OWNER_NOT_FOUND` / `OWNER_INVALID`; best-effort cleanup |
+| Evidence INSERT/trigger fails | none after rollback | unreferenced final object | rollback; map owner error when applicable, otherwise `SQLITE_FAILED`; cleanup only after no committed row is proven |
+| process death after INSERT but before COMMIT | none (uncommitted tx rolls back) | unreferenced final object | restart reconciliation deletes proven orphan |
+| COMMIT returns a definite rollback/failure | none | unreferenced final object | `SQLITE_FAILED`; orphan may be removed after DB re-read proves absence |
+| COMMIT result is uncertain / ACK lost | unknown until re-read | final object must be preserved | **do not delete**; re-read SQLite by the unique-attempt `storage_ref`; matching committed row → converge to success; no row → orphan; inability to determine → preserve file and surface `SQLITE_FAILED` |
+| process death after COMMIT before caller/UI acknowledgement | committed row | referenced final object | restart treats as valid committed Evidence; no compensation/delete |
+| committed row later references missing file | committed row retained | file absent | `BROKEN_STORAGE_REFERENCE`; never delete row as compensation |
+| committed row/file hash verification mismatches | committed row retained | file retained | `HASH_MISMATCH`; retain both for diagnosis |
+
+Filesystem compensation is therefore asymmetric: unreferenced files may be cleaned after proof; committed Evidence metadata is never deleted to make a filesystem problem disappear.
+
+## 10. Orphan cleanup contract
+
+Cleanup distinguishes three mandatory categories:
+
+### 10.1 Incomplete temporary objects
+
+Objects under the canonical `.incoming` namespace are never valid committed `storage_ref`s. At startup/reconciliation, when no Evidence write is active, they are incomplete work and may be deleted automatically.
+
+### 10.2 Final managed objects with no committed Evidence row
+
+A final object is an orphan only after a fresh SQLite read proves that **no committed Evidence row** references its exact canonical `storage_ref`. It may then be deleted automatically.
+
+This rule safely resolves crashes after final file publication but before database commit. It also protects the uncertain-COMMIT case: if the row actually committed, the fresh SQLite reference set prevents deletion.
+
+### 10.3 Committed Evidence row whose file is missing
+
+This is **not** an orphan-row cleanup case. It is a broken reference / integrity failure:
+
+- retain the Evidence row;
+- do not synthesize a replacement file;
+- do not delete the Evidence row;
+- surface `BROKEN_STORAGE_REFERENCE` with the Evidence identity and logical `storage_ref` suitable for diagnosis, without logging file contents or sensitive source URI data.
+
+### 10.4 Cleanup serialization
+
+Startup/init reconciliation MUST run under the same single-process Evidence maintenance/write serialization boundary used by new Evidence persistence, and SHOULD complete before new Evidence acquisition/persistence is accepted. This prevents cleanup racing an active copy.
+
+If cleanup cannot safely enumerate or delete a confirmed orphan, return/surface `ORPHAN_CLEANUP_FAILED`. New Evidence persistence may be held in a degraded/unavailable state until reconciliation is safe; ordinary domain work must still be able to proceed because Evidence is optional.
+
+Unknown files that do not match the managed-object grammar must not be silently deleted merely because they are in or near the Evidence root. Surface them for diagnosis unless they are inside the dedicated `.incoming` namespace and satisfy its strict staging grammar.
+
+## 11. Restart reconciliation
+
+No sidecar JSON, manifest, index, browser storage, or in-memory map becomes authoritative.
+
+Reconciliation uses only:
+
+```text
+committed SQLite Evidence rows
++
+managed app-private Evidence directory
+```
+
+Under the Evidence maintenance lock:
+
+1. Read the committed Evidence `(evidence_id, storage_ref, content_hash, file_size, ...)` set from SQLite.
+2. Validate each `storage_ref` grammar before any filesystem resolution.
+3. Enumerate `.incoming` and final managed objects.
+4. Classify:
+   - committed row + existing final file → valid reference (subject to stat/integrity checks);
+   - `.incoming` object → incomplete temporary object → auto-clean;
+   - final managed object with no committed row → confirmed orphan → auto-clean;
+   - committed row + missing final file → integrity problem → retain row and surface `BROKEN_STORAGE_REFERENCE`;
+   - committed row + verified hash mismatch → integrity problem → retain row/file and surface `HASH_MISMATCH`.
+5. Only after reconciliation completes may new Evidence writes begin.
+
+A full content hash of every object is not required on every startup. When hash verification is requested, it must be streaming and mismatch must be surfaced rather than repaired silently.
+
+## 12. Retention and deletion
+
+The existing schema makes Evidence rows no-delete in v1. Gate 6C must not introduce a normal “delete evidence” operation that would contradict that contract.
+
+Consequences:
+
+- a committed Evidence binary is retained for as long as its committed Evidence row exists;
+- visit finalization does not delete Evidence files;
+- later attachment remains allowed because the existing logical model says Evidence may be attached at record time or later;
+- `Evidence.note` may be updated under the existing schema; binary content, `storage_ref`, hash, ownership, filename, MIME, size, capture/device metadata, and recorded audit metadata remain immutable;
+- orphan-file deletion is maintenance of **uncommitted** filesystem residue, not deletion of Evidence;
+- uninstall removes app-private `Directory.Data` files according to Capacitor documentation; this is application lifecycle removal, not a domain Evidence delete operation.
+
+Archival, selective purge, legal retention periods, backup/export, cross-device restore, cloud retention, and a future user-visible delete workflow are **DEFERRED BEYOND GATE 6C** unless separately authorized. They must not be invented by an adapter.
+
+## 13. Owner validation
+
+All six existing owner kinds are preserved; no new owner kind is introduced.
+
+Responsibility is layered:
+
+1. **Application preflight:** reject an unknown `owner_kind` as `OWNER_INVALID`; query the selected owner table and return `OWNER_NOT_FOUND` when the requested row does not exist. A read-only early preflight may occur before copying to avoid waste.
+2. **Transactional application validation:** after final file publication, re-check owner existence inside the same `BEGIN IMMEDIATE` that performs the Evidence INSERT.
+3. **Database hard floor:** `trg_evidence_bi` remains unchanged and must reject any INSERT whose declared owner does not exist. Application code maps the trigger failure to the meaningful owner error where possible.
+
+No application preflight weakens, bypasses, replaces, or duplicates the trigger with a looser rule.
+
+Gate 6C-A intentionally does **not** require the owner Visit to be `PREPARATION`; the existing model allows Evidence at record time or later, and no authoritative repository contract currently establishes a PREPARATION-only Evidence insertion rule.
+
+## 14. Retrieval contract
+
+Later retrieval is:
+
+```text
+Evidence.storage_ref
+→ EvidenceStorage.resolve(storage_ref)
+→ validated app-private physical URI/handle
+```
+
+Rules:
+
+- `resolve` parses only the canonical logical namespace and prevents traversal/out-of-root resolution;
+- a transient acquisition URI is never required after successful commit;
+- `resolve` must verify the final object exists before returning a usable handle;
+- a missing object returns `BROKEN_STORAGE_REFERENCE` and does not mutate SQLite;
+- optional/explicit integrity verification compares the streamed digest with `content_hash`; mismatch returns `HASH_MISMATCH` and preserves both metadata and file;
+- MIME metadata is supplied as descriptive metadata to later viewers/sharing layers but is not trusted as proof of content safety.
+
+## 15. Permissions, denial, cancellation, source loss
+
+The runtime-neutral acquisition layer maps these conditions without creating Evidence metadata:
+
+- Camera cancelled → `USER_CANCELLED`;
+- gallery/media selection cancelled → `USER_CANCELLED`;
+- generic file picker cancelled → `USER_CANCELLED`;
+- Camera permission/access denied → `PERMISSION_DENIED`;
+- picker/provider access denied → `PERMISSION_DENIED`;
+- selected source disappears or grant is lost before durable copy completes → `SOURCE_UNAVAILABLE`;
+- source cannot provide a byte representation supported by Gate 6C → `UNSUPPORTED_SOURCE`.
+
+All are safe no-op/error outcomes with no committed Evidence row. If a staging file was created before source loss, it is incomplete `.incoming` work and is cleaned under §10.
+
+Because Evidence is optional, none of these outcomes invalidates, rolls back, or corrupts an already valid owner domain record, and inability to capture Evidence must not block creation/recording of a Finding.
+
+## 16. Large-file handling
+
+Gate 6C establishes a **bounded-memory requirement**, not an arbitrary permanent file-size number.
+
+Mandatory semantics:
+
+- source copy must support streaming/chunked/native byte transfer;
+- hashing must be incremental when enabled/required;
+- no implementation may require a whole large binary to make a mandatory Base64 round trip through JavaScript memory;
+- metadata such as exact final size should come from the final staged/published object, not from an untrusted size hint;
+- low-storage/write-shortage conditions fail before the SQLite Evidence row is committed.
+
+Official Capacitor Filesystem v8 documents `readFileInChunks(...)`, but its binary write/append examples and APIs still use encoded data, and the documentation does not establish that `Filesystem.copy(...)` can copy arbitrary Android `content://` sources into `Directory.Data` with the required bounded-memory and failure semantics.
+
+> **REQUIRES EXECUTABLE SPIKE IN 6C-C:** verify source→app-private streaming/copy for Camera/gallery/generic `content://` sources, memory behavior, large-file behavior, and interruption behavior. A narrow native adapter is permitted behind `EvidenceStorage` if necessary; it is not adopted by 6C-A.
+
+No numeric v1 maximum file size is adopted here.
+
+If a future hard limit is proposed, the exact number is a **PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED**. `FILE_TOO_LARGE` remains a reserved taxonomy code and is emitted only after such a limit is adopted.
+
+## 17. Android Camera and process-death recovery
+
+Current official Capacitor v8 Camera documentation establishes the following technical facts:
+
+- the API introduced in 8.1.0 uses `takePhoto()` and `chooseFromGallery()`;
+- legacy `getPhoto()` / `pickImages()` are deprecated by the current v8 migration guidance;
+- on Android the Camera API launches a separate Activity;
+- Capacitor recommends handling `App.appRestoredResult` because Android may terminate the app while an external Activity is running;
+- the new Camera APIs expose structured native error codes that adapters can map into runtime-neutral outcomes.
+
+Gate 6C-C therefore uses the **current API strategy** as a technical implementation baseline: `takePhoto()` for new Camera photos and `chooseFromGallery()` for gallery/media selection. It must not build new code on the deprecated legacy APIs.
+
+The restored-result rule is mandatory:
+
+```text
+App.appRestoredResult Camera result
+→ normalize to EvidenceSource
+→ re-enter the same owner-confirmation/acquisition orchestration
+→ durable .incoming copy/hash
+→ publish final object
+→ BEGIN IMMEDIATE
+→ owner revalidation + Evidence INSERT
+→ COMMIT
+```
+
+A restored Camera result must never bypass durable copy, hashing policy, owner validation, or SQLite ordering.
+
+If process death erased volatile owner-selection context, the restored source MUST NOT be auto-attached to a guessed owner. The application must reconstruct the relevant durable domain state from SQLite and require/recover an unambiguous owner selection before commit. If ownership cannot be established unambiguously, the source remains uncommitted and no Evidence row is created. Gate 6C does not add a sidecar authority to remember owner intent.
+
+The practical preservation lifetime of restored source access, and the exact listener/adapter sequencing relative to startup reconciliation, require physical/executable verification in 6C-C/6C-D.
+
+## 18. Generic file import
+
+`PRJ-04` requires photos **and files**. Camera/gallery support alone is therefore insufficient.
+
+Gate 6C-B must expose a generic runtime-neutral file-source operation. On Android, the source may be a `content://` or file URI, but the URI is acquisition-only and must be copied immediately into managed app-private Evidence storage before commit.
+
+Android's official Storage Access Framework documents `ACTION_OPEN_DOCUMENT` as the system mechanism for user selection of documents/files and represents selected documents as `content://` URIs that can be opened through `ContentResolver`. This is a suitable native implementation candidate.
+
+No third-party file-picker plugin is adopted by 6C-A.
+
+> **REQUIRES EXECUTABLE SPIKE IN 6C-C:** choose and prove the Android generic-file acquisition adapter. A narrow custom Capacitor Android plugin around the Storage Access Framework is an acceptable candidate if no verified official Capacitor API satisfies the required generic-file and process-restoration contract. This candidate must be kept behind `EvidenceSourceAcquisition`; it must not leak Android/Capacitor types into runtime-neutral orchestration.
+
+Persistable external URI permission is not storage authority. The goal is to obtain enough access to complete the app-private copy; the committed Evidence must remain retrievable without the original external URI.
+
+## 19. Error/result taxonomy
+
+Gate 6C-B should use a compact Evidence-specific result taxonomy and map it into the existing typed Application-Core error style (`E_*`) rather than inventing inconsistent untyped exceptions.
+
+| Runtime-neutral code | Semantics | DB row? |
+|---|---|---|
+| `USER_CANCELLED` | user cancelled acquisition | no |
+| `PERMISSION_DENIED` | Camera/gallery/provider access denied | no |
+| `SOURCE_UNAVAILABLE` | selected source disappeared/cannot be reopened before durable copy | no |
+| `UNSUPPORTED_SOURCE` | source cannot supply supported bytes/semantics | no |
+| `FILE_TOO_LARGE` | reserved; only active if a size limit is later owner-approved | no |
+| `STORAGE_WRITE_FAILED` | stage/stat/publish durable storage failed | no |
+| `HASH_FAILED` | required/requested hash could not be completed | no |
+| `OWNER_NOT_FOUND` | valid owner kind but referenced owner row absent | no |
+| `OWNER_INVALID` | owner kind/owner reference shape invalid | no |
+| `SQLITE_FAILED` | SQLite transaction/insert/commit failed and no more specific mapped domain error applies | no or uncertain until re-read |
+| `BROKEN_STORAGE_REFERENCE` | committed Evidence points to missing/malformed/unresolvable managed file | row retained |
+| `HASH_MISMATCH` | verified final bytes do not match stored digest | row/file retained |
+| `ORPHAN_CLEANUP_FAILED` | confirmed orphan/incoming cleanup or safe enumeration failed | no domain mutation |
+
+6C-B may materialize these as codes such as `E_EVIDENCE_STORAGE_WRITE_FAILED`; the precise TypeScript names are implementation detail. Cancellation is an expected operation outcome, not a domain-corruption exception.
+
+Platform-specific Camera/Android error codes are mapped at the adapter boundary and are not exposed as business semantics.
+
+## 20. Security boundaries
+
+Gate 6C implementation MUST enforce:
+
+- committed Evidence storage is app-private;
+- imported/source filenames never control physical paths;
+- `storage_ref` is parsed against a closed grammar and can never escape the managed root;
+- imported files are data only; they are never executed or interpreted as executable code;
+- MIME metadata is descriptive and may be incorrect; it is not trusted security proof;
+- source URI strings and file contents are not logged as routine diagnostics;
+- real Evidence, real inspection photos/files, personal/sensitive operational data, production databases, secrets, API keys, and device identifiers are never committed to GitHub;
+- no public Gallery/Documents copy is created merely for committed Evidence storage;
+- later view/share/export must be a separate explicit capability and must not change SQLite ownership authority.
+
+## 21. Decision matrix
+
+| Topic | Classification | Gate 6C-A disposition |
+|---|---|---|
+| binaries outside SQLite | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | preserved exactly |
+| SQLite metadata/domain ownership authority | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | filesystem never becomes ownership authority |
+| six owner kinds + `trg_evidence_bi` hard floor | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | unchanged |
+| Evidence optional; capture failure must not block Finding | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | unchanged |
+| Evidence metadata immutable except note; Evidence no-delete | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | unchanged |
+| attach Evidence at record time or later | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | no PREPARATION-only rule invented |
+| durable-file-first → SQLite-row ordering | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | preserved exactly |
+| app-private committed Evidence storage | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | public Gallery/Documents not storage authority |
+| transient source URI is not `storage_ref` | **B — DERIVED TECHNICAL CONSEQUENCE** | required by durable managed-storage contract |
+| staging/final state distinction and startup reconciliation | **B — DERIVED TECHNICAL CONSEQUENCE** | `.incoming` incomplete; final unreferenced objects cleanable after DB proof |
+| missing committed file behavior | **B — DERIVED TECHNICAL CONSEQUENCE** | retain DB row; surface `BROKEN_STORAGE_REFERENCE` |
+| bounded-memory/streaming requirement | **B — DERIVED TECHNICAL CONSEQUENCE** | no mandatory whole-file Base64 path |
+| restored Camera result uses same pipeline | **B — DERIVED TECHNICAL CONSEQUENCE** | no bypass of copy/hash/owner/SQLite ordering |
+| current Camera API (`takePhoto` / `chooseFromGallery`) | **B — DERIVED TECHNICAL IMPLEMENTATION DECISION** | preferred for 6C-C; legacy APIs not used for new implementation |
+| Android app-private location / `Directory.Data` | **B — DERIVED TECHNICAL IMPLEMENTATION DECISION** | preferred candidate; verify in 6C-C, not a DIRECT source rule |
+| exact `storage_ref = evidence/v1/objects/<uuid>.<ext>` grammar | **C — PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED** | pending owner review |
+| exact UUID-v4 object token scheme | **C — PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED** | pending owner review |
+| SHA-256 required for newly committed Gate-6C Evidence | **C — PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED** | proposed `sha256:<lowercase hex>`; nullable historical rows preserved |
+| numeric maximum v1 file size | **D — DEFERRED BEYOND GATE 6C unless separately approved** | no arbitrary number adopted; `FILE_TOO_LARGE` reserved |
+| generic Android file-picker implementation | **D — implementation selection deferred to 6C-C spike** | SAF/custom narrow Capacitor plugin is candidate; no third-party plugin adopted |
+| proof of Filesystem `copy(content://...)` bounded-memory behavior | **D — REQUIRES EXECUTABLE SPIKE IN 6C-C** | documentation is insufficient to claim it |
+| proof of atomic/complete-object `rename` publication | **D — REQUIRES EXECUTABLE SPIKE IN 6C-C** | documentation exposes rename but does not promise atomicity |
+| normal committed Evidence deletion/purge/archive policy | **D — DEFERRED BEYOND GATE 6C** | no v1 delete operation |
+| backup/export/cloud/sync retention | **D — DEFERRED BEYOND GATE 6C** | no server/cloud authority introduced |
+
+## 22. Gate 6C internal execution decomposition
+
+This is an internal execution decomposition only; it does not replace the adopted product Roadmap.
+
+### 6C-A — Evidence Storage Contract & Failure Model
+
+**Entry:** Gate 6B CLOSED/MERGED; Gate 6C separately authorized for design.
+
+**Work:** this contract, current official platform research, decision classification, failure/reconciliation model.
+
+**Exit:** independent review confirms repository authority preserved; owner explicitly approves/rejects the category-C choices; contract/state changes are merged. No executable Evidence implementation is required for 6C-A exit.
+
+### 6C-B — Runtime-neutral Evidence orchestration + host regressions
+
+**Entry:** 6C-A contract merged and required category-C owner decisions resolved.
+
+**Work:** runtime-neutral source/storage ports and orchestration only; fake/in-memory test adapters; host regression coverage for ordering, owner preflight + trigger mapping, cancellation, stage/publish failure, SQLite failures, uncertain COMMIT convergence, orphan reconciliation, missing references, and bounded-memory contract seams.
+
+**Exit:** focused host suite passes; closed Gate 5A→5L / 6B contracts are not weakened; no Android-specific type leaks into runtime-neutral core.
+
+### 6C-C — Android Camera/File + durable EvidenceStorage adapters
+
+**Entry:** 6C-B reviewed/accepted.
+
+**Work:** install only justified official dependencies; implement Camera/gallery adapter; implement/choose generic Android file acquisition; implement app-private EvidenceStorage; handle `appRestoredResult`; execute required spikes for `content://` copy/streaming and complete-object publication; Android/emulator integration checks as appropriate.
+
+**Exit:** all `REQUIRES EXECUTABLE SPIKE IN 6C-C` questions have concrete evidence; adapter behavior satisfies 6C-A; no schema/core weakening; host + Android CI checks pass.
+
+### 6C-D — Physical Android Evidence qualification + Gate closure
+
+**Entry:** 6C-C implementation reviewed with green CI.
+
+**Work:** real-device qualification covering Camera, gallery/media, generic file, cancel/deny, source loss, process death/restored Camera result, restart reconciliation, orphan cleanup, missing-file diagnosis, large-file bounded-memory behavior, low-storage/write failures, and retrieval after restart.
+
+**Exit:** physical evidence is independently reviewed; unresolved contradictions corrected narrowly; owner authorizes merge/closure; only then may Gate 6C become CLOSED and Gate 6D become next.
+
+Gate 6D is not started by any 6C sub-stage.
+
+## 23. Current official technology research
+
+Consulted current official documentation (Capacitor documentation reports v8 at the time of this design):
+
+- Capacitor Camera v8: `https://capacitorjs.com/docs/apis/camera`
+- Capacitor App v8: `https://capacitorjs.com/docs/apis/app`
+- Capacitor Filesystem v8: `https://capacitorjs.com/docs/apis/filesystem`
+- Android Storage Access Framework / documents: `https://developer.android.com/training/data-storage/shared/documents-files`
+- Android `ACTION_OPEN_DOCUMENT`: `https://developer.android.com/reference/android/content/Intent#ACTION_OPEN_DOCUMENT`
+
+Verified points used by this contract:
+
+- Camera v8.1.0 introduced `takePhoto()` / `chooseFromGallery()` and deprecated `getPhoto()` / `pickImages()` in the current migration guide.
+- Android Camera uses an external Activity and official Capacitor guidance requires handling `appRestoredResult` for OS process death.
+- Camera's Android photo/gallery path can avoid using public Gallery as committed storage; `saveToGallery` defaults false in the new Camera API.
+- Filesystem `Directory.Data` is application file storage on Android and is deleted on uninstall.
+- Filesystem Android permission methods are required for `Documents` / `ExternalStorage`, not `Data`.
+- Filesystem supports reading Android `content://` paths when used as full paths and exposes `readFileInChunks`, `rename`, `copy`, `stat`, `readdir`, and `getUri`.
+- Official documentation does **not** establish that `copy` accepts every required `content://` source with the required bounded-memory semantics, nor does it promise atomicity for `rename`; those claims are deliberately deferred to executable spikes.
+- Android's official Storage Access Framework provides `ACTION_OPEN_DOCUMENT` for user-selected generic files and returns document URIs suitable for stream access.
+
+## 24. 6C-A owner-review items and stop rule
+
+The only policy choices this document intentionally leaves pending owner approval are:
+
+1. exact canonical `storage_ref` grammar (`evidence/v1/objects/<uuid-v4>.<safe-extension>`);
+2. exact UUID-v4 object-token convention;
+3. proposed requirement that every newly committed Gate-6C Evidence object carry a SHA-256 digest in `sha256:<lowercase-hex>` form.
+
+No numeric permanent file-size limit is proposed.
+
+No third-party generic picker is selected.
+
+No claim is made that Capacitor Filesystem `copy(content://...)` or `rename(...)` already proves the required large-file/atomic-publication semantics.
+
+**STOP CONDITION:** 6C-B must not begin from this design branch. It begins only under a separate scoped authorization after 6C-A review and required owner decisions.

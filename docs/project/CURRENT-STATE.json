@@ -11,6 +11,7 @@
     "last_gate6b_merge_sha": "0905c6111269d62480e7ccadc31786bef29f3c51",
     "last_gate6b_merge_title": "Merge Gate 6B Android SQLite adapter physical qualification",
     "last_gate6b_pr": 17,
+    "gate6c_a_design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -294,18 +295,38 @@
     "next_physical_action": "NONE_REQUIRED_GATE6B_CLOSED",
     "next_governance_action": "NONE_GATE6B_CLOSED_MERGED"
   },
+  "gate_6c": {
+    "id": "6C",
+    "name": "Evidence Storage + Camera/File Pipeline",
+    "status": "IN_PROGRESS",
+    "current_substage": "6C-A",
+    "current_substage_name": "Evidence Storage Contract & Failure Model",
+    "current_substage_status": "DESIGN_REVIEW",
+    "mode": "DESIGN_CONTRACT_ONLY",
+    "design_branch": "design/gate6c-evidence-contract-v1",
+    "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
+    "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
+    "implementation_started": false,
+    "proposed_project_decisions_owner_approval": "PENDING_REVIEW",
+    "gate6c_b_started": false,
+    "gate6c_c_started": false,
+    "gate6c_d_started": false,
+    "gate6d_started": false
+  },
   "next_gate": {
     "id": "6C",
     "name": "Evidence Storage + Camera/File Pipeline",
-    "status": "NOT_STARTED",
-    "role": "NEXT"
+    "status": "IN_PROGRESS",
+    "role": "CURRENT",
+    "current_substage": "6C-A",
+    "current_substage_status": "DESIGN_REVIEW"
   },
-  "gate_6c_status": "NEXT_NOT_STARTED",
+  "gate_6c_status": "IN_PROGRESS_6C_A_DESIGN_REVIEW",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — NEXT / NOT_STARTED",
-    "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A DESIGN_REVIEW",
+    "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",
     "6G DOCX + PDF + Artifact Save/Share — LATER",

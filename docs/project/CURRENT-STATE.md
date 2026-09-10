@@ -14,6 +14,8 @@
 - Gate 6B implementation branch: `implementation/gate6b-android-runtime-proof-v1`.
 - Gate 6B reviewed branch head: `04dcf001e5494c38258c7112619ea1d508af694c`.
 - Gate 6B merge SHA: `0905c6111269d62480e7ccadc31786bef29f3c51`.
+- Gate 6C-A design base: live `main@0fbd9ca3db6f2a34f063a682e4f997becefb83ad`.
+- Gate 6C-A design branch: `design/gate6c-evidence-contract-v1`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
@@ -36,9 +38,27 @@ SQLite candidate: `@capacitor-community/sqlite@8.1.1`.
 
 ### Gate 6C — Evidence Storage + Camera/File Pipeline
 
-الحالة: **`NEXT / NOT_STARTED`**.
+الحالة: **`IN_PROGRESS`**.
 
-لم يبدأ تنفيذ Gate 6C في مصالحة الإغلاق هذه.
+Current sub-stage: **`6C-A — Evidence Storage Contract & Failure Model`**.
+
+Sub-stage status: **`DESIGN_REVIEW`**.
+
+Mode: **DESIGN / CONTRACT ONLY**.
+
+Governing design artifact on the Gate-6C-A branch:
+
+`docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md`
+
+Gate 6C-A does not implement Camera, Filesystem, file picker, Evidence orchestration, UI, APK, or physical-device behavior. Proposed policy decisions explicitly marked `PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED` are pending review and are **not owner-approved merely by being documented**.
+
+Gate 6C-B / 6C-C / 6C-D have not started.
+
+### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
+
+الحالة: **`LATER / NOT_STARTED`**.
+
+Gate 6D has not started and must not begin before Gate 6C closure under the adopted Roadmap.
 
 ## 3) Adapter Qualification الفيزيائية المقبولة على `87135cfe...`
 
@@ -161,6 +181,8 @@ Canonical hashes:
 - `docs/schema/schema.sql`: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`;
 - `bootstrap/v1/checklist-v1.json`: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
 
+Gate 6C-A is design-only and introduces no new executable test baseline.
+
 ## 7) ثوابت لا تتغير
 
 - SQLite هي local authority؛ process memory ليست authority.
@@ -169,10 +191,18 @@ Canonical hashes:
 - diagnostic Q12 writer ليس product architecture.
 - Q12 classifier semantics لم تُضعف.
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
-- Gate 6C **NEXT / NOT_STARTED**.
+- Gate 6C **IN_PROGRESS** فقط ضمن sub-stage `6C-A DESIGN_REVIEW`؛ ليست CLOSED.
+- Gate 6D **LATER / NOT_STARTED**.
 
 ## 8) الحالة التالية
 
-لا يوجد physical retest جديد مطلوب لإغلاق Gate 6B؛ الإغلاق أصبح مستندًا إلى evidence المقبولة + PR #17 + owner-approved merge + Fresh Read main.
+العمل الحالي هو مراجعة عقد **Gate 6C-A — Evidence Storage Contract & Failure Model** فقط.
 
-المرحلة التالية في الـRoadmap هي Gate 6C، لكنها **لم تبدأ** في هذا العمل وتحتاج scope/authorization مستقلًا قبل أي implementation.
+قبل بدء 6C-B يجب:
+
+1. مراجعة artifact الفعلي لـGate 6C-A؛
+2. اعتماد/رفض قرارات `PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED` صراحةً؛
+3. دمج عقد 6C-A وحالة المشروع بعد المراجعة/موافقة المالك؛
+4. إصدار scope/authorization مستقل لـ6C-B.
+
+لا يوجد في Gate 6C-A أي تنفيذ لـCamera/Filesystem/picker/Evidence service، ولا physical Android proof. Gate 6D لم يبدأ.

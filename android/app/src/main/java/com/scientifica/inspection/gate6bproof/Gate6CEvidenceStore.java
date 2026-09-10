@@ -33,6 +33,12 @@ import java.util.regex.Pattern;
 final class Gate6CEvidenceStore {
     static final int COPY_BUFFER_BYTES = 64 * 1024;
     static final long LARGE_SYNTHETIC_TEST_BYTES = 32L * 1024L * 1024L;
+    static final String PUBLICATION_CONCURRENCY_DIAGNOSTIC =
+        "Gate6C v1 composite publication: in-contract concurrent Evidence operations are serialized by the shared " +
+        "single-process Evidence maintenance/write boundary; other Android applications cannot write the app-private " +
+        "filesDir; privileged/root/direct out-of-contract filesystem tampering is not prevented and remains diagnosable " +
+        "through the transactional storage_ref recheck, reconciliation and hash verification where applicable. " +
+        "Os.rename itself is an atomic move, not a syscall-level no-replace primitive.";
 
     private static final String ROOT_RELATIVE = "evidence/v1";
     private static final String OBJECTS_RELATIVE = ROOT_RELATIVE + "/objects";
@@ -45,8 +51,8 @@ final class Gate6CEvidenceStore {
 
     enum PublishFault {
         NONE,
-        BEFORE_FINAL_ENTRY,
-        AFTER_ATOMIC_PUBLICATION_BEFORE_DURABILITY_SYNC
+        BEFORE_RENAME,
+        AFTER_RENAME_BEFORE_DURABILITY_SYNC
     }
 
     static final class Allocation {
@@ -122,6 +128,8 @@ final class Gate6CEvidenceStore {
     private final File root;
     private final File objectsDir;
     private final File incomingDir;
+    private int renameAttemptCount;
+    private int directorySyncCount;
 
     Gate6CEvidenceStore(Context context) throws IOException {
         this.context = context.getApplicationContext();
@@ -174,7 +182,7 @@ final class Gate6CEvidenceStore {
                 0600
             );
             try (FileOutputStream output = new FileOutputStream(outputFd)) {
-                outputFd = null; // owned by the stream now
+                outputFd = null;
                 final byte[] buffer = new byte[COPY_BUFFER_BYTES];
                 int read;
                 while ((read = input.read(buffer)) != -1) {
@@ -221,16 +229,22 @@ final class Gate6CEvidenceStore {
         final File staging = stagingFile(stagingRef);
         final File destination = finalFile(storageRef);
         if (!staging.isFile()) throw new FileNotFoundException("Complete staging object is missing");
-        if (fault == PublishFault.BEFORE_FINAL_ENTRY) throw new IOException("TEST_ONLY: interrupted before atomic publication");
-
         final long stagedLength = staging.length();
-        final int publishErrno = Gate6CAtomicPublisher.renameNoReplace(staging, destination);
-        if (publishErrno != 0) {
-            throw new IOException("Atomic no-replace publication failed: errno=" + publishErrno);
+
+        // Defense in depth under the Gate-6C-A single-process Evidence serialization boundary.
+        // Os.rename is intentionally NOT represented as syscall-level no-replace.
+        if (destination.exists()) throw new IOException("Final Evidence destination already exists before publication rename");
+        if (fault == PublishFault.BEFORE_RENAME) throw new IOException("TEST_ONLY: interrupted after destination guard and before rename");
+
+        renameAttemptCount += 1;
+        try {
+            Os.rename(staging.getAbsolutePath(), destination.getAbsolutePath());
+        } catch (ErrnoException e) {
+            throw new IOException("Composite Evidence publication rename failed: errno=" + e.errno, e);
         }
 
-        if (fault == PublishFault.AFTER_ATOMIC_PUBLICATION_BEFORE_DURABILITY_SYNC) {
-            throw new IOException("TEST_ONLY: interrupted after atomic publication before directory durability sync");
+        if (fault == PublishFault.AFTER_RENAME_BEFORE_DURABILITY_SYNC) {
+            throw new IOException("TEST_ONLY: interrupted after rename before directory durability sync");
         }
 
         fsyncDirectory(objectsDir);
@@ -238,7 +252,7 @@ final class Gate6CEvidenceStore {
 
         final HashResult published = hashFile(destination);
         if (published.bytes != stagedLength) throw new IOException("Published object length differs from complete staging object");
-        if (staging.exists()) throw new IOException("Atomic publication left staging pathname present");
+        if (staging.exists()) throw new IOException("Successful rename left staging pathname present");
         return new PublishResult(storageRef, published.bytes, published.hash);
     }
 
@@ -291,6 +305,8 @@ final class Gate6CEvidenceStore {
     File finalFileForTest(String storageRef) throws IOException { return finalFile(storageRef); }
     File stagingFileForTest(String stagingRef) throws IOException { return stagingFile(stagingRef); }
     File rootForTest() { return root; }
+    int renameAttemptCountForTest() { return renameAttemptCount; }
+    int directorySyncCountForTest() { return directorySyncCount; }
 
     private void listDirectory(File directory, boolean staging, List<ManagedObject> out) throws IOException {
         final File[] entries = directory.listFiles();
@@ -454,6 +470,7 @@ final class Gate6CEvidenceStore {
         try {
             fd = Os.open(directory.getAbsolutePath(), OsConstants.O_RDONLY, 0);
             Os.fsync(fd);
+            directorySyncCount += 1;
         } catch (ErrnoException e) {
             throw new IOException("Unable to fsync Evidence directory", e);
         } finally {

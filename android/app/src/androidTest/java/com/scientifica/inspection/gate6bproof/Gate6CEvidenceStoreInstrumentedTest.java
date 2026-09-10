@@ -11,7 +11,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
-import android.system.OsConstants;
 import androidx.core.content.FileProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -38,7 +37,6 @@ public final class Gate6CEvidenceStoreInstrumentedTest {
     public void setUp() throws Exception {
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         deleteRecursively(new File(context.getFilesDir(), "evidence"));
-        deleteRecursively(new File(context.getFilesDir(), "gate6c-renameat2-spike"));
         cleanSyntheticCache();
         store = new Gate6CEvidenceStore(context);
     }
@@ -46,67 +44,20 @@ public final class Gate6CEvidenceStoreInstrumentedTest {
     @After
     public void tearDown() {
         deleteRecursively(new File(context.getFilesDir(), "evidence"));
-        deleteRecursively(new File(context.getFilesDir(), "gate6c-renameat2-spike"));
         cleanSyntheticCache();
     }
 
     @Test
-    public void renameAt2NoReplaceSyscallReportsRequiredErrnos() throws Exception {
-        File dir = new File(context.getFilesDir(), "gate6c-renameat2-spike");
-        assertTrue(dir.mkdirs() || dir.isDirectory());
-
-        File successSource = writeText(new File(dir, "success-source"), "complete-success-source");
-        File successDestination = new File(dir, "success-destination");
-        int successErrno = Gate6CAtomicPublisher.renameNoReplace(successSource, successDestination);
-        assertEquals(0, successErrno);
-        assertFalse(successSource.exists());
-        assertEquals("complete-success-source", readText(successDestination));
-
-        File collisionSource = writeText(new File(dir, "collision-source"), "replacement-bytes");
-        File collisionDestination = writeText(new File(dir, "collision-destination"), "preserved-destination");
-        String collisionSourceHash = hash(collisionSource);
-        String preservedHash = hash(collisionDestination);
-        int collisionErrno = Gate6CAtomicPublisher.renameNoReplace(collisionSource, collisionDestination);
-        assertEquals(OsConstants.EEXIST, collisionErrno);
-        assertEquals(collisionSourceHash, hash(collisionSource));
-        assertEquals(preservedHash, hash(collisionDestination));
-        assertEquals("preserved-destination", readText(collisionDestination));
-
-        File invalidFlagSource = writeText(new File(dir, "invalid-flag-source"), "invalid-flag-source");
-        File invalidFlagDestination = new File(dir, "invalid-flag-destination");
-        int invalidFlagErrno = Gate6CAtomicPublisher.renameWithFlagsForTest(
-            invalidFlagSource,
-            invalidFlagDestination,
-            Gate6CAtomicPublisher.RENAME_NOREPLACE | 0x40000000
-        );
-        assertEquals(OsConstants.EINVAL, invalidFlagErrno);
-        assertTrue(invalidFlagSource.isFile());
-        assertFalse(invalidFlagDestination.exists());
-
-        File permissionSource = writeText(new File(dir, "permission-source"), "permission-source");
-        File permissionDestination = new File("/data/local/tmp/gate6c-publication-denied-" + System.nanoTime());
-        int permissionErrno = Gate6CAtomicPublisher.renameNoReplace(permissionSource, permissionDestination);
-        assertTrue(permissionErrno == OsConstants.EACCES || permissionErrno == OsConstants.EPERM);
-        assertTrue(permissionSource.isFile());
-        assertFalse(permissionDestination.exists());
-
-        File externalDir = context.getExternalFilesDir(null);
-        assertNotNull(externalDir);
-        File crossSource = writeText(new File(dir, "cross-source"), "cross-filesystem-source");
-        File crossDestination = new File(externalDir, "gate6c-cross-destination-" + System.nanoTime());
-        int crossFilesystemErrno = Gate6CAtomicPublisher.renameNoReplace(crossSource, crossDestination);
-        assertEquals(OsConstants.EXDEV, crossFilesystemErrno);
-        assertTrue(crossSource.isFile());
-        assertFalse(crossDestination.exists());
-
-        System.out.println(
-            "GATE6C_RENAMEAT2_SPIKE api=" + Build.VERSION.SDK_INT +
-            " success_errno=" + successErrno +
-            " collision_errno=" + collisionErrno +
-            " invalid_flag_errno=" + invalidFlagErrno +
-            " permission_errno=" + permissionErrno +
-            " cross_filesystem_errno=" + crossFilesystemErrno
-        );
+    public void compositePublicationThreatBoundaryIsExplicit() {
+        String diagnostic = Gate6CEvidenceStore.PUBLICATION_CONCURRENCY_DIAGNOSTIC;
+        assertTrue(diagnostic.contains("serialized"));
+        assertTrue(diagnostic.contains("app-private"));
+        assertTrue(diagnostic.contains("privileged/root/direct out-of-contract"));
+        assertTrue(diagnostic.contains("transactional storage_ref recheck"));
+        assertTrue(diagnostic.contains("reconciliation"));
+        assertTrue(diagnostic.contains("hash verification"));
+        assertTrue(diagnostic.contains("not a syscall-level no-replace primitive"));
+        System.out.println("GATE6C_COMPOSITE_PUBLICATION_BOUNDARY api=" + Build.VERSION.SDK_INT + " diagnostic=" + diagnostic);
     }
 
     @Test
@@ -172,21 +123,30 @@ public final class Gate6CEvidenceStoreInstrumentedTest {
     }
 
     @Test
-    public void completeStagePublishesExactFinalObjectAndRemovesIncoming() throws Exception {
+    public void completeStagePublishesExactFinalObjectAndReturnsAfterDirectorySyncs() throws Exception {
         File source = syntheticSource("publish.bin", 128L * 1024L + 9L);
         Gate6CEvidenceStore.Allocation a = stageSource(source);
         String stagedHash = hash(store.stagingFileForTest(a.stagingRef));
+        long stagedSize = store.stagingFileForTest(a.stagingRef).length();
+        int renameBefore = store.renameAttemptCountForTest();
+        int syncBefore = store.directorySyncCountForTest();
         assertFalse(store.finalExists(a.storageRef));
+
         Gate6CEvidenceStore.PublishResult published = store.publish(a.storageRef, a.stagingRef);
+
+        assertEquals(renameBefore + 1, store.renameAttemptCountForTest());
+        assertEquals(syncBefore + 2, store.directorySyncCountForTest());
         assertTrue(store.finalExists(a.storageRef));
         assertFalse(store.stagingFileForTest(a.stagingRef).exists());
         assertEquals(stagedHash, published.contentHash);
         assertEquals(stagedHash, hash(store.finalFileForTest(a.storageRef)));
+        assertEquals(stagedSize, published.fileSize);
         assertEquals(source.length(), published.fileSize);
+        System.out.println("GATE6C_COMPOSITE_PUBLISH_PASS api=" + Build.VERSION.SDK_INT + " bytes=" + published.fileSize + " hash=" + published.contentHash);
     }
 
     @Test
-    public void publishNeverOverwritesExistingDestination() throws Exception {
+    public void preExistingDestinationFailsBeforeRenameAndPreservesDestinationByteForByte() throws Exception {
         File original = syntheticSource("original.bin", 64L * 1024L + 1L);
         Gate6CEvidenceStore.Allocation a = stageSource(original);
         Gate6CEvidenceStore.PublishResult first = store.publish(a.storageRef, a.stagingRef);
@@ -196,8 +156,12 @@ public final class Gate6CEvidenceStoreInstrumentedTest {
         File replacement = syntheticSource("replacement.bin", 96L * 1024L + 3L);
         store.stage(Uri.fromFile(replacement).toString(), a.storageRef, a.stagingRef, replacement.getName(), "application/octet-stream", null);
         String replacementStagingHash = hash(store.stagingFileForTest(a.stagingRef));
+        int renameBeforeCollision = store.renameAttemptCountForTest();
+
         IOException collision = assertThrows(IOException.class, () -> store.publish(a.storageRef, a.stagingRef));
-        assertTrue(collision.getMessage().contains("errno=" + OsConstants.EEXIST));
+
+        assertTrue(collision.getMessage().contains("already exists before publication rename"));
+        assertEquals(renameBeforeCollision, store.renameAttemptCountForTest());
         assertEquals(preservedHash, hash(store.finalFileForTest(a.storageRef)));
         assertEquals(preservedSize, store.finalFileForTest(a.storageRef).length());
         assertEquals(replacementStagingHash, hash(store.stagingFileForTest(a.stagingRef)));
@@ -205,25 +169,32 @@ public final class Gate6CEvidenceStoreInstrumentedTest {
     }
 
     @Test
-    public void interruptionBeforeFinalEntryLeavesNoFinalObject() throws Exception {
+    public void interruptionAfterImmediateGuardBeforeRenameLeavesNoFinalObject() throws Exception {
         File source = syntheticSource("before-interrupt.bin", 32768);
         Gate6CEvidenceStore.Allocation a = stageSource(source);
-        assertThrows(IOException.class, () -> store.publish(a.storageRef, a.stagingRef, Gate6CEvidenceStore.PublishFault.BEFORE_FINAL_ENTRY));
+        int renameBefore = store.renameAttemptCountForTest();
+        assertThrows(IOException.class, () -> store.publish(a.storageRef, a.stagingRef, Gate6CEvidenceStore.PublishFault.BEFORE_RENAME));
+        assertEquals(renameBefore, store.renameAttemptCountForTest());
         assertFalse(store.finalExists(a.storageRef));
         assertTrue(store.stagingFileForTest(a.stagingRef).isFile());
     }
 
     @Test
-    public void interruptionAfterAtomicPublicationLeavesCompleteFinalWithoutStagingPath() throws Exception {
+    public void interruptionAfterRenameLeavesCompleteDiscoverableFinalOrphan() throws Exception {
         File source = syntheticSource("after-interrupt.bin", 131073);
         Gate6CEvidenceStore.Allocation a = stageSource(source);
         String stagedHash = hash(store.stagingFileForTest(a.stagingRef));
         long stagedSize = store.stagingFileForTest(a.stagingRef).length();
-        assertThrows(IOException.class, () -> store.publish(a.storageRef, a.stagingRef, Gate6CEvidenceStore.PublishFault.AFTER_ATOMIC_PUBLICATION_BEFORE_DURABILITY_SYNC));
+
+        assertThrows(IOException.class, () -> store.publish(a.storageRef, a.stagingRef, Gate6CEvidenceStore.PublishFault.AFTER_RENAME_BEFORE_DURABILITY_SYNC));
+
         assertTrue(store.finalExists(a.storageRef));
         assertFalse(store.stagingFileForTest(a.stagingRef).exists());
         assertEquals(stagedHash, hash(store.finalFileForTest(a.storageRef)));
         assertEquals(stagedSize, store.finalFileForTest(a.storageRef).length());
+        assertTrue(has(store.listManagedObjects(), "FINAL", a.storageRef));
+        store.removeConfirmedOrphan(a.storageRef);
+        assertFalse(store.finalExists(a.storageRef));
     }
 
     @Test
@@ -250,7 +221,8 @@ public final class Gate6CEvidenceStoreInstrumentedTest {
         Gate6CEvidenceStore.PublishResult p = store.publish(a.storageRef, a.stagingRef);
         assertEquals(p.fileSize, store.stat(a.storageRef).fileSize);
         assertEquals(p.contentHash, store.verifyHash(a.storageRef, p.contentHash).hash);
-        assertNotEquals(p.contentHash, store.verifyHash(a.storageRef, "sha256:" + repeat('0', 64)).hash.equals("sha256:" + repeat('0', 64)) ? p.contentHash : "sha256:" + repeat('0', 64));
+        String impossible = "sha256:" + repeat('0', 64);
+        assertNotEquals(impossible, store.verifyHash(a.storageRef, impossible).hash);
         String handle = store.resolve(a.storageRef);
         assertTrue(handle.startsWith("content://" + context.getPackageName() + ".fileprovider/"));
         try (InputStream in = context.getContentResolver().openInputStream(Uri.parse(handle))) {
@@ -349,29 +321,6 @@ public final class Gate6CEvidenceStoreInstrumentedTest {
         }
         assertEquals(size, file.length());
         return file;
-    }
-
-    private File writeText(File file, String value) throws Exception {
-        try (FileOutputStream out = new FileOutputStream(file, false)) {
-            out.write(value.getBytes("UTF-8"));
-            out.flush();
-            out.getFD().sync();
-        }
-        return file;
-    }
-
-    private String readText(File file) throws Exception {
-        byte[] bytes = new byte[(int) file.length()];
-        try (FileInputStream in = new FileInputStream(file)) {
-            int offset = 0;
-            while (offset < bytes.length) {
-                int read = in.read(bytes, offset, bytes.length - offset);
-                if (read < 0) break;
-                offset += read;
-            }
-            assertEquals(bytes.length, offset);
-        }
-        return new String(bytes, "UTF-8");
     }
 
     private String hash(File file) throws Exception {

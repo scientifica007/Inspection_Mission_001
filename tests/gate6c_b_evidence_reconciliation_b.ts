@@ -1,6 +1,6 @@
 import * as S from "./gate6c_b_evidence_support.ts";
 import type { EvidenceObjectAllocation, EvidenceSource, EvidenceSourceKind, ManagedEvidenceObject, StagedEvidenceObject } from "./gate6c_b_evidence_support.ts";
-const { APP_ERR, EvidenceMaintenanceQueue, EvidenceService, FakeAcquisition, FakeStorage, ProxyAdapter, SCHEMA_SQL, NOW, HASH_A, ok, assert, rejectsCode, count, uuid, finalRef, stagingRef, allocation, syntheticEvidenceRow, freshWorld, createInput, insertEvidenceRaw, serviceFor, getItem, deferred, isCanonicalStorageRef, isCanonicalStagingRef, openFreshDb, successSource } = S;
+const { APP_ERR, EvidenceApplicationContext, EvidenceService, FakeAcquisition, FakeStorage, ProxyAdapter, SCHEMA_SQL, NOW, HASH_A, ok, assert, rejectsCode, count, uuid, finalRef, stagingRef, allocation, syntheticEvidenceRow, freshWorld, createInput, insertEvidenceRaw, serviceFor, getItem, deferred, isCanonicalStorageRef, isCanonicalStagingRef, openFreshDb, successSource } = S;
 
 // M — shared serialization boundary
 class BlockingStorage extends FakeStorage {
@@ -19,15 +19,15 @@ class BlockingStorage extends FakeStorage {
 }
 
 await ok("G6C-B-56 create/create calls do not overlap Evidence critical section", async () => {
-    const w = await freshWorld(); const acq = new FakeAcquisition(); const storage = new BlockingStorage([allocation(110), allocation(111)]); const queue = new EvidenceMaintenanceQueue(); const svc = serviceFor(w.db, storage, acq, { maintenance: queue });
+    const w = await freshWorld(); const acq = new FakeAcquisition(); const storage = new BlockingStorage([allocation(110), allocation(111)]); const context = new EvidenceApplicationContext(); const svc = serviceFor(w.db, storage, acq, { context });
     const p1 = svc.createEvidence(createInput("VISIT", w.ownerIds.VISIT)); await storage.entered.promise; const p2 = svc.createEvidence(createInput("VISIT", w.ownerIds.VISIT)); await Promise.resolve(); await Promise.resolve();
     assert(acq.calls.length === 1, "second create must not enter while first is blocked"); storage.release.resolve(); await Promise.all([p1, p2]); assert(storage.maxActiveStages === 1, "stage critical sections must not overlap");
 });
 
 await ok("G6C-B-57 create/reconciliation calls share the same serialization boundary", async () => {
-    const w = await freshWorld(); const storage = new BlockingStorage([allocation(112)]); const queue = new EvidenceMaintenanceQueue(); const svc = serviceFor(w.db, storage, new FakeAcquisition(), { maintenance: queue });
-    const create = svc.createEvidence(createInput("VISIT", w.ownerIds.VISIT)); await storage.entered.promise; const reconcile = svc.reconcileEvidence(); await Promise.resolve(); await Promise.resolve();
-    assert(storage.listCalls === 0, "reconcile must not enter while create holds boundary"); storage.release.resolve(); await create; await reconcile; assert(storage.listCalls === 1, "reconcile runs after create releases boundary");
+    const w = await freshWorld(); const storage = new BlockingStorage([allocation(112)]); const context = new EvidenceApplicationContext(); const svc = serviceFor(w.db, storage, new FakeAcquisition(), { context });
+    const create = svc.createEvidence(createInput("VISIT", w.ownerIds.VISIT)); await storage.entered.promise; const baseline = storage.listCalls; const reconcile = svc.reconcileEvidence(); await Promise.resolve(); await Promise.resolve();
+    assert(storage.listCalls === baseline, "reconcile must not enter while create holds boundary"); storage.release.resolve(); await create; await reconcile; assert(storage.listCalls === baseline + 1, "reconcile runs after create releases boundary");
 });
 
 // N — no-delete / asymmetric compensation

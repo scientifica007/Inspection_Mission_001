@@ -7,7 +7,7 @@ import {
     type AcquisitionOutcome, type CreateEvidenceInput, type CreateEvidenceResult, type EvidenceAttempt,
     type EvidenceDbRow, type EvidenceObjectAllocation, type EvidenceOwnerKind, type EvidenceSource,
     type EvidenceSourceAcquisition, type EvidenceSourceKind, type EvidenceStorage, type StagedEvidenceObject,
-    type StoredEvidenceStat,
+    type StoredEvidenceObject,
 } from "./evidence-contract.ts";
 
 const DEFAULT_CANDIDATE_ATTEMPTS = 4;
@@ -67,21 +67,22 @@ export class EvidenceCreateOrchestrator {
             catch(e){ await this.cleanupIncoming(a.stagingRef,e); throw this.storageFailure("final-path existence check failed",e); }
             if (exists) { await this.cleanupIncoming(a.stagingRef,new Error("final path collision")); continue; }
 
+            let published:StoredEvidenceObject;
             try {
-                const published=await this.storage.publish(staged);
-                if (published.storageRef!==a.storageRef || !isCanonicalStorageRef(published.storageRef))
-                    throw new Error("publish returned unexpected storage_ref");
-            } catch(e){ await this.cleanupIncoming(a.stagingRef,e); throw this.storageFailure("final publication failed",e); }
-
-            let stat:StoredEvidenceStat;
+                published=await this.storage.publish(staged);
+            } catch(e){
+                await this.cleanupIncoming(a.stagingRef,e);
+                throw this.storageFailure("final publication failed",e);
+            }
             try {
-                stat=await this.storage.stat(a.storageRef);
-                if (stat.storageRef!==a.storageRef || !Number.isInteger(stat.fileSize) || stat.fileSize<0 || stat.fileSize!==staged.fileSize)
-                    throw new Error("final stat does not match staged object");
-            } catch(e){ await this.cleanupPublished(a.storageRef,e); throw this.storageFailure("final stat failed",e); }
+                this.validatePublished(published,staged,a);
+            } catch(e) {
+                await this.cleanupPublished(a.storageRef,e);
+                throw e;
+            }
 
-            const attempt:EvidenceAttempt={ ownerKind,ownerRef,storageRef:a.storageRef,contentHash:staged.contentHash,
-                fileName:staged.fileName,mimeType:staged.mimeType,fileSize:stat.fileSize,capturedAt:staged.capturedAt??null,
+            const attempt:EvidenceAttempt={ ownerKind,ownerRef,storageRef:published.storageRef,contentHash:published.contentHash,
+                fileName:staged.fileName,mimeType:staged.mimeType,fileSize:published.fileSize,capturedAt:staged.capturedAt??null,
                 deviceNote:normalizeOptionalText(staged.deviceNote),note,recordedAt,recordedBy };
             return this.commitAttempt(attempt);
         }
@@ -156,6 +157,18 @@ export class EvidenceCreateOrchestrator {
         this.meaningful(s.fileName,"createEvidence: fileName");this.meaningful(s.mimeType,"createEvidence: mimeType");
         if(!Number.isInteger(s.fileSize)||s.fileSize<0)throw new DomainError(APP_ERR.EVIDENCE_STORAGE_WRITE_FAILED,"createEvidence: fileSize must be non-negative integer");
         if(s.capturedAt!==undefined&&s.capturedAt!==null)this.utc(s.capturedAt,"createEvidence: capturedAt");
+    }
+    private validatePublished(p:StoredEvidenceObject,s:StagedEvidenceObject,a:EvidenceObjectAllocation):void{
+        if(p.storageRef!==a.storageRef||!isCanonicalStorageRef(p.storageRef))
+            throw new DomainError(APP_ERR.EVIDENCE_STORAGE_WRITE_FAILED,"createEvidence: publish returned unexpected storage_ref");
+        if(!Number.isInteger(p.fileSize)||p.fileSize<0)
+            throw new DomainError(APP_ERR.EVIDENCE_STORAGE_WRITE_FAILED,"createEvidence: published fileSize must be a non-negative integer");
+        if(!isCanonicalSha256(p.contentHash))
+            throw new DomainError(APP_ERR.EVIDENCE_HASH_FAILED,"createEvidence: published content_hash must be canonical SHA-256");
+        if(p.fileSize!==s.fileSize)
+            throw new DomainError(APP_ERR.EVIDENCE_STORAGE_WRITE_FAILED,"createEvidence: published fileSize disagrees with staged object");
+        if(p.contentHash!==s.contentHash)
+            throw new DomainError(APP_ERR.EVIDENCE_HASH_FAILED,"createEvidence: published content_hash disagrees with staged object");
     }
     private async assertOwnerExists(k:EvidenceOwnerKind,id:number,ctx:string):Promise<void>{
         const t=OWNER_TABLES[k];try{const rows=await this.db.query(`SELECT ${t.pk} AS owner_id FROM ${t.table} WHERE ${t.pk} = ?`,[id]);

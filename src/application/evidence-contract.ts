@@ -39,7 +39,14 @@ export interface StagedEvidenceObject {
     capturedAt?: string | null;
     deviceNote?: string | null;
 }
-export interface StoredEvidenceObject { storageRef: string }
+export interface StoredEvidenceObject {
+    /** Canonical final managed identity actually published. */
+    storageRef: string;
+    /** Final complete-object size, reported only after publication is statable. */
+    fileSize: number;
+    /** Final complete-object SHA-256, computed by the storage adapter with bounded memory. */
+    contentHash: string;
+}
 export interface StoredEvidenceStat { storageRef: string; fileSize: number }
 export interface ResolvedEvidenceHandle { storageRef: string; handleRef: string }
 export type ManagedEvidenceObjectKind = "INCOMING" | "FINAL" | "UNKNOWN";
@@ -52,7 +59,10 @@ export interface EvidenceStorage {
     /** Copy/hash bytes behind the storage seam; no whole binary enters Application Core. */
     stage(source: EvidenceSource, allocation: EvidenceObjectAllocation): Promise<StagedEvidenceObject>;
     finalExists(storageRef: string): Promise<boolean>;
-    /** Must fail closed instead of replacing an existing final destination. */
+    /**
+     * Publish the complete final object without overwrite/replacement and return
+     * authoritative final size/hash metadata for the object actually published.
+     */
     publish(staged: StagedEvidenceObject): Promise<StoredEvidenceObject>;
     stat(storageRef: string): Promise<StoredEvidenceStat>;
     resolve(storageRef: string): Promise<ResolvedEvidenceHandle>;

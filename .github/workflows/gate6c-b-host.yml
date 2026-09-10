@@ -61,7 +61,7 @@ jobs:
       - name: Gate 6C-B typecheck
         run: npm run typecheck:gate6c
 
-      - name: Gate 6C-B Evidence regression 70/0
+      - name: Gate 6C-B Evidence regression 85/0
         run: npm run gate6c:host
 
       - name: Gate 6B host adapter contract 16/0
@@ -155,7 +155,7 @@ jobs:
           printf '%s\n' "${changed[@]}"
           for path in "${changed[@]}"; do
             case "$path" in
-              src/application/evidence.ts|src/application/evidence-contract.ts|src/application/evidence-create.ts|src/application/evidence-reconciliation.ts|src/application/errors.ts|tests/gate6c_b_evidence_regression.ts|tests/gate6c_b_evidence_support.ts|tests/gate6c_b_evidence_creation_a.ts|tests/gate6c_b_evidence_creation_b.ts|tests/gate6c_b_evidence_reconciliation_a.ts|tests/gate6c_b_evidence_reconciliation_b.ts|tsconfig.gate6c.json|package.json|.github/workflows/gate6c-b-host.yml|docs/project/CURRENT-STATE.md|docs/project/CURRENT-STATE.json|docs/project/TEST-BASELINES.md) ;;
+              src/application/evidence.ts|src/application/evidence-contract.ts|src/application/evidence-create.ts|src/application/evidence-reconciliation.ts|src/application/errors.ts|tests/gate6c_b_evidence_regression.ts|tests/gate6c_b_evidence_support.ts|tests/gate6c_b_evidence_support_core.ts|tests/gate6c_b_evidence_support_fixtures.ts|tests/gate6c_b_evidence_creation_a.ts|tests/gate6c_b_evidence_creation_b.ts|tests/gate6c_b_evidence_reconciliation_a.ts|tests/gate6c_b_evidence_reconciliation_b.ts|tests/gate6c_b_evidence_contract_gaps.ts|tsconfig.gate6c.json|package.json|.github/workflows/gate6c-b-host.yml|docs/project/CURRENT-STATE.md|docs/project/CURRENT-STATE.json|docs/project/TEST-BASELINES.md) ;;
               *) echo "unexpected Gate 6C-B changed path: $path"; exit 1 ;;
             esac
           done

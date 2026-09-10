@@ -24,6 +24,11 @@
     "last_gate6c_b_reviewed_head": "ea88fac83d60b99b7d50828915173d3aa14bb5d6",
     "last_gate6c_b_merge_sha": "7418df4fc03b9b6017cbeb588eb6ae76bd560be2",
     "last_gate6c_b_final_head_ci_run": 34484231771,
+    "gate6c_c_governing_base_sha": "976b48106824f84f0dbbbca82832cbad4e53afb7",
+    "last_gate6c_c_pr": 23,
+    "last_gate6c_c_reviewed_head": "9de6c69eef90c490319c02eac48d236482597210",
+    "last_gate6c_c_merge_sha": "f221b215358f83dce381ac5261a856a7de4e5c98",
+    "last_gate6c_c_final_head_ci_run": 34531511138,
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -31,7 +36,7 @@
     "DERIVED": "Executable/technical consequence derived from an official requirement.",
     "PROJECT": "Explicit project-owner decision or requirement; must not be attributed to official sources."
   },
-  "closed_gates": ["1","2","3","4","4A","4B","4-Revision-6","5A","5B","5C","5D","5E","5F","5G","5H","5I","5J","5K","5L","6A","6B","6C-A","6C-B"],
+  "closed_gates": ["1","2","3","4","4A","4B","4-Revision-6","5A","5B","5C","5D","5E","5F","5G","5H","5I","5J","5K","5L","6A","6B","6C-A","6C-B","6C-C"],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
       "status": "MERGED_RESOLVED",
@@ -255,10 +260,10 @@
     "id": "6C",
     "name": "Evidence Storage + Camera/File Pipeline",
     "status": "IN_PROGRESS",
-    "current_substage": "6C-C",
-    "current_substage_name": "Android Camera/File + durable EvidenceStorage adapters",
-    "current_substage_status": "IN_PROGRESS_IMPLEMENTATION_REVIEW",
-    "mode": "IMPLEMENTATION_REVIEW",
+    "current_substage": "6C-D",
+    "current_substage_name": "Gate 6C-D",
+    "current_substage_status": "NEXT_NOT_STARTED",
+    "mode": "IMPLEMENTATION_NOT_STARTED",
     "design_branch": "design/gate6c-evidence-contract-v1",
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
@@ -310,6 +315,42 @@
       "closure_status": "CLOSED_MERGED",
       "closed": true,
       "merged": true
+    },
+    "gate6c_c": {
+      "status": "CLOSED",
+      "merge_status": "MERGED",
+      "implementation_branch": "implementation/gate6c-c-android-evidence-adapters-v1",
+      "governing_base_sha": "976b48106824f84f0dbbbca82832cbad4e53afb7",
+      "final_reviewed_head": "9de6c69eef90c490319c02eac48d236482597210",
+      "final_head_qualification_run": 34531511138,
+      "qualification_conclusion": "SUCCESS",
+      "pr": 23,
+      "merge_sha": "f221b215358f83dce381ac5261a856a7de4e5c98",
+      "independent_review_verdict": "MERGE_READY",
+      "owner_merge_approval": true,
+      "evidence_classification": "ADOPTED_BY_CLOSED_GATE6C_C",
+      "closure_status": "CLOSED_MERGED",
+      "host_regressions": {
+        "device_adapter": {"passed": 14, "failed": 0, "suite": "Gate 6C-C device adapter host regression"},
+        "restored_result": {"passed": 11, "failed": 0, "suite": "Gate 6C-C restored-result host regression"},
+        "filesystem_rejection": {"passed": 4, "failed": 0, "suite": "Gate 6C-C Filesystem rejection guard"}
+      },
+      "qualification_evidence": {
+        "native_api24": {"passed": 18, "failed": 0},
+        "native_api35": {"passed": 18, "failed": 0},
+        "full_integration_api24": {"passed": 2, "failed": 0},
+        "full_integration_api35": {"passed": 2, "failed": 0},
+        "classification": "QUALIFICATION_EVIDENCE_NOT_HOST_REGRESSION"
+      },
+      "apk_provenance": {
+        "artifact_id": 10173762572,
+        "artifact_name": "gate6c-c-final-debug-apk-9de6c69eef90c490319c02eac48d236482597210",
+        "app_debug_apk_sha256": "da98c8437619a9e93d0d28df5bb1e2b20bf0d2f20120600e0bbbff10a40e9112",
+        "github_artifact_zip_sha256": "2718aa9309b69fad63c8054ef6d941f13c63821991382b83513d72aa1af6dded",
+        "hashes_are_distinct": true
+      },
+      "closed": true,
+      "merged": true
     }
   },
   "next_gate": {
@@ -317,14 +358,14 @@
     "name": "Evidence Storage + Camera/File Pipeline",
     "status": "IN_PROGRESS",
     "role": "CURRENT",
-    "current_substage": "6C-C",
-    "current_substage_status": "IN_PROGRESS_IMPLEMENTATION_REVIEW"
+    "current_substage": "6C-D",
+    "current_substage_status": "NEXT_NOT_STARTED"
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_IN_PROGRESS_IMPLEMENTATION_REVIEW",
+  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_CLOSED_MERGED_6C_D_NEXT_NOT_STARTED",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C IN_PROGRESS / IMPLEMENTATION_REVIEW",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C CLOSED / MERGED / 6C-D NEXT / NOT_STARTED",
     "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",
@@ -334,6 +375,9 @@
   ],
   "field_usable_v1": false,
   "test_baselines": {
+    "gate6c_c_device_adapter_host": {"passed": 14, "failed": 0},
+    "gate6c_c_restored_result_host": {"passed": 11, "failed": 0},
+    "gate6c_c_filesystem_rejection_guard": {"passed": 4, "failed": 0},
     "gate6b_host_adapter_contract": {"passed": 16, "failed": 0},
     "gate6b_schema_execution": {"passed": 8, "failed": 0},
     "gate6b_q12_diagnostic_classifier": {"passed": 20, "failed": 0},
@@ -363,6 +407,36 @@
       "merge_sha": "7418df4fc03b9b6017cbeb588eb6ae76bd560be2",
       "passed": 85,
       "failed": 0
+    },
+    "gate6c_c": {
+      "classification": "ADOPTED_BY_CLOSED_GATE6C_C",
+      "implementation_branch": "implementation/gate6c-c-android-evidence-adapters-v1",
+      "governing_base_sha": "976b48106824f84f0dbbbca82832cbad4e53afb7",
+      "reviewed_head": "9de6c69eef90c490319c02eac48d236482597210",
+      "final_head_qualification_run": 34531511138,
+      "qualification_conclusion": "SUCCESS",
+      "pr": 23,
+      "merge_sha": "f221b215358f83dce381ac5261a856a7de4e5c98",
+      "independent_review_verdict": "MERGE_READY",
+      "owner_merge_approval": true,
+      "closure_status": "CLOSED_MERGED",
+      "host_regressions": {
+        "device_adapter": {"passed": 14, "failed": 0},
+        "restored_result": {"passed": 11, "failed": 0},
+        "filesystem_rejection": {"passed": 4, "failed": 0}
+      },
+      "qualification_evidence": {
+        "native_api24": {"passed": 18, "failed": 0},
+        "native_api35": {"passed": 18, "failed": 0},
+        "full_integration_api24": {"passed": 2, "failed": 0},
+        "full_integration_api35": {"passed": 2, "failed": 0}
+      },
+      "apk_provenance": {
+        "artifact_id": 10173762572,
+        "artifact_name": "gate6c-c-final-debug-apk-9de6c69eef90c490319c02eac48d236482597210",
+        "app_debug_apk_sha256": "da98c8437619a9e93d0d28df5bb1e2b20bf0d2f20120600e0bbbff10a40e9112",
+        "github_artifact_zip_sha256": "2718aa9309b69fad63c8054ef6d941f13c63821991382b83513d72aa1af6dded"
+      }
     }
   },
   "canonical_hashes": {

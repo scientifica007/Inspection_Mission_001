@@ -256,7 +256,7 @@ jobs:
           disable-animations: true
           disk-size: 4096M
           heap-size: 512M
-          script: ./android/gradlew -p android connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceStoreInstrumentedTest
+          script: ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceStoreInstrumentedTest
       - name: Upload native Android test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -331,7 +331,7 @@ jobs:
               echo "GATE6C_WEBVIEW_PACKAGE=$pkg"
               adb shell dumpsys package "$pkg" 2>/dev/null | grep -m1 'versionName=' || true
             done
-            ./android/gradlew -p android connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest
+            ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest
       - name: Upload integration Android test reports
         if: always()
         uses: actions/upload-artifact@v4

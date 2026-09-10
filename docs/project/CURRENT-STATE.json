@@ -12,7 +12,7 @@
     "last_gate6b_merge_title": "Merge Gate 6B Android SQLite adapter physical qualification",
     "last_gate6b_pr": 17,
     "gate6c_a_design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
-    "gate6c_a_owner_approval_at": "2026-09-10T10:27:00+01:00",
+    "gate6c_a_owner_decision_date": "2026-09-10",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -310,7 +310,7 @@
     "implementation_started": false,
     "project_decisions_owner_approval": "APPROVED_2026-09-10",
     "owner_approved_project_decisions": {
-      "approved_at": "2026-09-10T10:27:00+01:00",
+      "decision_date": "2026-09-10",
       "storage_ref_grammar": "evidence/v1/objects/<uuid-v4>.<safe-extension>",
       "staging_ref_grammar": "evidence/v1/.incoming/<uuid-v4>.part",
       "object_token": "UUID_V4_CANONICAL_LOWERCASE",

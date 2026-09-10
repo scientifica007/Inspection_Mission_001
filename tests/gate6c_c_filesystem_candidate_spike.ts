@@ -31,13 +31,23 @@ function interfaceBlock(text: string, name: string): string {
   const marker = `export interface ${name}`;
   const start = text.indexOf(marker);
   if (start < 0) return "";
-  const next = text.indexOf("\nexport interface ", start + marker.length);
+  const next = text.indexOf("\nexport ", start + marker.length);
   return text.slice(start, next < 0 ? text.length : next);
 }
 
 function methodOptionType(text: string, method: string): string | null {
   const match = new RegExp(`\\b${method}\\s*\\(\\s*options\\s*:\\s*([A-Za-z0-9_]+)`).exec(text);
   return match === null ? null : match[1];
+}
+
+function resolveOptionsBlock(text: string, typeName: string | null): { block: string; resolution: string } {
+  if (typeName === null) return { block: "", resolution: "missing" };
+  const direct = interfaceBlock(text, typeName);
+  if (direct.length > 0) return { block: direct, resolution: typeName };
+  const alias = new RegExp(`export\\s+type\\s+${typeName}\\s*=\\s*([A-Za-z0-9_]+)\\s*;`).exec(text);
+  if (alias === null) return { block: "", resolution: typeName };
+  const aliased = interfaceBlock(text, alias[1]);
+  return { block: aliased, resolution: `${typeName}->${alias[1]}` };
 }
 
 const root = path.resolve("node_modules/@capacitor/filesystem");
@@ -54,42 +64,22 @@ if (pluginPath !== null && definitionsPath !== null) {
   const definitions = fs.readFileSync(definitionsPath, "utf8");
   const copyType = methodOptionType(definitions, "copy");
   const renameType = methodOptionType(definitions, "rename");
-  const copy = copyType === null ? "" : interfaceBlock(definitions, copyType);
-  const rename = renameType === null ? "" : interfaceBlock(definitions, renameType);
+  const copy = resolveOptionsBlock(definitions, copyType);
+  const rename = resolveOptionsBlock(definitions, renameType);
 
-  check(
-    "G6C-C-FS04 candidate copy delegates to opaque controller operation",
-    android.includes("controller.copy(source, destination)"),
-    "FilesystemPlugin.copy delegates source/destination to controller.copy",
-  );
-  check(
-    "G6C-C-FS05 candidate rename delegates to opaque controller operation",
-    android.includes("controller.move(source, destination)"),
-    "FilesystemPlugin.rename delegates source/destination to controller.move",
-  );
-  check("G6C-C-FS06 copy public option type found", copyType !== null && copy.length > 0, `copy options=${String(copyType)}`);
-  check("G6C-C-FS07 rename public option type found", renameType !== null && rename.length > 0, `rename options=${String(renameType)}`);
+  check("G6C-C-FS04 candidate copy delegates to opaque controller operation", android.includes("controller.copy(source, destination)"), "FilesystemPlugin.copy delegates source/destination to controller.copy");
+  check("G6C-C-FS05 candidate rename delegates to opaque controller operation", android.includes("controller.move(source, destination)"), "FilesystemPlugin.rename delegates source/destination to controller.move");
+  check("G6C-C-FS06 copy public option type found", copy.block.length > 0, `copy options=${copy.resolution}`);
+  check("G6C-C-FS07 rename public option type found", rename.block.length > 0, `rename options=${rename.resolution}`);
 
   const noReplaceVocabulary = /noReplace|failIfExists|replaceExisting|atomicMove|createNew/i;
-  const copyCanExpressNoReplace = noReplaceVocabulary.test(copy);
-  const renameCanExpressNoReplace = noReplaceVocabulary.test(rename);
-  check(
-    "G6C-C-FS08 copy cannot express primitive-level no-replace policy",
-    !copyCanExpressNoReplace,
-    copy.replace(/\s+/g, " ").slice(0, 400),
-  );
-  check(
-    "G6C-C-FS09 rename cannot express primitive-level no-replace policy",
-    !renameCanExpressNoReplace,
-    rename.replace(/\s+/g, " ").slice(0, 400),
-  );
+  const copyCanExpressNoReplace = noReplaceVocabulary.test(copy.block);
+  const renameCanExpressNoReplace = noReplaceVocabulary.test(rename.block);
+  check("G6C-C-FS08 copy cannot express primitive-level no-replace policy", !copyCanExpressNoReplace, copy.block.replace(/\s+/g, " ").slice(0, 400));
+  check("G6C-C-FS09 rename cannot express primitive-level no-replace policy", !renameCanExpressNoReplace, rename.block.replace(/\s+/g, " ").slice(0, 400));
 
   const fullContractProvable = copyCanExpressNoReplace || renameCanExpressNoReplace;
-  check(
-    "G6C-C-FS10 full EvidenceStorage publication contract is not provable through candidate API",
-    !fullContractProvable,
-    "no public no-replace primitive is exposed; API names alone cannot prove required publication semantics",
-  );
+  check("G6C-C-FS10 full EvidenceStorage publication contract is not provable through candidate API", !fullContractProvable, "no public no-replace primitive is exposed; API names alone cannot prove required publication semantics");
 
   if (!fullContractProvable) {
     console.log("DISPOSITION: FILESYSTEM_PLUGIN_REJECTED_FOR_EVIDENCE_STORAGE");

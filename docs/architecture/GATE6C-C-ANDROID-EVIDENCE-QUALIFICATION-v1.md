@@ -1,7 +1,7 @@
 # Gate 6C-C — Android Evidence Adapter Candidate Qualification v1
 
-Status: **IN_PROGRESS / IMPLEMENTATION_REVIEW**  
-Classification: **PROJECT / executable qualification evidence**  
+Status: **IN_PROGRESS / IMPLEMENTATION_REVIEW**
+Classification: **PROJECT / executable qualification evidence**
 Gate 6C-C is **not CLOSED**. Gate 6C-D physical qualification has **not started**.
 
 ## 1. Scope and governing boundary

@@ -1,0 +1,207 @@
+name: Gate 6C-C Android Evidence
+
+on:
+  push:
+    branches:
+      - implementation/gate6c-c-android-evidence-adapters-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate6c-c-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GOVERNING_BASE: 976b48106824f84f0dbbbca82832cbad4e53afb7
+  SCHEMA_SHA256: c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7
+  BOOTSTRAP_SHA256: d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
+
+jobs:
+  host-closed-baselines:
+    name: Host / closed baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Validate project state JSON
+        run: python3 -m json.tool docs/project/CURRENT-STATE.json >/dev/null
+
+      - name: Guard canonical schema and bootstrap hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' "$SCHEMA_SHA256" docs/schema/schema.sql | sha256sum -c -
+          printf '%s  %s\n' "$BOOTSTRAP_SHA256" bootstrap/v1/checklist-v1.json | sha256sum -c -
+
+      - name: Guard closed Application Core and Gate 6B surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$GOVERNING_BASE" -- src/application
+          git diff --exit-code "$GOVERNING_BASE" -- src/bootstrap
+          git diff --exit-code "$GOVERNING_BASE" -- src/device/capacitor-sqlite-adapter.ts
+          git diff --exit-code "$GOVERNING_BASE" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6BCompetingWriterPlugin.java
+          ! grep -R --line-number -E 'READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|MANAGE_EXTERNAL_STORAGE' android/app/src/main/AndroidManifest.xml
+          ! grep -R --line-number -E '@capacitor/(core|android)"[[:space:]]*:[[:space:]]*"9\.|@capacitor/(camera|app|filesystem)"[[:space:]]*:[[:space:]]*"9\.' package.json package-lock.json
+
+      - name: Verify pinned dependency majors and versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./node_modules/@capacitor/core/package.json').version")" = "8.5.1"
+          test "$(node -p "require('./node_modules/@capacitor/android/package.json').version")" = "8.5.1"
+          test "$(node -p "require('./node_modules/@capacitor-community/sqlite/package.json').version")" = "8.1.1"
+          test "$(node -p "require('./node_modules/@capacitor/camera/package.json').version")" = "8.2.4"
+          test "$(node -p "require('./node_modules/@capacitor/app/package.json').version")" = "8.1.1"
+          test "$(node -p "require('./node_modules/@capacitor/filesystem/package.json').version")" = "8.1.3"
+
+      - name: Typecheck Gate 6C-B and Gate 6C-C adapters
+        run: |
+          npm run typecheck:gate6c
+          npm run typecheck:gate6c-c
+
+      - name: Gate 6C-C device adapter host regression
+        run: npm run gate6c-c:host
+
+      - name: Gate 6C-B adopted host regression
+        run: npm run gate6c:host
+
+      - name: Gate 6B host baselines
+        run: |
+          npm run gate6b:host
+          npm run gate6b:schema-host
+          npm run gate6b:q12-host
+
+      - name: Historical Gate 5 regressions
+        run: |
+          node tests/gate5b_adapter_regression.ts
+          node tests/gate5b_regression.ts
+          node tests/gate5c_regression.ts
+          node tests/gate5d_regression.ts
+          node tests/gate5e_regression.ts
+          node tests/gate5f_regression.ts
+          node tests/gate5g_regression.ts
+          node tests/gate5h_regression.ts
+          node tests/gate5i_regression.ts
+          node tests/gate5j_regression.ts
+          node tests/gate5k_regression.ts
+          node tests/gate5l_regression.ts
+
+      - name: Schema regression
+        run: python3 tests/gate4a_regression.py
+
+      - name: Production build
+        run: npm run build
+
+      - name: Diff whitespace check before generated sync
+        run: git diff --check "$GOVERNING_BASE"..HEAD
+
+      - name: Capacitor Android sync
+        run: npx cap sync android
+
+      - name: Preserve SQLCipher 4.17.0 resolution
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./android/gradlew -p android :app:dependencies --configuration debugRuntimeClasspath > /tmp/deps.txt
+          grep -F 'net.zetetic:sqlcipher-android:4.17.0' /tmp/deps.txt
+          if grep -E 'net\.zetetic:sqlcipher-android:[^4]|net\.zetetic:sqlcipher-android:4\.(0|1[0-6])\.' /tmp/deps.txt; then
+            echo 'Unexpected SQLCipher version detected' >&2
+            exit 1
+          fi
+
+      - name: Gradle assembleDebug
+        run: ./android/gradlew -p android assembleDebug
+
+      - name: APK SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum "$APK" | tee gate6c-c-debug-apk.sha256
+
+      - name: Upload Gate 6C-D-ready debug APK
+        id: apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate6c-d-ready-debug-apk-${{ github.sha }}
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            gate6c-c-debug-apk.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  android-emulator:
+    name: Android adapter proof / API ${{ matrix.api }}
+    needs: host-closed-baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 24
+            arch: x86
+          - api: 35
+            arch: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install exact dependencies
+        run: npm ci
+      - name: Build web assets and sync Android plugins
+        run: |
+          npm run build
+          npx cap sync android
+      - name: Enable KVM group access
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run native Gate 6C-C instrumentation suite
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: ${{ matrix.arch }}
+          target: default
+          profile: pixel_2
+          disable-animations: true
+          disk-size: 4096M
+          heap-size: 512M
+          script: ./android/gradlew -p android connectedDebugAndroidTest
+      - name: Upload Android test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate6c-c-android-test-api-${{ matrix.api }}-${{ github.sha }}
+          path: |
+            android/app/build/reports/androidTests/connected/**
+            android/app/build/outputs/androidTest-results/connected/**
+          if-no-files-found: warn
+          retention-days: 30

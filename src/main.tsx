@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
 import { gate6cRestoredResultCoordinator } from "./device/evidence-restored-result.ts";
+import "./gate6c/device-integration-proof.ts";
 import { Gate6BProofApp } from "./ui/Gate6BProofApp.tsx";
 import "./ui/gate6b.css";
 

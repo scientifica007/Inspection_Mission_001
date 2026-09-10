@@ -35,6 +35,11 @@ function interfaceBlock(text: string, name: string): string {
   return text.slice(start, next < 0 ? text.length : next);
 }
 
+function methodOptionType(text: string, method: string): string | null {
+  const match = new RegExp(`\\b${method}\\s*\\(\\s*options\\s*:\\s*([A-Za-z0-9_]+)`).exec(text);
+  return match === null ? null : match[1];
+}
+
 const root = path.resolve("node_modules/@capacitor/filesystem");
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")) as { version?: string };
 const pluginPath = findFile(root, "FilesystemPlugin.kt");
@@ -47,8 +52,10 @@ check("G6C-C-FS03 public TypeScript definitions present", definitionsPath !== nu
 if (pluginPath !== null && definitionsPath !== null) {
   const android = fs.readFileSync(pluginPath, "utf8");
   const definitions = fs.readFileSync(definitionsPath, "utf8");
-  const copy = interfaceBlock(definitions, "CopyOptions");
-  const rename = interfaceBlock(definitions, "RenameOptions");
+  const copyType = methodOptionType(definitions, "copy");
+  const renameType = methodOptionType(definitions, "rename");
+  const copy = copyType === null ? "" : interfaceBlock(definitions, copyType);
+  const rename = renameType === null ? "" : interfaceBlock(definitions, renameType);
 
   check(
     "G6C-C-FS04 candidate copy delegates to opaque controller operation",
@@ -60,8 +67,8 @@ if (pluginPath !== null && definitionsPath !== null) {
     android.includes("controller.move(source, destination)"),
     "FilesystemPlugin.rename delegates source/destination to controller.move",
   );
-  check("G6C-C-FS06 CopyOptions found", copy.length > 0, "public CopyOptions extracted");
-  check("G6C-C-FS07 RenameOptions found", rename.length > 0, "public RenameOptions extracted");
+  check("G6C-C-FS06 copy public option type found", copyType !== null && copy.length > 0, `copy options=${String(copyType)}`);
+  check("G6C-C-FS07 rename public option type found", renameType !== null && rename.length > 0, `rename options=${String(renameType)}`);
 
   const noReplaceVocabulary = /noReplace|failIfExists|replaceExisting|atomicMove|createNew/i;
   const copyCanExpressNoReplace = noReplaceVocabulary.test(copy);

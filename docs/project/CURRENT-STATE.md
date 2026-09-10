@@ -19,11 +19,16 @@
 - Gate 6C-A PR: `#19`.
 - Gate 6C-A reviewed head: `b267d4ced626b32f7e4a4bad21b37082abc4ae86`.
 - Gate 6C-A merge SHA: `4dfe7afd920285b034b26decb500932de4dae655`.
+- Gate 6C-B governing implementation base: `953610be8815725bb55bbdc62ac2ca375ee4ffa3`.
+- Gate 6C-B implementation branch: `implementation/gate6c-b-evidence-orchestration-v1`.
+- Gate 6C-B initial implementation checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`.
+- Gate 6C-B corrected executable validation SHA: `dadf4d90a10d7348fea0543c1885ecf5b0846578`.
+- Gate 6C-B corrected executable CI run: `34483510338` — SUCCESS.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A مغلقة/مدمجة كـsub-stage، بينما Gate 6C ككل ما تزال IN_PROGRESS.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A مغلقة/مدمجة كـsub-stage، بينما Gate 6C ككل ما تزال IN_PROGRESS وGate 6C-B في IMPLEMENTATION_REVIEW.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -61,13 +66,23 @@ Project Owner approval recorded on `2026-09-10` for all three category-C Gate-6C
 2. canonical lowercase UUID v4 object token;
 3. mandatory SHA-256 for every newly committed Gate-6C Evidence object in `sha256:<64 lowercase hexadecimal characters>` form, while historical/pre-Gate-6C `content_hash = NULL` remains valid.
 
-These decisions remain **`OWNER_APPROVED / ADOPTED`**. Gate 6C-A introduced no Camera, Filesystem, file-picker, Evidence-orchestration, UI, APK, schema, bootstrap, or dependency implementation.
+These decisions remain **`OWNER_APPROVED / ADOPTED`**.
 
 #### Gate 6C-B — Runtime-neutral Evidence orchestration + host regressions
 
-الحالة: **`NEXT / NOT_STARTED`**.
+الحالة: **`IN_PROGRESS / IMPLEMENTATION_REVIEW`**.
 
-Gate 6C-B is the next sub-stage, but executable implementation has **not** started. It requires separate scoped authorization from the merged Gate-6C-A contract.
+`implementation_started=true`.
+
+- implementation branch: `implementation/gate6c-b-evidence-orchestration-v1`;
+- governing base: `953610be8815725bb55bbdc62ac2ca375ee4ffa3`;
+- initial checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`;
+- corrected executable SHA: `dadf4d90a10d7348fea0543c1885ecf5b0846578`;
+- corrected executable CI: run `34483510338` / **SUCCESS**;
+- Gate-6C-B host regression: **85 / 0** on the corrected executable SHA;
+- typecheck, production build, canonical hash guards, historical regressions, runtime-neutrality/no-drift/dependency/synthetic-only guards and `git diff --check`: PASS on that run.
+
+This is **CURRENT / CANDIDATE BRANCH EVIDENCE**, not an adopted closed baseline. Gate 6C-B is not CLOSED and has not been merged.
 
 Gate 6C-C / 6C-D have not started.
 
@@ -198,7 +213,7 @@ Canonical hashes:
 - `docs/schema/schema.sql`: `c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7`;
 - `bootstrap/v1/checklist-v1.json`: `d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd`.
 
-Gate 6C-A is design-only and introduces no new executable test baseline.
+Gate 6C-B candidate branch evidence: **85 / 0** at `dadf4d90a10d7348fea0543c1885ecf5b0846578`, CI run `34483510338` SUCCESS. This is not an adopted/closed baseline.
 
 ## 7) ثوابت لا تتغير
 
@@ -208,18 +223,15 @@ Gate 6C-A is design-only and introduces no new executable test baseline.
 - diagnostic Q12 writer ليس product architecture.
 - Q12 classifier semantics لم تُضعف.
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
-- Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`، وGate 6C-B **NEXT / NOT_STARTED**.
+- Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **IN_PROGRESS / IMPLEMENTATION_REVIEW**.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
+- Gate 6C-C و6C-D **NOT_STARTED**.
 - Gate 6D **LATER / NOT_STARTED**.
 
 ## 8) الحالة التالية
 
-Gate 6C-A أُغلقت ودمجت عبر PR #19. لا توجد أعمال تصميمية إضافية مطلوبة لإغلاقها.
+Gate 6C-B implementation is implemented on its candidate branch and is now awaiting independent branch review. It is not closed or merged.
 
-المرحلة التالية هي:
-
-**Gate 6C-B — Runtime-neutral Evidence orchestration + host regressions — `NEXT / NOT_STARTED`.**
-
-قبل أي تنفيذ في 6C-B يجب إصدار scope/authorization مستقل مبني على عقد Gate 6C-A المدمج وFresh Read للـ`main` الحي.
+Do not begin Gate 6C-C until Gate 6C-B receives its required review/merge governance.
 
 Gate 6C-C و6C-D لم تبدأا. Gate 6D لم يبدأ.

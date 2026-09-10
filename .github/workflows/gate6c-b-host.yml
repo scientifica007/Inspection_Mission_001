@@ -1,0 +1,168 @@
+name: Gate 6C-B Evidence Host Regression
+
+on:
+  push:
+    branches:
+      - implementation/gate6c-b-evidence-orchestration-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate6c-b-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate project state JSON
+        run: python -m json.tool docs/project/CURRENT-STATE.json >/dev/null
+
+      - name: Enforce canonical schema/bootstrap SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          schema_hash="$(sha256sum docs/schema/schema.sql | awk '{print $1}')"
+          bootstrap_hash="$(sha256sum bootstrap/v1/checklist-v1.json | awk '{print $1}')"
+          test "$schema_hash" = "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7"
+          test "$bootstrap_hash" = "d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd"
+          printf 'schema=%s\nbootstrap=%s\n' "$schema_hash" "$bootstrap_hash"
+
+      - name: Enforce Gate 6C-B runtime-neutral production core
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -nE "(from|import\()[[:space:]]*['\"]node:" src/application/evidence*.ts; then
+            echo "node:* import found in Gate 6C-B runtime-neutral Evidence core"
+            exit 1
+          fi
+          if grep -R -nE "@capacitor|@capacitor-community/sqlite|from[[:space:]]+['\"]react|localStorage|sessionStorage|indexedDB" src/application/evidence*.ts; then
+            echo "runtime-specific dependency leaked into Gate 6C-B Evidence core"
+            exit 1
+          fi
+
+      - name: Gate 6C-B typecheck
+        run: npm run typecheck:gate6c
+
+      - name: Gate 6C-B Evidence regression 85/0
+        run: npm run gate6c:host
+
+      - name: Gate 6B host adapter contract 16/0
+        run: npm run gate6b:host
+
+      - name: Gate 6B canonical schema execution regression 8/0
+        run: npm run gate6b:schema-host
+
+      - name: Gate 6B Q12 diagnostic/classifier regression 20/0
+        run: npm run gate6b:q12-host
+
+      - name: Gate 5B adapter normalization 6/0
+        run: node tests/gate5b_adapter_regression.ts
+
+      - name: Gate 5B bootstrap 32/0
+        run: node tests/gate5b_regression.ts
+
+      - name: Gate 5C 55/0
+        run: node tests/gate5c_regression.ts
+
+      - name: Gate 5D 60/0
+        run: node tests/gate5d_regression.ts
+
+      - name: Gate 5E 79/0
+        run: node tests/gate5e_regression.ts
+
+      - name: Gate 5F 30/0
+        run: node tests/gate5f_regression.ts
+
+      - name: Gate 5G 41/0
+        run: node tests/gate5g_regression.ts
+
+      - name: Gate 5H 66/0
+        run: node tests/gate5h_regression.ts
+
+      - name: Gate 5I 48/0
+        run: node tests/gate5i_regression.ts
+
+      - name: Gate 5J 75/0
+        run: node tests/gate5j_regression.ts
+
+      - name: Gate 5K 82/0
+        run: node tests/gate5k_regression.ts
+
+      - name: Gate 5L 94/0
+        run: node tests/gate5l_regression.ts
+
+      - name: Schema regression 100/0
+        run: python tests/gate4a_regression.py
+
+      - name: Production build
+        run: VITE_GIT_COMMIT="$(git rev-parse HEAD)" npm run build
+
+      - name: Guard closed/native/canonical paths against Gate 6C-B drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=953610be8815725bb55bbdc62ac2ca375ee4ffa3
+          git diff --exit-code "$base"...HEAD -- \
+            docs/schema/schema.sql \
+            bootstrap/v1/checklist-v1.json \
+            android \
+            src/device \
+            src/gate6b \
+            package-lock.json \
+            capacitor.config.ts
+
+      - name: Guard dependency sets unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=953610be8815725bb55bbdc62ac2ca375ee4ffa3
+          git show "$base:package.json" > /tmp/package-base.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const before = JSON.parse(fs.readFileSync('/tmp/package-base.json','utf8'));
+          const after = JSON.parse(fs.readFileSync('package.json','utf8'));
+          for (const key of ['dependencies','devDependencies']) {
+            if (JSON.stringify(before[key] ?? {}) !== JSON.stringify(after[key] ?? {})) {
+              throw new Error(`${key} drifted in Gate 6C-B`);
+            }
+          }
+          NODE
+
+      - name: Guard synthetic-only change surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=953610be8815725bb55bbdc62ac2ca375ee4ffa3
+          mapfile -t changed < <(git diff --name-only "$base"...HEAD)
+          printf '%s\n' "${changed[@]}"
+          for path in "${changed[@]}"; do
+            case "$path" in
+              src/application/evidence.ts|src/application/evidence-contract.ts|src/application/evidence-create.ts|src/application/evidence-reconciliation.ts|src/application/errors.ts|tests/gate6c_b_evidence_regression.ts|tests/gate6c_b_evidence_support.ts|tests/gate6c_b_evidence_support_core.ts|tests/gate6c_b_evidence_support_fixtures.ts|tests/gate6c_b_evidence_creation_a.ts|tests/gate6c_b_evidence_creation_b.ts|tests/gate6c_b_evidence_reconciliation_a.ts|tests/gate6c_b_evidence_reconciliation_b.ts|tests/gate6c_b_evidence_contract_gaps.ts|tsconfig.gate6c.json|package.json|.github/workflows/gate6c-b-host.yml|docs/project/CURRENT-STATE.md|docs/project/CURRENT-STATE.json|docs/project/TEST-BASELINES.md) ;;
+              *) echo "unexpected Gate 6C-B changed path: $path"; exit 1 ;;
+            esac
+          done
+          if git diff --name-only "$base"...HEAD | grep -Ei '\.(jpg|jpeg|png|gif|webp|heic|pdf|docx|sqlite|db)$'; then
+            echo "binary/operational artifact unexpectedly committed"
+            exit 1
+          fi
+
+      - name: Check branch diff whitespace
+        run: git diff --check 953610be8815725bb55bbdc62ac2ca375ee4ffa3...HEAD

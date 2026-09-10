@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "files": [
+    "src/bootstrap/adapter.ts",
+    "src/application/errors.ts",
+    "src/application/evidence-contract.ts",
+    "src/application/evidence-create.ts",
+    "src/application/evidence-reconciliation.ts",
+    "src/application/evidence.ts"
+  ],
+  "include": []
+}

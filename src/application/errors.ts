@@ -90,6 +90,11 @@
 // contract says run ALL finalization checks before rolling back). The
 // error's top-level `code` is the first blocker's code in the deterministic
 // §8 order; no wrapper code (e.g. E_FINALIZATION_BLOCKED) is invented.
+//
+// Gate 6C-B extends this same typed DomainError/APP_ERR convention narrowly
+// for runtime-neutral Evidence orchestration. USER_CANCELLED remains an
+// expected acquisition result (not corruption); E_EVIDENCE_FILE_TOO_LARGE is
+// reserved only because no numeric Gate-6C file-size limit has been adopted.
 
 /** One structured finalization blocker (deterministic, machine-readable). */
 export interface FinalizationBlocker {
@@ -136,6 +141,21 @@ export const APP_ERR = {
     NC_NEEDS_NOTE: "E_NC_NEEDS_NOTE",
     CHK012: "E_CHK012",
     ORPHAN_FINDING: "E_ORPHAN_FINDING",
+    EVIDENCE_PERMISSION_DENIED: "E_EVIDENCE_PERMISSION_DENIED",
+    EVIDENCE_SOURCE_UNAVAILABLE: "E_EVIDENCE_SOURCE_UNAVAILABLE",
+    EVIDENCE_UNSUPPORTED_SOURCE: "E_EVIDENCE_UNSUPPORTED_SOURCE",
+    EVIDENCE_STORAGE_WRITE_FAILED: "E_EVIDENCE_STORAGE_WRITE_FAILED",
+    EVIDENCE_HASH_FAILED: "E_EVIDENCE_HASH_FAILED",
+    EVIDENCE_OWNER_NOT_FOUND: "E_EVIDENCE_OWNER_NOT_FOUND",
+    EVIDENCE_OWNER_INVALID: "E_EVIDENCE_OWNER_INVALID",
+    EVIDENCE_SQLITE_FAILED: "E_EVIDENCE_SQLITE_FAILED",
+    EVIDENCE_STORAGE_REF_CONFLICT: "E_EVIDENCE_STORAGE_REF_CONFLICT",
+    EVIDENCE_BROKEN_STORAGE_REFERENCE: "E_EVIDENCE_BROKEN_STORAGE_REFERENCE",
+    EVIDENCE_HASH_MISMATCH: "E_EVIDENCE_HASH_MISMATCH",
+    EVIDENCE_ORPHAN_CLEANUP_FAILED: "E_EVIDENCE_ORPHAN_CLEANUP_FAILED",
+    EVIDENCE_FILE_TOO_LARGE: "E_EVIDENCE_FILE_TOO_LARGE",
+    EVIDENCE_NOT_FOUND: "E_EVIDENCE_NOT_FOUND",
+    EVIDENCE_RECONCILIATION_REQUIRED: "E_EVIDENCE_RECONCILIATION_REQUIRED",
 } as const;
 
 export type AppErrorCode = (typeof APP_ERR)[keyof typeof APP_ERR];

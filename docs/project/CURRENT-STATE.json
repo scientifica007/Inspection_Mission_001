@@ -16,6 +16,10 @@
     "last_gate6c_a_pr": 19,
     "last_gate6c_a_reviewed_head": "b267d4ced626b32f7e4a4bad21b37082abc4ae86",
     "last_gate6c_a_merge_sha": "4dfe7afd920285b034b26decb500932de4dae655",
+    "gate6c_b_governing_base_sha": "953610be8815725bb55bbdc62ac2ca375ee4ffa3",
+    "gate6c_b_initial_checkpoint_sha": "64b424670ea4384b7e9d6c01eea952c201a573d7",
+    "gate6c_b_corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
+    "gate6c_b_corrected_executable_ci_run": 34483510338,
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -23,30 +27,7 @@
     "DERIVED": "Executable/technical consequence derived from an official requirement.",
     "PROJECT": "Explicit project-owner decision or requirement; must not be attributed to official sources."
   },
-  "closed_gates": [
-    "1",
-    "2",
-    "3",
-    "4",
-    "4A",
-    "4B",
-    "4-Revision-6",
-    "5A",
-    "5B",
-    "5C",
-    "5D",
-    "5E",
-    "5F",
-    "5G",
-    "5H",
-    "5I",
-    "5J",
-    "5K",
-    "5L",
-    "6A",
-    "6B",
-    "6C-A"
-  ],
+  "closed_gates": ["1","2","3","4","4A","4B","4-Revision-6","5A","5B","5C","5D","5E","5F","5G","5H","5I","5J","5K","5L","6A","6B","6C-A"],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
       "status": "MERGED_RESOLVED",
@@ -60,11 +41,7 @@
   },
   "application_core": {
     "status": "CLOSED",
-    "coverage": [
-      "T0-T11",
-      "OBS-1",
-      "currentVisitState/restart reconstruction"
-    ],
+    "coverage": ["T0-T11","OBS-1","currentVisitState/restart reconstruction"],
     "authoritative_store": "SQLite 3",
     "process_memory_authoritative": false
   },
@@ -74,10 +51,7 @@
     "triggers": 44,
     "views": 1,
     "explicit_indexes": 24,
-    "schema_regression": {
-      "passed": 100,
-      "failed": 0
-    }
+    "schema_regression": {"passed": 100, "failed": 0}
   },
   "product_architecture": {
     "status": "ADOPTED",
@@ -173,19 +147,11 @@
         "phase_a_timestamp": "2026-09-09T20:38:14.309Z",
         "phase_a_overall": "DEVICE_PROOF_READY",
         "phase_a_visit": 1,
-        "phase_a_zero_write": {
-          "before": 121,
-          "after": 121,
-          "delta": 0
-        },
+        "phase_a_zero_write": {"before": 121, "after": 121, "delta": 0},
         "phase_b_timestamp": "2026-09-09T20:41:35.702Z",
         "phase_b_overall": "PASS",
         "phase_b_visit": 1,
-        "phase_b_zero_write": {
-          "before": 0,
-          "after": 0,
-          "delta": 0
-        },
+        "phase_b_zero_write": {"before": 0, "after": 0, "delta": 0},
         "state_hash_sha256": "9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405",
         "real_force_stop": true,
         "visit_rediscovered_from_sqlite_only": 1,
@@ -199,13 +165,7 @@
         "q12_target_sha": "87135cfe80ae3de79a34e941828249fc6889139c",
         "same_binary": false,
         "basis": "Evidence reuse is accepted because the relevant Application-Core, bootstrap, primary-adapter and canonical-authority paths did not drift between the tested runtime states; this does not assert binary identity.",
-        "unchanged_paths": [
-          "src/application/**",
-          "src/bootstrap/**",
-          "src/device/capacitor-sqlite-adapter.ts",
-          "docs/schema/schema.sql",
-          "bootstrap/v1/checklist-v1.json"
-        ],
+        "unchanged_paths": ["src/application/**","src/bootstrap/**","src/device/capacitor-sqlite-adapter.ts","docs/schema/schema.sql","bootstrap/v1/checklist-v1.json"],
         "application_core_retest_required": false,
         "restart_phase_a_b_retest_required": false
       },
@@ -274,25 +234,12 @@
       "busy_timeout_transport": "QUERY_RAWQUERY_SCALARLONG_SET_AND_INDEPENDENT_READBACK",
       "busy_timeout_setter_must_return_zero": true,
       "busy_timeout_readback_must_return_zero": true,
-      "native_lock_classification": [
-        "SQLITE_BUSY/SQLiteDatabaseLockedException",
-        "SQLITE_LOCKED/SQLiteTableLockedException"
-      ],
+      "native_lock_classification": ["SQLITE_BUSY/SQLiteDatabaseLockedException","SQLITE_LOCKED/SQLiteTableLockedException"],
       "physical_result": "PASS_ON_87135CFE_REVIEW_ACCEPTED",
       "diagnostic_hardening": {
         "status": "IMPLEMENTED",
         "preserves_error_name_message_code": true,
-        "native_open_stages": [
-          "validate_target",
-          "load_sqlcipher",
-          "open_database",
-          "set_busy_timeout",
-          "read_busy_timeout",
-          "read_sqlite_version",
-          "database_list",
-          "same_file_check",
-          "probe_table_read"
-        ],
+        "native_open_stages": ["validate_target","load_sqlcipher","open_database","set_busy_timeout","read_busy_timeout","read_sqlite_version","database_list","same_file_check","probe_table_read"],
         "linkage_error_handled": true,
         "q12_semantics_weakened": false
       }
@@ -306,12 +253,12 @@
     "status": "IN_PROGRESS",
     "current_substage": "6C-B",
     "current_substage_name": "Runtime-neutral Evidence orchestration + host regressions",
-    "current_substage_status": "NEXT_NOT_STARTED",
-    "mode": "IMPLEMENTATION_NOT_STARTED",
+    "current_substage_status": "IMPLEMENTATION_REVIEW",
+    "mode": "IMPLEMENTATION_REVIEW",
     "design_branch": "design/gate6c-evidence-contract-v1",
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
-    "implementation_started": false,
+    "implementation_started": true,
     "project_decisions_owner_approval": "APPROVED_2026-09-10",
     "owner_approved_project_decisions": {
       "decision_date": "2026-09-10",
@@ -322,7 +269,7 @@
       "content_hash_format": "sha256:<64 lowercase hexadecimal characters>",
       "historical_null_content_hash_valid": true
     },
-    "gate6c_b_started": false,
+    "gate6c_b_started": true,
     "gate6c_c_started": false,
     "gate6c_d_started": false,
     "gate6d_started": false,
@@ -337,6 +284,20 @@
       "independent_review_verdict": "MERGE_READY",
       "owner_merge_approval": true,
       "closure_status": "CLOSED_MERGED"
+    },
+    "gate6c_b": {
+      "status": "IN_PROGRESS",
+      "review_status": "IMPLEMENTATION_REVIEW",
+      "implementation_branch": "implementation/gate6c-b-evidence-orchestration-v1",
+      "governing_base_sha": "953610be8815725bb55bbdc62ac2ca375ee4ffa3",
+      "initial_checkpoint_sha": "64b424670ea4384b7e9d6c01eea952c201a573d7",
+      "corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
+      "corrected_executable_ci_run": 34483510338,
+      "corrected_executable_ci_conclusion": "SUCCESS",
+      "host_regression": {"passed": 85, "failed": 0},
+      "evidence_classification": "CURRENT_CANDIDATE_BRANCH_EVIDENCE",
+      "closed": false,
+      "merged": false
     }
   },
   "next_gate": {
@@ -345,13 +306,13 @@
     "status": "IN_PROGRESS",
     "role": "CURRENT",
     "current_substage": "6C-B",
-    "current_substage_status": "NEXT_NOT_STARTED"
+    "current_substage_status": "IMPLEMENTATION_REVIEW"
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_NEXT_NOT_STARTED",
+  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_IMPLEMENTATION_REVIEW",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B NEXT / NOT_STARTED",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B IMPLEMENTATION_REVIEW",
     "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",
@@ -378,19 +339,21 @@
     "gate5b_adapter_normalization": {"passed": 6, "failed": 0},
     "schema": {"passed": 100, "failed": 0}
   },
+  "candidate_branch_evidence": {
+    "gate6c_b": {
+      "classification": "CURRENT_CANDIDATE_BRANCH_EVIDENCE",
+      "tested_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
+      "github_actions_run": 34483510338,
+      "conclusion": "SUCCESS",
+      "passed": 85,
+      "failed": 0
+    }
+  },
   "canonical_hashes": {
     "docs/schema/schema.sql": "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7",
     "bootstrap/v1/checklist-v1.json": "d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd"
   },
   "closed_gate_reopen_policy": "Only for a concrete reproducible executable contradiction; correction must be narrowly scoped and regressions rerun.",
-  "repository_exclusions": [
-    "real inspection photos",
-    "real operational Evidence",
-    "personal or sensitive data",
-    "production SQLite databases",
-    "real operational inspection records",
-    "secrets and API keys",
-    "device serial numbers"
-  ],
+  "repository_exclusions": ["real inspection photos","real operational Evidence","personal or sensitive data","production SQLite databases","real operational inspection records","secrets and API keys","device serial numbers"],
   "handoff_entrypoint": "START-HERE.md"
 }

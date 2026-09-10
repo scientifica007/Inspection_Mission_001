@@ -18,7 +18,7 @@
     "gate6b:schema-host": "node --experimental-strip-types tests/gate6b_schema_execution_regression.ts",
     "gate6b:q12-host": "node --experimental-strip-types tests/gate6b_q12_regression.ts",
     "gate6c:host": "node --experimental-strip-types tests/gate6c_b_evidence_regression.ts",
-    "gate6c-c:host": "node --experimental-strip-types tests/gate6c_c_device_adapter_regression.ts"
+    "gate6c-c:host": "node --experimental-strip-types tests/gate6c_c_device_adapter_regression.ts && node --experimental-strip-types tests/gate6c_c_restored_result_regression.ts"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "8.1.1",

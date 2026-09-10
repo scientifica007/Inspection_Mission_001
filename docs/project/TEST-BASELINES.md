@@ -4,10 +4,13 @@
 
 ## 1) Adopted baselines
 
-Gate 6B مغلقة/مدمجة ولا تعيد كتابة Application Core. suites الخاصة بها أصبحت جزءًا من baselines التاريخية المعتمدة:
+Gate 6B وGate 6C-B وGate 6C-C أُغلقت/دُمجت في نطاقاتها المعتمدة. الـrepeatable host suites التالية أصبحت جزءًا من baselines التاريخية المعتمدة:
 
 | Suite | Passed | Failed |
 |---|---:|---:|
+| Gate 6C-C device adapter host regression | 14 | 0 |
+| Gate 6C-C restored-result host regression | 11 | 0 |
+| Gate 6C-C Filesystem rejection guard | 4 | 0 |
 | Gate 6C-B Evidence host regression | 85 | 0 |
 | Gate 6B host adapter contract | 16 | 0 |
 | Gate 6B canonical-schema execution | 8 | 0 |
@@ -28,11 +31,16 @@ Gate 6B مغلقة/مدمجة ولا تعيد كتابة Application Core. suite
 
 إجمالي Gate 5B عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع بقاء العدّين منفصلين.
 
+نتائج Gate 6C-C native API24/API35 وfull-integration API24/API35 موثقة أدناه كـqualification evidence، وليست ordinary host regression baselines.
+
 Q12 host suite لا تدّعي lock proof على Android؛ الـdevice lock proof هو التشغيل الفيزيائي المقبول على `87135cfe80ae3de79a34e941828249fc6889139c`، وقد أسهم مع بقية evidence المقبولة في إغلاق Gate 6B عبر PR #17 / merge `0905c6111269d62480e7ccadc31786bef29f3c51`.
 
 ## 2) ملفات suites الحاكمة
 
 ```text
+tests/gate6c_c_device_adapter_regression.ts
+tests/gate6c_c_restored_result_regression.ts
+tests/gate6c_c_filesystem_candidate_spike.ts
 tests/gate6b_adapter_contract.ts
 tests/gate6b_schema_execution_regression.ts
 tests/gate6b_q12_regression.ts
@@ -51,7 +59,9 @@ tests/gate5l_regression.ts
 tests/gate4a_regression.py
 ```
 
-Gate 6C-B suite files are now part of the adopted regression surface after PR #21 merged at `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`.
+Gate 6C-B suite files remain part of the adopted regression surface after PR #21 merged at `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`.
+
+Gate 6C-C repeatable host suites became adopted after PR #23 merged at `f221b215358f83dce381ac5261a856a7de4e5c98`.
 
 ## 3) أوامر التشغيل المرجعية
 
@@ -59,6 +69,9 @@ Gate 6C-B suite files are now part of the adopted regression surface after PR #2
 npm run typecheck
 npm run typecheck:gate6c
 npm run gate6c:host
+npx tsx tests/gate6c_c_device_adapter_regression.ts
+npx tsx tests/gate6c_c_restored_result_regression.ts
+npx tsx tests/gate6c_c_filesystem_candidate_spike.ts
 npm run gate6b:host
 npm run gate6b:schema-host
 npm run gate6b:q12-host
@@ -144,8 +157,6 @@ d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
 
 ## 9) Gate 6C-B adopted baseline and closure evidence
 
-Gate 6C is **`IN_PROGRESS`**. Gate 6C-A and Gate 6C-B are **`CLOSED / MERGED`**. Gate 6C-C is **`NEXT / NOT_STARTED`**.
-
 Gate 6C-B provenance:
 
 - branch: `implementation/gate6c-b-evidence-orchestration-v1`;
@@ -164,9 +175,48 @@ Gate 6C-B provenance:
 - production build: PASS;
 - canonical hash, runtime-neutrality, historical regression, no-drift, dependency-set, synthetic-only, and `git diff --check` guards: PASS.
 
-**85 / 0 is now the adopted Gate-6C-B regression baseline.**
+**85 / 0 remains the adopted Gate-6C-B regression baseline.**
 
-## 10) قاعدة عدم الإضعاف والحالة الحالية
+## 10) Gate 6C-C adopted closure evidence
+
+Gate 6C is **`IN_PROGRESS`**. Gate 6C-A, Gate 6C-B and Gate 6C-C are **`CLOSED / MERGED`**. Gate 6C-D is **`NEXT / NOT_STARTED`**.
+
+Gate 6C-C provenance:
+
+- implementation branch: `implementation/gate6c-c-android-evidence-adapters-v1`;
+- governing base: `976b48106824f84f0dbbbca82832cbad4e53afb7`;
+- final reviewed head: `9de6c69eef90c490319c02eac48d236482597210`;
+- final-head qualification run: `34531511138` — **SUCCESS**;
+- independent PR-review verdict: **`MERGE_READY`**;
+- Project Owner merge approval: **true**;
+- PR: `#23`;
+- merge SHA: `f221b215358f83dce381ac5261a856a7de4e5c98`;
+- evidence classification: **`ADOPTED_BY_CLOSED_GATE6C_C`**;
+- closure status: **`CLOSED_MERGED`**.
+
+Adopted repeatable host regression suites:
+
+- `Gate 6C-C device adapter host regression`: **14 / 0** (`tests/gate6c_c_device_adapter_regression.ts`);
+- `Gate 6C-C restored-result host regression`: **11 / 0** (`tests/gate6c_c_restored_result_regression.ts`);
+- `Gate 6C-C Filesystem rejection guard`: **4 / 0** (`tests/gate6c_c_filesystem_candidate_spike.ts`).
+
+Qualification evidence — explicitly not ordinary host regressions:
+
+- Native Evidence API24: **18 / 0**;
+- Native Evidence API35: **18 / 0**;
+- Full Evidence integration API24: **2 / 0**;
+- Full Evidence integration API35: **2 / 0**.
+
+Final APK provenance:
+
+- Artifact ID: `10173762572`;
+- Artifact name: `gate6c-c-final-debug-apk-9de6c69eef90c490319c02eac48d236482597210`;
+- actual `app-debug.apk` SHA-256: `da98c8437619a9e93d0d28df5bb1e2b20bf0d2f20120600e0bbbff10a40e9112`;
+- GitHub artifact ZIP SHA-256: `2718aa9309b69fad63c8054ef6d941f13c63821991382b83513d72aa1af6dded`.
+
+The APK SHA-256 and GitHub artifact ZIP SHA-256 are separate provenance values and must not be conflated.
+
+## 11) قاعدة عدم الإضعاف والحالة الحالية
 
 لا يجوز حذف test صحيحة أو خفض semantics سابقة لتجاوز failure.
 
@@ -182,6 +232,10 @@ Gate 6C-A: **`CLOSED / MERGED`**.
 
 Gate 6C-B: **`CLOSED / MERGED`** عبر PR #21 / merge `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`.
 
-Gate 6C-C: **`NEXT / NOT_STARTED`**.
+Gate 6C-C: **`CLOSED / MERGED`** عبر PR #23 / merge `f221b215358f83dce381ac5261a856a7de4e5c98`.
 
-Gate 6C-D / Gate 6D: **`NOT_STARTED`**.
+Gate 6C-D: **`NEXT / NOT_STARTED`**.
+
+Gate 6D: **`NOT_STARTED`**.
+
+`field_usable_v1=false`.

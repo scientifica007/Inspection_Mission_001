@@ -1,0 +1,36 @@
+name: Gate 6C-C Dependency Lock Bootstrap
+
+on:
+  push:
+    branches:
+      - implementation/gate6c-c-android-evidence-adapters-v1
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Regenerate exact npm lock from pinned manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json already matches package.json"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "Gate 6C-C: refresh pinned dependency lock"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

@@ -12,16 +12,21 @@
     "typecheck": "tsc -p tsconfig.gate6b.json --noEmit",
     "typecheck:legacy-full": "tsc -p tsconfig.json --noEmit",
     "typecheck:gate6c": "tsc -p tsconfig.gate6c.json --noEmit",
+    "typecheck:gate6c-c": "tsc -p tsconfig.gate6c-c.json --noEmit",
     "cap:sync": "cap sync android",
     "gate6b:host": "node --experimental-strip-types tests/gate6b_adapter_contract.ts",
     "gate6b:schema-host": "node --experimental-strip-types tests/gate6b_schema_execution_regression.ts",
     "gate6b:q12-host": "node --experimental-strip-types tests/gate6b_q12_regression.ts",
-    "gate6c:host": "node --experimental-strip-types tests/gate6c_b_evidence_regression.ts"
+    "gate6c:host": "node --experimental-strip-types tests/gate6c_b_evidence_regression.ts",
+    "gate6c-c:host": "node --experimental-strip-types tests/gate6c_c_device_adapter_regression.ts"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "8.1.1",
     "@capacitor/android": "8.5.1",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/camera": "8.2.4",
     "@capacitor/core": "8.5.1",
+    "@capacitor/filesystem": "8.1.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

@@ -6,11 +6,13 @@
 >
 > **Status:** `DESIGN_REVIEW` — Gate 6C is `IN_PROGRESS`; Gate 6C is **not** closed.
 >
+> **Owner decisions:** the three category-C project decisions were explicitly **OWNER_APPROVED / ADOPTED** by the Project Owner on `2026-09-10`.
+>
 > **Mode:** DESIGN / CONTRACT ONLY. No Camera, Filesystem, picker, Evidence service, UI, APK, dependency, schema, bootstrap, or physical-device implementation is introduced by this document.
 >
 > **Authoritative starting point:** live GitHub `main@0fbd9ca3db6f2a34f063a682e4f997becefb83ad`.
 >
-> **Traceability:** inherited requirements retain `DIRECT` / `DERIVED` / `PROJECT`. New choices in this document are explicitly classified; a `PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED` is not adopted merely because it appears here.
+> **Traceability:** inherited requirements retain `DIRECT` / `DERIVED` / `PROJECT`. The three category-C choices identified below are now owner-approved PROJECT decisions; future choices explicitly marked `PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED` remain unapproved until separately authorized.
 
 ## 1. Purpose and governing boundary
 
@@ -121,22 +123,22 @@ The port must not contain UI semantics, owner-kind business rules, SQLite access
 
 ### 4.1 Required semantics
 
-Regardless of the exact grammar eventually approved, a committed `storage_ref` MUST:
+A committed `storage_ref` MUST:
 
 - be logical and application-relative;
 - be stable across ordinary process/app restarts;
 - resolve only inside the managed app-private Evidence store;
 - never be an absolute Android filesystem path;
 - never be a transient `content://` URI, Camera URI, gallery URI, or picker URI;
-- contain a versioned namespace so future storage migrations can be explicit;
+- contain the adopted versioned namespace so future storage migrations can be explicit;
 - contain no source filename component that can cause collision or path traversal;
 - be validated before resolution, with malformed/out-of-root references rejected as `BROKEN_STORAGE_REFERENCE`.
 
-### 4.2 Proposed canonical v1 grammar
+### 4.2 Canonical v1 grammar — OWNER-APPROVED PROJECT DECISION
 
-**PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED**
+**OWNER_APPROVED / ADOPTED — 2026-09-10**
 
-Adopt:
+The canonical committed reference is:
 
 ```text
 evidence/v1/objects/<uuid-v4>.<safe-extension>
@@ -158,7 +160,7 @@ Rationale:
 
 The parser must accept only the canonical grammar. It must reject absolute paths, URI schemes, `..`, empty segments, alternate separators, percent-decoded traversal, and any path outside the configured managed root.
 
-Owner review of this exact grammar is required before 6C-B treats it as adopted project policy.
+This grammar is now project policy for Gate 6C implementation.
 
 ## 5. Physical storage directory policy
 
@@ -181,11 +183,11 @@ The project currently does not install `@capacitor/filesystem`, `@capacitor/came
 
 A physical object identifier MUST be allocated before the Evidence database row because file persistence precedes the SQLite INSERT.
 
-**PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED**
+**OWNER_APPROVED / ADOPTED — 2026-09-10**
 
 Use a cryptographically random UUID v4 in canonical lowercase textual form as the v1 object token.
 
-Rules independent of the exact token choice:
+Rules:
 
 - never derive the object key from `evidence_id`;
 - never derive the object key from the original filename;
@@ -194,17 +196,17 @@ Rules independent of the exact token choice:
 - the final object must be created without overwriting an existing managed object;
 - the extension is normalized separately from the original filename.
 
-For the proposed grammar, `<safe-extension>` is lowercase ASCII `a-z0-9`, one short extension segment only, with no leading dot inside the stored value and no separators. A known safe extension may be derived from trusted Camera output metadata or a conservative MIME/filename normalization. Unknown types use a neutral extension such as `bin`. The exact user-facing source filename is retained separately in `file_name` and is never concatenated into a managed path.
+For the adopted grammar, `<safe-extension>` is lowercase ASCII `a-z0-9`, one short extension segment only, with no leading dot inside the stored value and no separators. A known safe extension may be derived from trusted Camera output metadata or a conservative MIME/filename normalization. Unknown types use a neutral extension such as `bin`. The exact user-facing source filename is retained separately in `file_name` and is never concatenated into a managed path.
 
 ## 7. Content-hash policy
 
-The schema deliberately permits `content_hash IS NULL`; Gate 6C-A must not rewrite that historical fact as though the database already mandates hashing.
+The schema deliberately permits `content_hash IS NULL`; Gate 6C-A does not rewrite that historical fact as though the database schema itself mandates hashing.
 
-### 7.1 Proposed policy
+### 7.1 Adopted policy — OWNER-APPROVED PROJECT DECISION
 
-**PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED**
+**OWNER_APPROVED / ADOPTED — 2026-09-10**
 
-For Evidence newly committed by Gate 6C, require SHA-256 and store:
+For Evidence newly committed by Gate 6C, SHA-256 is required and stored as:
 
 ```text
 sha256:<64 lowercase hexadecimal characters>
@@ -214,7 +216,7 @@ Historical/pre-Gate-6C rows remain valid with `content_hash = NULL`; no schema c
 
 Rationale: Evidence is an audit-supporting artifact, and an immutable content digest allows deterministic integrity verification without making the filesystem authoritative for ownership.
 
-### 7.2 Execution semantics if approved
+### 7.2 Execution semantics
 
 - Hash during the source→`.incoming` copy, before final publication and before SQLite `BEGIN IMMEDIATE`.
 - Hash incrementally/streamingly; whole-file buffering is prohibited.
@@ -223,8 +225,6 @@ Rationale: Evidence is an audit-supporting artifact, and an immutable content di
 - Hash verification of an already committed object is a separate bounded-memory operation.
 - Ordinary restart reconciliation must always check reference syntax and existence/stat. Full re-hashing of every Evidence binary on every startup is **not** mandated by this contract because it can be expensive. A reconciliation/diagnostic mode must support hash verification; when performed, a mismatch is `HASH_MISMATCH` and the Evidence row/file are retained for diagnosis.
 
-If the owner does not approve mandatory hashing, the fallback contract is SHA-256 when requested/available and `content_hash = NULL` otherwise; all failure ordering and storage rules remain unchanged.
-
 ## 8. Creation state machine and cross-store atomicity
 
 The canonical application flow is:
@@ -232,9 +232,9 @@ The canonical application flow is:
 ```text
 0  optional early owner preflight (read-only; advisory, not the hard floor)
 1  acquire source
-2  allocate collision-resistant object token
+2  allocate collision-resistant UUID-v4 object token
 3  stream/copy source → evidence/v1/.incoming/<token>.part
-4  finish copy; obtain exact stat; compute hash if policy requires
+4  finish copy; obtain exact stat; compute required SHA-256
 5  publish complete object → final managed object
 6  BEGIN IMMEDIATE
 7  revalidate owner inside the transaction
@@ -410,7 +410,7 @@ Gate 6C establishes a **bounded-memory requirement**, not an arbitrary permanent
 Mandatory semantics:
 
 - source copy must support streaming/chunked/native byte transfer;
-- hashing must be incremental when enabled/required;
+- hashing must be incremental because SHA-256 is required for new Gate-6C Evidence;
 - no implementation may require a whole large binary to make a mandatory Base64 round trip through JavaScript memory;
 - metadata such as exact final size should come from the final staged/published object, not from an untrusted size hint;
 - low-storage/write-shortage conditions fail before the SQLite Evidence row is committed.
@@ -480,7 +480,7 @@ Gate 6C-B should use a compact Evidence-specific result taxonomy and map it into
 | `UNSUPPORTED_SOURCE` | source cannot supply supported bytes/semantics | no |
 | `FILE_TOO_LARGE` | reserved; only active if a size limit is later owner-approved | no |
 | `STORAGE_WRITE_FAILED` | stage/stat/publish durable storage failed | no |
-| `HASH_FAILED` | required/requested hash could not be completed | no |
+| `HASH_FAILED` | required SHA-256 could not be completed | no |
 | `OWNER_NOT_FOUND` | valid owner kind but referenced owner row absent | no |
 | `OWNER_INVALID` | owner kind/owner reference shape invalid | no |
 | `SQLITE_FAILED` | SQLite transaction/insert/commit failed and no more specific mapped domain error applies | no or uncertain until re-read |
@@ -525,9 +525,9 @@ Gate 6C implementation MUST enforce:
 | restored Camera result uses same pipeline | **B — DERIVED TECHNICAL CONSEQUENCE** | no bypass of copy/hash/owner/SQLite ordering |
 | current Camera API (`takePhoto` / `chooseFromGallery`) | **B — DERIVED TECHNICAL IMPLEMENTATION DECISION** | preferred for 6C-C; legacy APIs not used for new implementation |
 | Android app-private location / `Directory.Data` | **B — DERIVED TECHNICAL IMPLEMENTATION DECISION** | preferred candidate; verify in 6C-C, not a DIRECT source rule |
-| exact `storage_ref = evidence/v1/objects/<uuid>.<ext>` grammar | **C — PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED** | pending owner review |
-| exact UUID-v4 object token scheme | **C — PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED** | pending owner review |
-| SHA-256 required for newly committed Gate-6C Evidence | **C — PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED** | proposed `sha256:<lowercase hex>`; nullable historical rows preserved |
+| exact `storage_ref = evidence/v1/objects/<uuid>.<ext>` grammar | **C — OWNER-APPROVED PROJECT DECISION** | **ADOPTED 2026-09-10** |
+| exact UUID-v4 object token scheme | **C — OWNER-APPROVED PROJECT DECISION** | **ADOPTED 2026-09-10** — canonical lowercase UUID v4 |
+| SHA-256 required for newly committed Gate-6C Evidence | **C — OWNER-APPROVED PROJECT DECISION** | **ADOPTED 2026-09-10** — `sha256:<64 lowercase hex>`; nullable historical rows preserved |
 | numeric maximum v1 file size | **D — DEFERRED BEYOND GATE 6C unless separately approved** | no arbitrary number adopted; `FILE_TOO_LARGE` reserved |
 | generic Android file-picker implementation | **D — implementation selection deferred to 6C-C spike** | SAF/custom narrow Capacitor plugin is candidate; no third-party plugin adopted |
 | proof of Filesystem `copy(content://...)` bounded-memory behavior | **D — REQUIRES EXECUTABLE SPIKE IN 6C-C** | documentation is insufficient to claim it |
@@ -545,11 +545,11 @@ This is an internal execution decomposition only; it does not replace the adopte
 
 **Work:** this contract, current official platform research, decision classification, failure/reconciliation model.
 
-**Exit:** independent review confirms repository authority preserved; owner explicitly approves/rejects the category-C choices; contract/state changes are merged. No executable Evidence implementation is required for 6C-A exit.
+**Exit:** independent review confirms repository authority preserved; the three category-C decisions are owner-approved; contract/state changes are merged. No executable Evidence implementation is required for 6C-A exit.
 
 ### 6C-B — Runtime-neutral Evidence orchestration + host regressions
 
-**Entry:** 6C-A contract merged and required category-C owner decisions resolved.
+**Entry:** 6C-A contract merged and category-C owner decisions resolved.
 
 **Work:** runtime-neutral source/storage ports and orchestration only; fake/in-memory test adapters; host regression coverage for ordering, owner preflight + trigger mapping, cancellation, stage/publish failure, SQLite failures, uncertain COMMIT convergence, orphan reconciliation, missing references, and bounded-memory contract seams.
 
@@ -594,18 +594,20 @@ Verified points used by this contract:
 - Official documentation does **not** establish that `copy` accepts every required `content://` source with the required bounded-memory semantics, nor does it promise atomicity for `rename`; those claims are deliberately deferred to executable spikes.
 - Android's official Storage Access Framework provides `ACTION_OPEN_DOCUMENT` for user-selected generic files and returns document URIs suitable for stream access.
 
-## 24. 6C-A owner-review items and stop rule
+## 24. 6C-A owner-approved decisions and stop rule
 
-The only policy choices this document intentionally leaves pending owner approval are:
+The Project Owner explicitly approved the three category-C project decisions on `2026-09-10`:
 
-1. exact canonical `storage_ref` grammar (`evidence/v1/objects/<uuid-v4>.<safe-extension>`);
-2. exact UUID-v4 object-token convention;
-3. proposed requirement that every newly committed Gate-6C Evidence object carry a SHA-256 digest in `sha256:<lowercase-hex>` form.
+1. canonical committed `storage_ref`: `evidence/v1/objects/<uuid-v4>.<safe-extension>`, with staging `evidence/v1/.incoming/<uuid-v4>.part`;
+2. canonical lowercase UUID v4 as the v1 object-token convention;
+3. mandatory SHA-256 for every newly committed Gate-6C Evidence object, stored as `sha256:<64 lowercase hexadecimal characters>`, while historical/pre-Gate-6C `content_hash = NULL` rows remain valid.
 
-No numeric permanent file-size limit is proposed.
+These three choices are now **OWNER_APPROVED / ADOPTED PROJECT decisions** and are no longer pending.
+
+No numeric permanent file-size limit is approved or proposed by this decision.
 
 No third-party generic picker is selected.
 
 No claim is made that Capacitor Filesystem `copy(content://...)` or `rename(...)` already proves the required large-file/atomic-publication semantics.
 
-**STOP CONDITION:** 6C-B must not begin from this design branch. It begins only under a separate scoped authorization after 6C-A review and required owner decisions.
+**STOP CONDITION:** 6C-B must not begin from this design branch. It begins only under a separate scoped authorization after 6C-A independent review and merge of the reviewed 6C-A contract/state changes.

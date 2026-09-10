@@ -50,7 +50,13 @@ Governing design artifact on the Gate-6C-A branch:
 
 `docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md`
 
-Gate 6C-A does not implement Camera, Filesystem, file picker, Evidence orchestration, UI, APK, or physical-device behavior. Proposed policy decisions explicitly marked `PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED` are pending review and are **not owner-approved merely by being documented**.
+Project Owner approval recorded on `2026-09-10` for all three category-C Gate-6C-A decisions:
+
+1. canonical committed `storage_ref`: `evidence/v1/objects/<uuid-v4>.<safe-extension>`, with staging `evidence/v1/.incoming/<uuid-v4>.part`;
+2. canonical lowercase UUID v4 object token;
+3. mandatory SHA-256 for every newly committed Gate-6C Evidence object in `sha256:<64 lowercase hexadecimal characters>` form, while historical/pre-Gate-6C `content_hash = NULL` remains valid.
+
+These three decisions are now **`OWNER_APPROVED / ADOPTED`** and are no longer pending. Gate 6C-A still does not implement Camera, Filesystem, file picker, Evidence orchestration, UI, APK, or physical-device behavior.
 
 Gate 6C-B / 6C-C / 6C-D have not started.
 
@@ -192,6 +198,7 @@ Gate 6C-A is design-only and introduces no new executable test baseline.
 - Q12 classifier semantics لم تُضعف.
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
 - Gate 6C **IN_PROGRESS** فقط ضمن sub-stage `6C-A DESIGN_REVIEW`؛ ليست CLOSED.
+- Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
 - Gate 6D **LATER / NOT_STARTED**.
 
 ## 8) الحالة التالية
@@ -200,8 +207,8 @@ Gate 6C-A is design-only and introduces no new executable test baseline.
 
 قبل بدء 6C-B يجب:
 
-1. مراجعة artifact الفعلي لـGate 6C-A؛
-2. اعتماد/رفض قرارات `PROPOSED PROJECT DECISION — OWNER APPROVAL REQUIRED` صراحةً؛
+1. مراجعة artifact الفعلي لـGate 6C-A مراجعة مستقلة؛
+2. التحقق من أن القرارات الثلاثة المسجلة تطابق موافقة المالك ولا توسّع النطاق؛
 3. دمج عقد 6C-A وحالة المشروع بعد المراجعة/موافقة المالك؛
 4. إصدار scope/authorization مستقل لـ6C-B.
 

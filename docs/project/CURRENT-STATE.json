@@ -12,6 +12,7 @@
     "last_gate6b_merge_title": "Merge Gate 6B Android SQLite adapter physical qualification",
     "last_gate6b_pr": 17,
     "gate6c_a_design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
+    "gate6c_a_owner_approval_at": "2026-09-10T10:27:00+01:00",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -307,7 +308,16 @@
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
     "implementation_started": false,
-    "proposed_project_decisions_owner_approval": "PENDING_REVIEW",
+    "project_decisions_owner_approval": "APPROVED_2026-09-10",
+    "owner_approved_project_decisions": {
+      "approved_at": "2026-09-10T10:27:00+01:00",
+      "storage_ref_grammar": "evidence/v1/objects/<uuid-v4>.<safe-extension>",
+      "staging_ref_grammar": "evidence/v1/.incoming/<uuid-v4>.part",
+      "object_token": "UUID_V4_CANONICAL_LOWERCASE",
+      "new_evidence_hash_policy": "SHA256_REQUIRED",
+      "content_hash_format": "sha256:<64 lowercase hexadecimal characters>",
+      "historical_null_content_hash_valid": true
+    },
     "gate6c_b_started": false,
     "gate6c_c_started": false,
     "gate6c_d_started": false,
@@ -321,11 +331,11 @@
     "current_substage": "6C-A",
     "current_substage_status": "DESIGN_REVIEW"
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_DESIGN_REVIEW",
+  "gate_6c_status": "IN_PROGRESS_6C_A_DESIGN_REVIEW_OWNER_DECISIONS_APPROVED",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A DESIGN_REVIEW",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A DESIGN_REVIEW / OWNER DECISIONS APPROVED",
     "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",

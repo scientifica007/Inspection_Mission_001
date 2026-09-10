@@ -41,7 +41,13 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Install exact public Android native toolchain
-        run: sdkmanager "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
 
       - name: Install exact dependencies
         run: npm ci
@@ -220,7 +226,13 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Install exact public Android native toolchain
-        run: sdkmanager "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
       - name: Install exact dependencies
         run: npm ci
       - name: Build web assets and sync Android plugins
@@ -282,7 +294,13 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Install exact public Android native toolchain
-        run: sdkmanager "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
       - name: Install exact dependencies
         run: npm ci
       - name: Build web assets and sync Android plugins

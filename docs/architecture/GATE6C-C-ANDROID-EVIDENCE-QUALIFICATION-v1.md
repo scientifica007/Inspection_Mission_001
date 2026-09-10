@@ -12,7 +12,7 @@ Gate 6C-C qualifies Android Camera/gallery/generic-file acquisition seams and du
 
 The adopted publication candidate is the composite guarded Android `Os.rename` sequence in `Gate6CEvidenceStore`: allocate a fresh canonical destination, preflight destination absence, stage and hash a complete object, check destination absence again immediately before publication, execute `Os.rename`, verify the published object, then rely on the closed application transaction/reconciliation protocol for cross-store convergence.
 
-Its exact concurrency/threat boundary is the Gate-6C-A boundary: in-contract Evidence maintenance/write operations are serialized by the shared single-process Evidence boundary and storage is app-private. It does **not** claim syscall-level `RENAME_NOREPLACE` protection against privileged/root/direct external filesystem mutation or arbitrary out-of-contract concurrent writers. SQLite's transactional `storage_ref` recheck, startup reconciliation, and hash verification remain part of the composite safety model.
+Its exact concurrency/threat boundary is the Gate-6C-A boundary: in-contract Evidence maintenance/write operations are serialized by the shared single-process Evidence boundary and storage is app-private. It does **not** claim syscall-level `RENAME_NOREPLACE` protection against privileged/root/direct external filesystem mutation or arbitrary out-of-contract concurrent writers. `Os.rename` itself is not claimed to be a no-replace primitive; the no-overwrite/no-reuse and complete-object publication properties are qualified as properties of the supported composite application/storage protocol and its executable API24/API35 tests. SQLite's transactional `storage_ref` recheck, startup reconciliation, and hash verification remain part of the composite safety model.
 
 ## 2. Native Evidence qualification
 
@@ -78,7 +78,7 @@ Focused production-build result: **`WEB_RUNTIME_COMPATIBILITY_SPIKE_PASS`**.
 
 - **`RENAMEAT2_NOREPLACE_REJECTED_FOR_API24_BASELINE`** — API24 executable result: **`ENOSYS (38)`**. The JNI/C syscall candidate is rejected and removed from production.
 - Android `Os.link` — **REJECTED / `EACCES`**. It is not the production publication primitive.
-- **`FILESYSTEM_PLUGIN_REJECTED_FOR_EVIDENCE_STORAGE`** — `@capacitor/filesystem@8.1.3` did not expose a primitive-level no-replace publication contract sufficient for the EvidenceStorage publication proof. It is removed from `package.json` and `package-lock.json`; final Capacitor sync must not load Filesystem.
+- **`FILESYSTEM_PLUGIN_REJECTED_FOR_EVIDENCE_STORAGE`** — the official `@capacitor/filesystem@8.1.3` candidate was not adopted because its exposed API did not provide sufficient executable evidence for the full Gate-6C `EvidenceStorage` publication contract required by the project, while the qualified narrow Android adapter proved the complete supported contract on API24/API35. This is a project selection result, not a claim that the Filesystem plugin is intrinsically unsafe and not a claim that Gate 6C-A requires a primitive-level `RENAME_NOREPLACE` operation. Filesystem is removed from `package.json` and `package-lock.json`; final Capacitor sync must not load it.
 
 ## 7. Security, permissions, and qualification limit
 
@@ -91,6 +91,6 @@ Focused production-build result: **`WEB_RUNTIME_COMPATIBILITY_SPIKE_PASS`**.
 
 ## 8. Candidate disposition
 
-Gate 6C remains **IN_PROGRESS**. Gate 6C-A and Gate 6C-B remain **CLOSED / MERGED**. Gate 6C-C advances only to **IN_PROGRESS / IMPLEMENTATION_REVIEW** with `gate6c_c_started = true`. Gate 6C-D and Gate 6D remain **NOT_STARTED**.
+Gate 6C remains **IN_PROGRESS**. Gate 6C-A and Gate 6C-B remain **CLOSED / MERGED**. Gate 6C-C advances only to **IN_PROGRESS / IMPLEMENTATION_REVIEW** with canonical nested `gate_6c.gate6c_c_started = true`. Gate 6C-D and Gate 6D remain **NOT_STARTED**.
 
 A completely new exact-final-SHA CI run is required after cleanup, dependency removal, workflow removal, proof, and state update. Final run/APK artifact identifiers are reported in the implementation handoff rather than embedded here because this document itself is part of the SHA that the final run qualifies.

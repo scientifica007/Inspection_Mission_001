@@ -48,6 +48,7 @@ check(
 );
 
 console.log("DISPOSITION: FILESYSTEM_PLUGIN_REJECTED_FOR_EVIDENCE_STORAGE");
-console.log("RATIONALE: the earlier executable candidate spike established that Filesystem 8.1.3 did not expose a primitive-level no-replace publication contract; final Gate 6C-C production dependencies therefore exclude it.");
+console.log("RATIONALE: the official Filesystem candidate was not adopted because its exposed API did not provide sufficient executable evidence for the full Gate-6C EvidenceStorage publication contract required by the project, while the qualified narrow Android adapter proved the complete supported contract on API24/API35.");
+console.log("SCOPE: this is a project selection result, not a claim that the Filesystem plugin is intrinsically unsafe and not a claim that Gate 6C-A requires a primitive-level RENAME_NOREPLACE operation.");
 console.log(`Gate 6C-C Filesystem rejection guard: ${passed} passed, ${failed} failed`);
 if (failed !== 0) process.exitCode = 1;

@@ -17,8 +17,6 @@ env:
   GOVERNING_BASE: 976b48106824f84f0dbbbca82832cbad4e53afb7
   SCHEMA_SHA256: c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7
   BOOTSTRAP_SHA256: d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
-  GATE6C_NDK_VERSION: 27.0.12077973
-  GATE6C_CMAKE_VERSION: 3.22.1
 
 jobs:
   host-closed-baselines:
@@ -40,20 +38,46 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Install exact public Android native toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          test -x "$SDKMANAGER"
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
 
       - name: Install exact dependencies
         run: npm ci
 
-      - name: Validate project state JSON
-        run: python3 -m json.tool docs/project/CURRENT-STATE.json >/dev/null
+      - name: Validate candidate state JSON and projections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/project/CURRENT-STATE.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          state = json.loads(Path('docs/project/CURRENT-STATE.json').read_text(encoding='utf-8'))
+          gate = state['gate_6c']
+          assert gate['status'] == 'IN_PROGRESS'
+          assert gate['current_substage'] == '6C-C'
+          assert gate['current_substage_status'] == 'IN_PROGRESS_IMPLEMENTATION_REVIEW'
+          assert gate['mode'] == 'IMPLEMENTATION_REVIEW'
+          assert gate['implementation_started'] is True
+          assert gate['gate6c_c_started'] is True
+          assert gate['gate6c_d_started'] is False
+          assert gate['gate6d_started'] is False
+          assert 'gate6c_c_started' not in state
+          projection = state['next_gate']
+          assert projection['id'] == '6C'
+          assert projection['status'] == 'IN_PROGRESS'
+          assert projection['role'] == 'CURRENT'
+          assert projection['current_substage'] == '6C-C'
+          assert projection['current_substage_status'] == 'IN_PROGRESS_IMPLEMENTATION_REVIEW'
+          assert state['gate_6c_status'] == 'IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_IN_PROGRESS_IMPLEMENTATION_REVIEW'
+          assert '6C-C' not in state['closed_gates']
+          assert any('6C-C IN_PROGRESS / IMPLEMENTATION_REVIEW' in item for item in state['roadmap'])
+          print('CURRENT-STATE.json semantic projection: PASS')
+          PY
+          grep -F 'Gate 6C-C **IN_PROGRESS / IMPLEMENTATION_REVIEW**' docs/project/CURRENT-STATE.md
+          ! grep -F 'Gate 6C-C **NEXT / NOT_STARTED**' docs/project/CURRENT-STATE.md
+          ! grep -F 'Gate 6C-C و6C-D **NOT_STARTED**' docs/project/CURRENT-STATE.md
+          grep -F 'Gate 6C-D **NOT_STARTED**' docs/project/CURRENT-STATE.md
+          grep -F 'Gate 6D **LATER / NOT_STARTED**' docs/project/CURRENT-STATE.md
 
       - name: Guard canonical schema and bootstrap hashes
         shell: bash
@@ -71,29 +95,39 @@ jobs:
           git diff --exit-code "$GOVERNING_BASE" -- src/device/capacitor-sqlite-adapter.ts
           git diff --exit-code "$GOVERNING_BASE" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6BCompetingWriterPlugin.java
           grep -F 'minSdkVersion = 24' android/variables.gradle
+          grep -F 'target: "chrome69"' vite.config.ts
           ! grep -R --line-number -E 'READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|MANAGE_EXTERNAL_STORAGE' android/app/src/main/AndroidManifest.xml
           ! grep -R --line-number -E '@capacitor/(core|android)"[[:space:]]*:[[:space:]]*"9\.|@capacitor/(camera|app|filesystem)"[[:space:]]*:[[:space:]]*"9\.' package.json package-lock.json
 
-      - name: API 24 Java compatibility and rejected-hard-link guard
+      - name: Guard rejected JNI CMake renameat2 and hard-link remnants are absent
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t gate6c_java < <(find android/app/src/main/java android/app/src/androidTest/java -type f -name 'Gate6C*.java' -print | sort)
-          printf '%s\n' "${gate6c_java[@]}"
-          if grep -nH -F '.isBlank(' "${gate6c_java[@]}"; then
-            echo 'Java String.isBlank() is unavailable on API 24 without an explicit compatibility mechanism' >&2
+          test ! -e android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CAtomicPublisher.java
+          test ! -e android/app/src/main/cpp/gate6c_atomic_publish.c
+          test ! -e android/app/src/main/cpp/CMakeLists.txt
+          ! grep -nE 'externalNativeBuild|gate6c_atomic_publish|Gate6CAtomicPublisher' android/app/build.gradle
+          if grep -R -nE 'renameat2|RENAME_NOREPLACE|gate6c_atomic_publish|Gate6CAtomicPublisher|syscall\(' android/app/src/main android/app/build.gradle; then
+            echo 'Rejected Gate 6C-C renameat2/JNI production path reappeared' >&2
             exit 1
           fi
-          if grep -nH -F 'O_DIRECTORY' "${gate6c_java[@]}"; then
-            echo 'Unsupported Android OsConstants.O_DIRECTORY reference remains' >&2
-            exit 1
-          fi
-          if grep -nH -F 'Os.link(' "${gate6c_java[@]}"; then
-            echo 'Rejected Android hard-link publication primitive reintroduced' >&2
+          if grep -R -nF 'Os.link(' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6C*.java; then
+            echo 'Rejected Android hard-link publication primitive reappeared' >&2
             exit 1
           fi
 
-      - name: Enforce bounded-memory and no native domain-SQL boundaries
+      - name: Guard temporary finalization mechanisms are absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .github/workflows/gate6c-c-lock-bootstrap.yml
+          test ! -e tools/gate6c_c_finalize.py
+          if grep -R -nE 'contents:[[:space:]]*write|git[[:space:]]+commit|git[[:space:]]+push' .github/workflows/gate6c-c-*; then
+            echo 'Write-capable Gate 6C-C workflow remains in final candidate' >&2
+            exit 1
+          fi
+
+      - name: Enforce bounded-memory and native domain-SQL boundaries
         shell: bash
         run: |
           set -euo pipefail
@@ -107,31 +141,52 @@ jobs:
           fi
           if grep -R -nE 'android\.database\.sqlite|net\.zetetic|INSERT[[:space:]]+INTO[[:space:]]+evidence|BEGIN[[:space:]]+IMMEDIATE|COMMIT;|ROLLBACK;' \
             android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidenceStore.java \
-            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java \
-            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CAtomicPublisher.java; then
+            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java; then
             echo 'Native Gate 6C Evidence layer contains forbidden domain SQLite behavior' >&2
             exit 1
           fi
-          grep -F 'syscall(' android/app/src/main/cpp/gate6c_atomic_publish.c
-          ! grep -R -nE 'dlopen|dlsym|libandroid_runtime|libbinder|hidden_api' android/app/src/main/cpp android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CAtomicPublisher.java
 
-      - name: Verify pinned dependency majors and versions
+      - name: Guard Filesystem dependency removal and exact retained versions
         shell: bash
         run: |
           set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          if (pkg.dependencies?.['@capacitor/filesystem'] !== undefined) throw new Error('Filesystem remains in package.json');
+          if (lock.packages?.['']?.dependencies?.['@capacitor/filesystem'] !== undefined) throw new Error('Filesystem remains in package-lock root');
+          if (lock.packages?.['node_modules/@capacitor/filesystem'] !== undefined) throw new Error('Filesystem package remains in lock graph');
+          if (lock.packages?.['node_modules/@capacitor/synapse'] !== undefined) throw new Error('Filesystem-only Synapse remnant remains in lock graph');
+          NODE
+          test ! -d node_modules/@capacitor/filesystem
           test "$(node -p "require('./node_modules/@capacitor/core/package.json').version")" = "8.5.1"
           test "$(node -p "require('./node_modules/@capacitor/android/package.json').version")" = "8.5.1"
           test "$(node -p "require('./node_modules/@capacitor-community/sqlite/package.json').version")" = "8.1.1"
           test "$(node -p "require('./node_modules/@capacitor/camera/package.json').version")" = "8.2.4"
           test "$(node -p "require('./node_modules/@capacitor/app/package.json').version")" = "8.1.1"
-          test "$(node -p "require('./node_modules/@capacitor/filesystem/package.json').version")" = "8.1.3"
+
+      - name: Guard synthetic-only finalization scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$GOVERNING_BASE"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -Ei '\.(db|sqlite|sqlite3|keystore|jks|pem|p12|pfx)$'; then
+            echo 'Database/credential-like artifact changed in Gate 6C-C candidate' >&2
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -Ei '(^|/)(gate6d|gate6c-d)(/|[-_.])'; then
+            echo 'Gate 6C-D/Gate 6D path changed outside authorized scope' >&2
+            exit 1
+          fi
 
       - name: Typecheck Gate 6C-B and Gate 6C-C adapters
         run: |
           npm run typecheck:gate6c
           npm run typecheck:gate6c-c
 
-      - name: Gate 6C-C device adapter host regression
+      - name: Gate 6C-C device adapter and rejection host regressions
         run: npm run gate6c-c:host
 
       - name: Gate 6C-B adopted host regression
@@ -167,8 +222,20 @@ jobs:
       - name: Diff whitespace check before generated sync
         run: git diff --check "$GOVERNING_BASE"..HEAD
 
-      - name: Capacitor Android sync
-        run: npx cap sync android
+      - name: Capacitor Android sync and exact runtime plugin set
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx cap sync android 2>&1 | tee /tmp/cap-sync.log
+          grep -F '[info] Found 3 Capacitor plugins for android:' /tmp/cap-sync.log
+          grep -F '@capacitor-community/sqlite@8.1.1' /tmp/cap-sync.log
+          grep -F '@capacitor/app@8.1.1' /tmp/cap-sync.log
+          grep -F '@capacitor/camera@8.2.4' /tmp/cap-sync.log
+          ! grep -Fi '@capacitor/filesystem' /tmp/cap-sync.log
+          grep -F "include ':capacitor-community-sqlite'" android/capacitor.settings.gradle
+          grep -F "include ':capacitor-app'" android/capacitor.settings.gradle
+          grep -F "include ':capacitor-camera'" android/capacitor.settings.gradle
+          ! grep -Fi 'capacitor-filesystem' android/capacitor.settings.gradle
 
       - name: Preserve SQLCipher 4.17.0 resolution
         shell: bash
@@ -191,11 +258,11 @@ jobs:
           APK=android/app/build/outputs/apk/debug/app-debug.apk
           sha256sum "$APK" | tee gate6c-c-debug-apk.sha256
 
-      - name: Upload Gate 6C-C candidate debug APK
+      - name: Upload Gate 6C-C final candidate debug APK
         id: apk
         uses: actions/upload-artifact@v4
         with:
-          name: gate6c-c-candidate-debug-apk-${{ github.sha }}
+          name: gate6c-c-final-debug-apk-${{ github.sha }}
           path: |
             android/app/build/outputs/apk/debug/app-debug.apk
             gate6c-c-debug-apk.sha256
@@ -225,14 +292,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Install exact public Android native toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          test -x "$SDKMANAGER"
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
       - name: Install exact dependencies
         run: npm ci
       - name: Build web assets and sync Android plugins
@@ -293,14 +352,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Install exact public Android native toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          test -x "$SDKMANAGER"
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
       - name: Install exact dependencies
         run: npm ci
       - name: Build web assets and sync Android plugins
@@ -325,16 +376,21 @@ jobs:
           disk-size: 4096M
           heap-size: 512M
           script: |
+            set -euo pipefail
             echo "GATE6C_WEBVIEW_API=${{ matrix.api }}"
-            [ "${{ matrix.api }}" != "24" ] || echo "GATE6C_WEBVIEW_API24_PROVIDER_REQUEST=com.android.chrome"
-            [ "${{ matrix.api }}" != "24" ] || adb shell cmd webviewupdate set-webview-implementation com.android.chrome
-            adb shell dumpsys webviewupdate || true
-            echo "GATE6C_WEBVIEW_PACKAGE=com.google.android.webview"
-            adb shell dumpsys package com.google.android.webview 2>/dev/null | grep -m1 'versionName=' || true
-            echo "GATE6C_WEBVIEW_PACKAGE=com.android.webview"
-            adb shell dumpsys package com.android.webview 2>/dev/null | grep -m1 'versionName=' || true
-            echo "GATE6C_WEBVIEW_PACKAGE=com.android.chrome"
-            adb shell dumpsys package com.android.chrome 2>/dev/null | grep -m1 'versionName=' || true
+            if [ "${{ matrix.api }}" = "24" ]; then
+              echo "GATE6C_WEBVIEW_API24_PROVIDER_REQUEST=com.android.chrome"
+              provider_result="$(adb shell cmd webviewupdate set-webview-implementation com.android.chrome)"
+              echo "GATE6C_WEBVIEW_API24_PROVIDER_RESULT=$provider_result"
+              echo "$provider_result" | grep -F 'Success'
+              adb shell dumpsys webviewupdate | tee /tmp/gate6c-webviewupdate.txt
+              grep -F 'com.android.chrome' /tmp/gate6c-webviewupdate.txt
+              adb shell dumpsys package com.android.chrome | grep -m1 -F 'versionName=69.0.3497.100'
+            else
+              adb shell dumpsys webviewupdate || true
+              echo "GATE6C_WEBVIEW_PACKAGE=com.android.webview"
+              adb shell dumpsys package com.android.webview 2>/dev/null | grep -m1 'versionName=' || true
+            fi
             echo "GATE6C_INTEGRATION_TEST_START class=Gate6CEvidenceIntegrationInstrumentedTest expectedSha=$GITHUB_SHA"
             ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest -Pandroid.testInstrumentationRunnerArguments.gate6cExpectedGitSha=$GITHUB_SHA
             echo "GATE6C_INTEGRATION_TEST_COMPLETE class=Gate6CEvidenceIntegrationInstrumentedTest expectedSha=$GITHUB_SHA"

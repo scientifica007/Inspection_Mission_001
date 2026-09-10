@@ -20,14 +20,42 @@
     "gate6c_b_initial_checkpoint_sha": "64b424670ea4384b7e9d6c01eea952c201a573d7",
     "gate6c_b_corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
     "gate6c_b_corrected_executable_ci_run": 34483510338,
-    "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
+    "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first.",
+    "last_gate6c_b_pr": 21,
+    "last_gate6c_b_reviewed_head": "ea88fac83d60b99b7d50828915173d3aa14bb5d6",
+    "last_gate6c_b_merge_sha": "7418df4fc03b9b6017cbeb588eb6ae76bd560be2",
+    "last_gate6c_b_final_head_ci_run": 34484231771
   },
   "traceability": {
     "DIRECT": "Explicitly stated in an official source.",
     "DERIVED": "Executable/technical consequence derived from an official requirement.",
     "PROJECT": "Explicit project-owner decision or requirement; must not be attributed to official sources."
   },
-  "closed_gates": ["1","2","3","4","4A","4B","4-Revision-6","5A","5B","5C","5D","5E","5F","5G","5H","5I","5J","5K","5L","6A","6B","6C-A"],
+  "closed_gates": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "4A",
+    "4B",
+    "4-Revision-6",
+    "5A",
+    "5B",
+    "5C",
+    "5D",
+    "5E",
+    "5F",
+    "5G",
+    "5H",
+    "5I",
+    "5J",
+    "5K",
+    "5L",
+    "6A",
+    "6B",
+    "6C-A",
+    "6C-B"
+  ],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
       "status": "MERGED_RESOLVED",
@@ -41,7 +69,11 @@
   },
   "application_core": {
     "status": "CLOSED",
-    "coverage": ["T0-T11","OBS-1","currentVisitState/restart reconstruction"],
+    "coverage": [
+      "T0-T11",
+      "OBS-1",
+      "currentVisitState/restart reconstruction"
+    ],
     "authoritative_store": "SQLite 3",
     "process_memory_authoritative": false
   },
@@ -51,7 +83,10 @@
     "triggers": 44,
     "views": 1,
     "explicit_indexes": 24,
-    "schema_regression": {"passed": 100, "failed": 0}
+    "schema_regression": {
+      "passed": 100,
+      "failed": 0
+    }
   },
   "product_architecture": {
     "status": "ADOPTED",
@@ -147,11 +182,19 @@
         "phase_a_timestamp": "2026-09-09T20:38:14.309Z",
         "phase_a_overall": "DEVICE_PROOF_READY",
         "phase_a_visit": 1,
-        "phase_a_zero_write": {"before": 121, "after": 121, "delta": 0},
+        "phase_a_zero_write": {
+          "before": 121,
+          "after": 121,
+          "delta": 0
+        },
         "phase_b_timestamp": "2026-09-09T20:41:35.702Z",
         "phase_b_overall": "PASS",
         "phase_b_visit": 1,
-        "phase_b_zero_write": {"before": 0, "after": 0, "delta": 0},
+        "phase_b_zero_write": {
+          "before": 0,
+          "after": 0,
+          "delta": 0
+        },
         "state_hash_sha256": "9d7ab85b68ded94d02fc63e55d765f40f25f1d041e42a506ed7cb3b6cd52f405",
         "real_force_stop": true,
         "visit_rediscovered_from_sqlite_only": 1,
@@ -165,7 +208,13 @@
         "q12_target_sha": "87135cfe80ae3de79a34e941828249fc6889139c",
         "same_binary": false,
         "basis": "Evidence reuse is accepted because the relevant Application-Core, bootstrap, primary-adapter and canonical-authority paths did not drift between the tested runtime states; this does not assert binary identity.",
-        "unchanged_paths": ["src/application/**","src/bootstrap/**","src/device/capacitor-sqlite-adapter.ts","docs/schema/schema.sql","bootstrap/v1/checklist-v1.json"],
+        "unchanged_paths": [
+          "src/application/**",
+          "src/bootstrap/**",
+          "src/device/capacitor-sqlite-adapter.ts",
+          "docs/schema/schema.sql",
+          "bootstrap/v1/checklist-v1.json"
+        ],
         "application_core_retest_required": false,
         "restart_phase_a_b_retest_required": false
       },
@@ -194,7 +243,7 @@
       "q12_native_open_blocked_c3cc": {
         "tested_sha": "c3cc890b35d7f9612214559f83d8091f98e96a68",
         "overall": "BLOCKED",
-        "q1_q11": "PASS",
+        "q1_q7": "PASS",
         "q12": "BLOCKED",
         "q12_stage": "native_open",
         "q12_detail": "Error",
@@ -234,12 +283,25 @@
       "busy_timeout_transport": "QUERY_RAWQUERY_SCALARLONG_SET_AND_INDEPENDENT_READBACK",
       "busy_timeout_setter_must_return_zero": true,
       "busy_timeout_readback_must_return_zero": true,
-      "native_lock_classification": ["SQLITE_BUSY/SQLiteDatabaseLockedException","SQLITE_LOCKED/SQLiteTableLockedException"],
+      "native_lock_classification": [
+        "SQLITE_BUSY/SQLiteDatabaseLockedException",
+        "SQLITE_LOCKED/SQLiteTableLockedException"
+      ],
       "physical_result": "PASS_ON_87135CFE_REVIEW_ACCEPTED",
       "diagnostic_hardening": {
         "status": "IMPLEMENTED",
         "preserves_error_name_message_code": true,
-        "native_open_stages": ["validate_target","load_sqlcipher","open_database","set_busy_timeout","read_busy_timeout","read_sqlite_version","database_list","same_file_check","probe_table_read"],
+        "native_open_stages": [
+          "validate_target",
+          "load_sqlcipher",
+          "open_database",
+          "set_busy_timeout",
+          "read_busy_timeout",
+          "read_sqlite_version",
+          "database_list",
+          "same_file_check",
+          "probe_table_read"
+        ],
         "linkage_error_handled": true,
         "q12_semantics_weakened": false
       }
@@ -251,10 +313,10 @@
     "id": "6C",
     "name": "Evidence Storage + Camera/File Pipeline",
     "status": "IN_PROGRESS",
-    "current_substage": "6C-B",
-    "current_substage_name": "Runtime-neutral Evidence orchestration + host regressions",
-    "current_substage_status": "IMPLEMENTATION_REVIEW",
-    "mode": "IMPLEMENTATION_REVIEW",
+    "current_substage": "6C-C",
+    "current_substage_name": "Android Camera/File + durable EvidenceStorage adapters",
+    "current_substage_status": "NEXT_NOT_STARTED",
+    "mode": "IMPLEMENTATION_NOT_STARTED",
     "design_branch": "design/gate6c-evidence-contract-v1",
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
@@ -286,18 +348,29 @@
       "closure_status": "CLOSED_MERGED"
     },
     "gate6c_b": {
-      "status": "IN_PROGRESS",
-      "review_status": "IMPLEMENTATION_REVIEW",
+      "status": "CLOSED",
+      "review_status": "MERGE_READY",
       "implementation_branch": "implementation/gate6c-b-evidence-orchestration-v1",
       "governing_base_sha": "953610be8815725bb55bbdc62ac2ca375ee4ffa3",
       "initial_checkpoint_sha": "64b424670ea4384b7e9d6c01eea952c201a573d7",
       "corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
       "corrected_executable_ci_run": 34483510338,
       "corrected_executable_ci_conclusion": "SUCCESS",
-      "host_regression": {"passed": 85, "failed": 0},
-      "evidence_classification": "CURRENT_CANDIDATE_BRANCH_EVIDENCE",
-      "closed": false,
-      "merged": false
+      "host_regression": {
+        "passed": 85,
+        "failed": 0
+      },
+      "evidence_classification": "ADOPTED_BY_CLOSED_GATE6C_B",
+      "closed": true,
+      "merged": true,
+      "final_reviewed_head": "ea88fac83d60b99b7d50828915173d3aa14bb5d6",
+      "final_head_ci_run": 34484231771,
+      "final_head_ci_conclusion": "SUCCESS",
+      "pr": 21,
+      "merge_sha": "7418df4fc03b9b6017cbeb588eb6ae76bd560be2",
+      "independent_review_verdict": "MERGE_READY",
+      "owner_merge_approval": true,
+      "closure_status": "CLOSED_MERGED"
     }
   },
   "next_gate": {
@@ -305,14 +378,14 @@
     "name": "Evidence Storage + Camera/File Pipeline",
     "status": "IN_PROGRESS",
     "role": "CURRENT",
-    "current_substage": "6C-B",
-    "current_substage_status": "IMPLEMENTATION_REVIEW"
+    "current_substage": "6C-C",
+    "current_substage_status": "NEXT_NOT_STARTED"
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_IMPLEMENTATION_REVIEW",
+  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_NEXT_NOT_STARTED",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B IMPLEMENTATION_REVIEW",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C NEXT / NOT_STARTED",
     "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",
@@ -322,29 +395,72 @@
   ],
   "field_usable_v1": false,
   "test_baselines": {
-    "gate6b_host_adapter_contract": {"passed": 16, "failed": 0},
-    "gate6b_schema_execution": {"passed": 8, "failed": 0},
-    "gate6b_q12_diagnostic_classifier": {"passed": 20, "failed": 0},
-    "gate5l": {"passed": 94, "failed": 0},
-    "gate5k": {"passed": 82, "failed": 0},
-    "gate5j": {"passed": 75, "failed": 0},
-    "gate5i": {"passed": 48, "failed": 0},
-    "gate5h": {"passed": 66, "failed": 0},
-    "gate5g": {"passed": 41, "failed": 0},
-    "gate5f": {"passed": 30, "failed": 0},
-    "gate5e": {"passed": 79, "failed": 0},
-    "gate5d": {"passed": 60, "failed": 0},
-    "gate5c": {"passed": 55, "failed": 0},
-    "gate5b": {"passed": 32, "failed": 0, "scope": "bootstrap/reference-data regression"},
-    "gate5b_adapter_normalization": {"passed": 6, "failed": 0},
-    "schema": {"passed": 100, "failed": 0}
-  },
-  "candidate_branch_evidence": {
-    "gate6c_b": {
-      "classification": "CURRENT_CANDIDATE_BRANCH_EVIDENCE",
-      "tested_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
-      "github_actions_run": 34483510338,
-      "conclusion": "SUCCESS",
+    "gate6b_host_adapter_contract": {
+      "passed": 16,
+      "failed": 0
+    },
+    "gate6b_schema_execution": {
+      "passed": 8,
+      "failed": 0
+    },
+    "gate6b_q12_diagnostic_classifier": {
+      "passed": 20,
+      "failed": 0
+    },
+    "gate5l": {
+      "passed": 94,
+      "failed": 0
+    },
+    "gate5k": {
+      "passed": 82,
+      "failed": 0
+    },
+    "gate5j": {
+      "passed": 75,
+      "failed": 0
+    },
+    "gate5i": {
+      "passed": 48,
+      "failed": 0
+    },
+    "gate5h": {
+      "passed": 66,
+      "failed": 0
+    },
+    "gate5g": {
+      "passed": 41,
+      "failed": 0
+    },
+    "gate5f": {
+      "passed": 30,
+      "failed": 0
+    },
+    "gate5e": {
+      "passed": 79,
+      "failed": 0
+    },
+    "gate5d": {
+      "passed": 60,
+      "failed": 0
+    },
+    "gate5c": {
+      "passed": 55,
+      "failed": 0
+    },
+    "gate5b": {
+      "passed": 32,
+      "failed": 0,
+      "scope": "bootstrap/reference-data regression"
+    },
+    "gate5b_adapter_normalization": {
+      "passed": 6,
+      "failed": 0
+    },
+    "schema": {
+      "passed": 100,
+      "failed": 0
+    },
+    "gate6c_b_evidence_host": {
       "passed": 85,
       "failed": 0
     }
@@ -354,6 +470,27 @@
     "bootstrap/v1/checklist-v1.json": "d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd"
   },
   "closed_gate_reopen_policy": "Only for a concrete reproducible executable contradiction; correction must be narrowly scoped and regressions rerun.",
-  "repository_exclusions": ["real inspection photos","real operational Evidence","personal or sensitive data","production SQLite databases","real operational inspection records","secrets and API keys","device serial numbers"],
-  "handoff_entrypoint": "START-HERE.md"
+  "repository_exclusions": [
+    "real inspection photos",
+    "real operational Evidence",
+    "personal or sensitive data",
+    "production SQLite databases",
+    "real operational inspection records",
+    "secrets and API keys",
+    "device serial numbers"
+  ],
+  "handoff_entrypoint": "START-HERE.md",
+  "closed_gate_evidence": {
+    "gate6c_b": {
+      "classification": "ADOPTED_BY_CLOSED_GATE6C_B",
+      "reviewed_head": "ea88fac83d60b99b7d50828915173d3aa14bb5d6",
+      "corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
+      "corrected_executable_ci_run": 34483510338,
+      "final_head_ci_run": 34484231771,
+      "pr": 21,
+      "merge_sha": "7418df4fc03b9b6017cbeb588eb6ae76bd560be2",
+      "passed": 85,
+      "failed": 0
+    }
+  }
 }

@@ -17,12 +17,14 @@ env:
   GOVERNING_BASE: 976b48106824f84f0dbbbca82832cbad4e53afb7
   SCHEMA_SHA256: c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7
   BOOTSTRAP_SHA256: d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
+  GATE6C_NDK_VERSION: 27.0.12077973
+  GATE6C_CMAKE_VERSION: 3.22.1
 
 jobs:
   host-closed-baselines:
     name: Host / closed baselines
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,6 +40,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Install exact public Android native toolchain
+        run: sdkmanager "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
 
       - name: Install exact dependencies
         run: npm ci
@@ -64,7 +68,7 @@ jobs:
           ! grep -R --line-number -E 'READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|MANAGE_EXTERNAL_STORAGE' android/app/src/main/AndroidManifest.xml
           ! grep -R --line-number -E '@capacitor/(core|android)"[[:space:]]*:[[:space:]]*"9\.|@capacitor/(camera|app|filesystem)"[[:space:]]*:[[:space:]]*"9\.' package.json package-lock.json
 
-      - name: API 24 Java compatibility audit for Gate 6C-C additions
+      - name: API 24 Java compatibility and rejected-hard-link guard
         shell: bash
         run: |
           set -euo pipefail
@@ -76,6 +80,10 @@ jobs:
           fi
           if grep -nH -F 'O_DIRECTORY' "${gate6c_java[@]}"; then
             echo 'Unsupported Android OsConstants.O_DIRECTORY reference remains' >&2
+            exit 1
+          fi
+          if grep -nH -F 'Os.link(' "${gate6c_java[@]}"; then
+            echo 'Rejected Android hard-link publication primitive reintroduced' >&2
             exit 1
           fi
 
@@ -93,10 +101,13 @@ jobs:
           fi
           if grep -R -nE 'android\.database\.sqlite|net\.zetetic|INSERT[[:space:]]+INTO[[:space:]]+evidence|BEGIN[[:space:]]+IMMEDIATE|COMMIT;|ROLLBACK;' \
             android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidenceStore.java \
-            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java; then
+            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java \
+            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CAtomicPublisher.java; then
             echo 'Native Gate 6C Evidence layer contains forbidden domain SQLite behavior' >&2
             exit 1
           fi
+          grep -F 'syscall(' android/app/src/main/cpp/gate6c_atomic_publish.c
+          ! grep -R -nE 'dlopen|dlsym|libandroid_runtime|libbinder|hidden_api' android/app/src/main/cpp android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CAtomicPublisher.java
 
       - name: Verify pinned dependency majors and versions
         shell: bash
@@ -174,22 +185,22 @@ jobs:
           APK=android/app/build/outputs/apk/debug/app-debug.apk
           sha256sum "$APK" | tee gate6c-c-debug-apk.sha256
 
-      - name: Upload Gate 6C-D-ready debug APK
+      - name: Upload Gate 6C-C candidate debug APK
         id: apk
         uses: actions/upload-artifact@v4
         with:
-          name: gate6c-d-ready-debug-apk-${{ github.sha }}
+          name: gate6c-c-candidate-debug-apk-${{ github.sha }}
           path: |
             android/app/build/outputs/apk/debug/app-debug.apk
             gate6c-c-debug-apk.sha256
           if-no-files-found: error
           retention-days: 30
 
-  android-emulator:
-    name: Android adapter proof / API ${{ matrix.api }}
+  android-native:
+    name: Android native Evidence proof / API ${{ matrix.api }}
     needs: host-closed-baselines
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -208,6 +219,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Install exact public Android native toolchain
+        run: sdkmanager "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
       - name: Install exact dependencies
         run: npm ci
       - name: Build web assets and sync Android plugins
@@ -221,7 +234,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Run native Gate 6C-C instrumentation suite
+      - name: Run native storage/publication instrumentation only
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api }}
@@ -231,12 +244,81 @@ jobs:
           disable-animations: true
           disk-size: 4096M
           heap-size: 512M
-          script: ./android/gradlew -p android connectedDebugAndroidTest
-      - name: Upload Android test reports
+          script: ./android/gradlew -p android connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceStoreInstrumentedTest
+      - name: Upload native Android test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gate6c-c-android-test-api-${{ matrix.api }}-${{ github.sha }}
+          name: gate6c-c-native-test-api-${{ matrix.api }}-${{ github.sha }}
+          path: |
+            android/app/build/reports/androidTests/connected/**
+            android/app/build/outputs/androidTest-results/connected/**
+          if-no-files-found: warn
+          retention-days: 30
+
+  android-integration:
+    name: Android full Evidence integration / API ${{ matrix.api }}
+    needs: android-native
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 24
+            arch: x86
+            target: google_apis
+          - api: 35
+            arch: x86_64
+            target: default
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install exact public Android native toolchain
+        run: sdkmanager "ndk;${GATE6C_NDK_VERSION}" "cmake;${GATE6C_CMAKE_VERSION}" >/dev/null
+      - name: Install exact dependencies
+        run: npm ci
+      - name: Build web assets and sync Android plugins
+        run: |
+          VITE_GIT_COMMIT="$GITHUB_SHA" npm run build
+          npx cap sync android
+      - name: Confirm API 24 contract floor remains configured
+        run: grep -F 'minSdkVersion = 24' android/variables.gradle
+      - name: Enable KVM group access
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run full JavaScript Capacitor EvidenceService integration
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: ${{ matrix.arch }}
+          target: ${{ matrix.target }}
+          profile: pixel_2
+          disable-animations: true
+          disk-size: 4096M
+          heap-size: 512M
+          script: |
+            echo "GATE6C_WEBVIEW_API=${{ matrix.api }}"
+            adb shell dumpsys webviewupdate || true
+            for pkg in com.google.android.webview com.android.webview com.android.chrome; do
+              echo "GATE6C_WEBVIEW_PACKAGE=$pkg"
+              adb shell dumpsys package "$pkg" 2>/dev/null | grep -m1 'versionName=' || true
+            done
+            ./android/gradlew -p android connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest
+      - name: Upload integration Android test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate6c-c-integration-test-api-${{ matrix.api }}-${{ github.sha }}
           path: |
             android/app/build/reports/androidTests/connected/**
             android/app/build/outputs/androidTest-results/connected/**

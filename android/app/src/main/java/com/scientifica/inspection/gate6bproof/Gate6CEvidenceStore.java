@@ -46,7 +46,7 @@ final class Gate6CEvidenceStore {
     enum PublishFault {
         NONE,
         BEFORE_FINAL_ENTRY,
-        AFTER_FINAL_ENTRY_BEFORE_STAGING_CLEANUP
+        AFTER_ATOMIC_PUBLICATION_BEFORE_DURABILITY_SYNC
     }
 
     static final class Allocation {
@@ -221,23 +221,24 @@ final class Gate6CEvidenceStore {
         final File staging = stagingFile(stagingRef);
         final File destination = finalFile(storageRef);
         if (!staging.isFile()) throw new FileNotFoundException("Complete staging object is missing");
-        if (fault == PublishFault.BEFORE_FINAL_ENTRY) throw new IOException("TEST_ONLY: interrupted before final entry creation");
+        if (fault == PublishFault.BEFORE_FINAL_ENTRY) throw new IOException("TEST_ONLY: interrupted before atomic publication");
 
-        try {
-            // POSIX hard-link creation is same-filesystem and fails with EEXIST rather than replacing a destination.
-            Os.link(staging.getAbsolutePath(), destination.getAbsolutePath());
-            fsyncDirectory(objectsDir);
-        } catch (ErrnoException e) {
-            throw new IOException("Final publication failed without replacement", e);
+        final long stagedLength = staging.length();
+        final int publishErrno = Gate6CAtomicPublisher.renameNoReplace(staging, destination);
+        if (publishErrno != 0) {
+            throw new IOException("Atomic no-replace publication failed: errno=" + publishErrno);
         }
+
+        if (fault == PublishFault.AFTER_ATOMIC_PUBLICATION_BEFORE_DURABILITY_SYNC) {
+            throw new IOException("TEST_ONLY: interrupted after atomic publication before directory durability sync");
+        }
+
+        fsyncDirectory(objectsDir);
+        fsyncDirectory(incomingDir);
 
         final HashResult published = hashFile(destination);
-        if (published.bytes != staging.length()) throw new IOException("Published object length differs from complete staging object");
-        if (fault == PublishFault.AFTER_FINAL_ENTRY_BEFORE_STAGING_CLEANUP) {
-            throw new IOException("TEST_ONLY: interrupted after complete final entry and before staging cleanup");
-        }
-        if (!staging.delete() && staging.exists()) throw new IOException("Published final object exists but staging cleanup failed");
-        fsyncDirectory(incomingDir);
+        if (published.bytes != stagedLength) throw new IOException("Published object length differs from complete staging object");
+        if (staging.exists()) throw new IOException("Atomic publication left staging pathname present");
         return new PublishResult(storageRef, published.bytes, published.hash);
     }
 

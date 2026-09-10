@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     namespace = "com.scientifica.inspection.gate6bproof"
     compileSdk = rootProject.ext.compileSdkVersion
+    ndkVersion "27.0.12077973"
     defaultConfig {
         applicationId "com.scientifica.inspection.gate6bproof"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -20,6 +21,12 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
         }
     }
 }

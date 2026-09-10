@@ -20,17 +20,56 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Apply owner-requested narrow correction if still needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('src/device/evidence-restored-result.ts'): [
+                  (
+                      '  private consumed = false;\n  constructor(private readonly source: EvidenceSource) {}',
+                      '  private consumed = false;\n  private readonly source: EvidenceSource;\n\n  constructor(source: EvidenceSource) {\n    this.source = source;\n  }',
+                  ),
+              ],
+              Path('android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidenceStore.java'): [
+                  ('sourceRef == null || sourceRef.isBlank()', 'sourceRef == null || sourceRef.trim().isEmpty()'),
+                  ('OsConstants.O_RDONLY | OsConstants.O_DIRECTORY', 'OsConstants.O_RDONLY'),
+              ],
+              Path('android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java'): [
+                  ('mime != null && !mime.isBlank()', 'mime != null && !mime.trim().isEmpty()'),
+                  ('value == null || value.isBlank()', 'value == null || value.trim().isEmpty()'),
+                  ('value != null && !value.isBlank()', 'value != null && !value.trim().isEmpty()'),
+              ],
+          }
+
+          for path, pairs in replacements.items():
+              text = path.read_text(encoding='utf-8')
+              for old, new in pairs:
+                  if old in text:
+                      text = text.replace(old, new)
+              path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Regenerate exact npm lock from pinned manifest
         shell: bash
         run: |
           set -euo pipefail
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          if git diff --quiet -- package-lock.json; then
-            echo "package-lock.json already matches package.json"
+          if git diff --quiet; then
+            echo "No correction or lockfile change required"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "Gate 6C-C: refresh pinned dependency lock"
+          git add src/device/evidence-restored-result.ts \
+            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidenceStore.java \
+            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java \
+            package-lock.json
+          git commit -m "Gate 6C-C: correct strip-types and API-24 native compatibility"
           git push origin "HEAD:${GITHUB_REF_NAME}"

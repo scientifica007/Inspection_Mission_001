@@ -50,6 +50,8 @@ tests/gate5l_regression.ts
 tests/gate4a_regression.py
 ```
 
+Gate 6C-B candidate suite files are additionally present on `implementation/gate6c-b-evidence-orchestration-v1`; their result is recorded below as candidate branch evidence and is not an adopted baseline.
+
 ## 3) أوامر التشغيل المرجعية
 
 ```bash
@@ -137,7 +139,25 @@ bootstrap/v1/checklist-v1.json
 d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
 ```
 
-## 9) قاعدة عدم الإضعاف والحالة الحالية
+## 9) Gate 6C-B CURRENT / CANDIDATE BRANCH EVIDENCE
+
+Gate 6C is **`IN_PROGRESS`**. Gate 6C-A is **`CLOSED / MERGED`**. Gate 6C-B is **`IN_PROGRESS / IMPLEMENTATION_REVIEW`** and is not an adopted closed baseline.
+
+Candidate provenance:
+
+- branch: `implementation/gate6c-b-evidence-orchestration-v1`;
+- governing base: `953610be8815725bb55bbdc62ac2ca375ee4ffa3`;
+- initial implementation checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`;
+- corrected executable validation SHA: `dadf4d90a10d7348fea0543c1885ecf5b0846578`;
+- corrected executable GitHub Actions run: `34483510338` — **SUCCESS**;
+- Gate-6C-B host regression: **85 / 0**;
+- Gate-6C-B typecheck: PASS;
+- production build: PASS;
+- canonical hash, runtime-neutrality, historical regression, no-drift, dependency-set, synthetic-only, and `git diff --check` guards: PASS.
+
+These results are **CURRENT / CANDIDATE BRANCH EVIDENCE** pending independent branch review and later governance. They do not mark Gate 6C-B CLOSED.
+
+## 10) قاعدة عدم الإضعاف والحالة الحالية
 
 لا يجوز حذف test صحيحة أو خفض semantics سابقة لتجاوز failure.
 
@@ -147,4 +167,10 @@ Q12: `PHYSICAL_PASS_REVIEW_ACCEPTED`.
 
 `@capacitor-community/sqlite@8.1.1`: `ADOPTED_BY_CLOSED_GATE6B`.
 
-Gate 6C: **`NEXT / NOT_STARTED`**.
+Gate 6C: **`IN_PROGRESS`**.
+
+Gate 6C-A: **`CLOSED / MERGED`**.
+
+Gate 6C-B: **`IN_PROGRESS / IMPLEMENTATION_REVIEW`**.
+
+Gate 6C-C / 6C-D / Gate 6D: **`NOT_STARTED`**.

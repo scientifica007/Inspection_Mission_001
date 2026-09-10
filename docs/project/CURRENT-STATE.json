@@ -13,10 +13,10 @@
     "last_gate6b_pr": 17,
     "gate6c_a_design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "gate6c_a_owner_decision_date": "2026-09-10",
-    "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first.",
     "last_gate6c_a_pr": 19,
     "last_gate6c_a_reviewed_head": "b267d4ced626b32f7e4a4bad21b37082abc4ae86",
-    "last_gate6c_a_merge_sha": "4dfe7afd920285b034b26decb500932de4dae655"
+    "last_gate6c_a_merge_sha": "4dfe7afd920285b034b26decb500932de4dae655",
+    "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
     "DIRECT": "Explicitly stated in an official source.",
@@ -361,71 +361,22 @@
   ],
   "field_usable_v1": false,
   "test_baselines": {
-    "gate6b_host_adapter_contract": {
-      "passed": 16,
-      "failed": 0
-    },
-    "gate6b_schema_execution": {
-      "passed": 8,
-      "failed": 0
-    },
-    "gate6b_q12_diagnostic_classifier": {
-      "passed": 20,
-      "failed": 0
-    },
-    "gate5l": {
-      "passed": 94,
-      "failed": 0
-    },
-    "gate5k": {
-      "passed": 82,
-      "failed": 0
-    },
-    "gate5j": {
-      "passed": 75,
-      "failed": 0
-    },
-    "gate5i": {
-      "passed": 48,
-      "failed": 0
-    },
-    "gate5h": {
-      "passed": 66,
-      "failed": 0
-    },
-    "gate5g": {
-      "passed": 41,
-      "failed": 0
-    },
-    "gate5f": {
-      "passed": 30,
-      "failed": 0
-    },
-    "gate5e": {
-      "passed": 79,
-      "failed": 0
-    },
-    "gate5d": {
-      "passed": 60,
-      "failed": 0
-    },
-    "gate5c": {
-      "passed": 55,
-      "failed": 0
-    },
-    "gate5b": {
-      "passed": 32,
-      "failed": 0,
-      "scope": "bootstrap/reference-data regression"
-    },
-    "gate5b_adapter_normalization": {
-      "passed": 6,
-      "failed": 0
-    },
-    "schema": {
-      "passed": 100,
-      "failed": 0
-    }
+    "gate6b_host_adapter_contract": {"passed": 16, "failed": 0},
+    "gate6b_schema_execution": {"passed": 8, "failed": 0},
+    "gate6b_q12_diagnostic_classifier": {"passed": 20, "failed": 0},
+    "gate5l": {"passed": 94, "failed": 0},
+    "gate5k": {"passed": 82, "failed": 0},
+    "gate5j": {"passed": 75, "failed": 0},
+    "gate5i": {"passed": 48, "failed": 0},
+    "gate5h": {"passed": 66, "failed": 0},
+    "gate5g": {"passed": 41, "failed": 0},
+    "gate5f": {"passed": 30, "failed": 0},
+    "gate5e": {"passed": 79, "failed": 0},
+    "gate5d": {"passed": 60, "failed": 0},
+    "gate5c": {"passed": 55, "failed": 0},
+    "gate5b": {"passed": 32, "failed": 0, "scope": "bootstrap/reference-data regression"},
+    "gate5b_adapter_normalization": {"passed": 6, "failed": 0},
+    "schema": {"passed": 100, "failed": 0}
   },
   "canonical_hashes": {
     "docs/schema/schema.sql": "c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7",

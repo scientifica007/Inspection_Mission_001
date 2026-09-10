@@ -20,6 +20,10 @@
     "gate6c_b_initial_checkpoint_sha": "64b424670ea4384b7e9d6c01eea952c201a573d7",
     "gate6c_b_corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
     "gate6c_b_corrected_executable_ci_run": 34483510338,
+    "last_gate6c_b_pr": 21,
+    "last_gate6c_b_reviewed_head": "ea88fac83d60b99b7d50828915173d3aa14bb5d6",
+    "last_gate6c_b_merge_sha": "7418df4fc03b9b6017cbeb588eb6ae76bd560be2",
+    "last_gate6c_b_final_head_ci_run": 34484231771,
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -27,7 +31,7 @@
     "DERIVED": "Executable/technical consequence derived from an official requirement.",
     "PROJECT": "Explicit project-owner decision or requirement; must not be attributed to official sources."
   },
-  "closed_gates": ["1","2","3","4","4A","4B","4-Revision-6","5A","5B","5C","5D","5E","5F","5G","5H","5I","5J","5K","5L","6A","6B","6C-A"],
+  "closed_gates": ["1","2","3","4","4A","4B","4-Revision-6","5A","5B","5C","5D","5E","5F","5G","5H","5I","5J","5K","5L","6A","6B","6C-A","6C-B"],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
       "status": "MERGED_RESOLVED",
@@ -251,10 +255,10 @@
     "id": "6C",
     "name": "Evidence Storage + Camera/File Pipeline",
     "status": "IN_PROGRESS",
-    "current_substage": "6C-B",
-    "current_substage_name": "Runtime-neutral Evidence orchestration + host regressions",
-    "current_substage_status": "IMPLEMENTATION_REVIEW",
-    "mode": "IMPLEMENTATION_REVIEW",
+    "current_substage": "6C-C",
+    "current_substage_name": "Android Camera/File + durable EvidenceStorage adapters",
+    "current_substage_status": "NEXT_NOT_STARTED",
+    "mode": "IMPLEMENTATION_NOT_STARTED",
     "design_branch": "design/gate6c-evidence-contract-v1",
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
@@ -286,18 +290,26 @@
       "closure_status": "CLOSED_MERGED"
     },
     "gate6c_b": {
-      "status": "IN_PROGRESS",
-      "review_status": "IMPLEMENTATION_REVIEW",
+      "status": "CLOSED",
+      "review_status": "MERGE_READY",
       "implementation_branch": "implementation/gate6c-b-evidence-orchestration-v1",
       "governing_base_sha": "953610be8815725bb55bbdc62ac2ca375ee4ffa3",
       "initial_checkpoint_sha": "64b424670ea4384b7e9d6c01eea952c201a573d7",
       "corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
       "corrected_executable_ci_run": 34483510338,
       "corrected_executable_ci_conclusion": "SUCCESS",
+      "final_reviewed_head": "ea88fac83d60b99b7d50828915173d3aa14bb5d6",
+      "final_head_ci_run": 34484231771,
+      "final_head_ci_conclusion": "SUCCESS",
+      "pr": 21,
+      "merge_sha": "7418df4fc03b9b6017cbeb588eb6ae76bd560be2",
+      "independent_review_verdict": "MERGE_READY",
+      "owner_merge_approval": true,
       "host_regression": {"passed": 85, "failed": 0},
-      "evidence_classification": "CURRENT_CANDIDATE_BRANCH_EVIDENCE",
-      "closed": false,
-      "merged": false
+      "evidence_classification": "ADOPTED_BY_CLOSED_GATE6C_B",
+      "closure_status": "CLOSED_MERGED",
+      "closed": true,
+      "merged": true
     }
   },
   "next_gate": {
@@ -305,14 +317,14 @@
     "name": "Evidence Storage + Camera/File Pipeline",
     "status": "IN_PROGRESS",
     "role": "CURRENT",
-    "current_substage": "6C-B",
-    "current_substage_status": "IMPLEMENTATION_REVIEW"
+    "current_substage": "6C-C",
+    "current_substage_status": "NEXT_NOT_STARTED"
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_IMPLEMENTATION_REVIEW",
+  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_NEXT_NOT_STARTED",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B IMPLEMENTATION_REVIEW",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C NEXT / NOT_STARTED",
     "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",
@@ -337,14 +349,18 @@
     "gate5c": {"passed": 55, "failed": 0},
     "gate5b": {"passed": 32, "failed": 0, "scope": "bootstrap/reference-data regression"},
     "gate5b_adapter_normalization": {"passed": 6, "failed": 0},
-    "schema": {"passed": 100, "failed": 0}
+    "schema": {"passed": 100, "failed": 0},
+    "gate6c_b_evidence_host": {"passed": 85, "failed": 0}
   },
-  "candidate_branch_evidence": {
+  "closed_gate_evidence": {
     "gate6c_b": {
-      "classification": "CURRENT_CANDIDATE_BRANCH_EVIDENCE",
-      "tested_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
-      "github_actions_run": 34483510338,
-      "conclusion": "SUCCESS",
+      "classification": "ADOPTED_BY_CLOSED_GATE6C_B",
+      "reviewed_head": "ea88fac83d60b99b7d50828915173d3aa14bb5d6",
+      "corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
+      "corrected_executable_ci_run": 34483510338,
+      "final_head_ci_run": 34484231771,
+      "pr": 21,
+      "merge_sha": "7418df4fc03b9b6017cbeb588eb6ae76bd560be2",
       "passed": 85,
       "failed": 0
     }

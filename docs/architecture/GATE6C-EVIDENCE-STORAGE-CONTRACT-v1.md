@@ -111,7 +111,9 @@ These signatures are illustrative, not implementation. The port contract is:
 
 - `allocate()` creates a collision-resistant object identity **before** any Evidence row exists.
 - `stage()` copies/streams the source into a non-addressable incoming object and obtains durable-object metadata using bounded memory.
-- `publish()` makes a complete staged object visible under its final managed reference; it returns only after the final object is complete and stattable.
+- before `publish()`, Gate 6C-B must verify through the storage port that the final managed object path for the candidate canonical `storage_ref` does not already exist;
+- `publish()` makes a complete staged object visible under its final managed reference; it returns only after the final object is complete and stattable, and it MUST provide no-overwrite/no-replace semantics for an already existing final destination;
+- if the final destination already exists, the storage operation must not overwrite, truncate, replace, or reuse it for the new attempt; the candidate identity is abandoned and a fresh UUID/`storage_ref` is allocated, while cleanup/reconciliation of the pre-existing object remains governed by §10;
 - `stat()` / `resolve()` validate the `storage_ref` grammar and remain confined to the managed app-private root.
 - `listManagedObjects()` enumerates only the managed Evidence namespace required for reconciliation.
 - `removeConfirmedOrphan()` may remove only an object that the application has already proved is not referenced by committed SQLite Evidence metadata.
@@ -170,7 +172,25 @@ This is an **APPLICATION-LEVEL invariant for Gate 6C v1**. It is a **DERIVED TEC
 
 The owner-approved UUID-v4 naming policy makes accidental allocation collision extremely unlikely, but probability is not a correctness rule. Gate 6C-B must still provide deterministic behavior for collision, retry, uncertain COMMIT, and pre-existing corruption. No code path may infer uniqueness merely from UUID randomness.
 
-Inside the **same `BEGIN IMMEDIATE` transaction** that performs owner revalidation and the Evidence INSERT, Gate 6C-B must query SQLite for the exact candidate canonical `storage_ref`, for example:
+Gate 6C-B therefore uses **two application-level SQLite guards** for every NEW attempt:
+
+1. a read-only pre-publication collision preflight by exact candidate canonical `storage_ref`, performed before any final managed object is published; and
+2. the existing cardinality recheck inside the same `BEGIN IMMEDIATE` transaction that performs owner revalidation and the Evidence INSERT.
+
+The read-only pre-publication preflight MAY occur before staging to avoid wasted work. If staging occurs first, it must still occur before final publication. The critical invariant is:
+
+> **NO final managed object may be published under a canonical `storage_ref` already referenced by committed SQLite Evidence.**
+
+For the **pre-publication SQLite preflight** of a NEW attempt:
+
+- **zero committed rows** → the candidate may continue to the final-path existence check and, if that also passes, publication;
+- **exactly one committed row** → do not publish any file under that `storage_ref`; abandon that candidate identity and allocate a fresh UUID/canonical `storage_ref`; this is an ordinary collision outcome and does not mutate the historical row;
+- **more than one committed row** → do not publish; surface `STORAGE_REF_CONFLICT` because the lookup has exposed pre-existing integrity corruption; preserve all rows and any existing managed file;
+- never use the new file to “repair” a missing managed file for an already committed Evidence row.
+
+Before publication, Gate 6C-B must also verify that the exact final managed object path does **not** already exist. If SQLite returns zero rows but the final path exists, the object may be an orphan or unresolved residue, but the new attempt MUST NOT overwrite, truncate, replace, or reuse it. The candidate is abandoned and a fresh UUID/`storage_ref` is allocated; cleanup/reconciliation of the pre-existing object remains exclusively under §10.
+
+After successful publication, inside the **same `BEGIN IMMEDIATE` transaction** that performs owner revalidation and the Evidence INSERT, Gate 6C-B must repeat the exact candidate canonical `storage_ref` query, for example:
 
 ```sql
 SELECT evidence_id, owner_kind, owner_ref, storage_ref, content_hash,
@@ -180,16 +200,24 @@ SELECT evidence_id, owner_kind, owner_ref, storage_ref, content_hash,
  ORDER BY evidence_id;
 ```
 
-For a **NEW attempt**:
+For this **transactional recheck**:
 
 - **zero rows** → the insertion may proceed, subject to the normal owner and metadata guards;
-- **one or more existing rows** → the new attempt MUST NOT blindly INSERT another Evidence row using the same `storage_ref`;
-- an ordinary new-attempt collision with exactly one pre-existing row → fail closed for that candidate identity, rollback/abandon that candidate as a new identity, allocate a fresh UUID/canonical `storage_ref`, and restart the new-attempt persistence path under the fresh identity;
-- if the lookup exposes a pre-existing `>1` duplicate-reference integrity condition, surface `STORAGE_REF_CONFLICT` rather than hiding that corruption by silently continuing;
-- never overwrite an existing Evidence row or an existing managed file;
-- never delete a managed file merely because the new attempt collided with a reference already committed in SQLite.
+- **one or more existing rows** after the pre-publication checks passed → this is an exceptional integrity/state-drift path, not the ordinary collision path; do not INSERT, do not overwrite or mutate any committed row, do not silently claim success, and surface `STORAGE_REF_CONFLICT`;
+- because a committed row now references the same canonical `storage_ref`, do **not** automatically delete the already published final file as compensation; preserve state for diagnosis;
+- if the recheck exposes `>1` committed rows, preserve all rows and the referenced managed file and do not choose an arbitrary row.
 
 Recovery of the **same uncertain attempt** is not treated as an ordinary new-attempt collision; it follows the deterministic 0/1/>1 convergence rules in §9.1.
+
+### 4.4 Evidence maintenance/write serialization boundary — DERIVED TECHNICAL CONSEQUENCE
+
+Normal Gate-6C Evidence creation and reconciliation/cleanup operations use the same **application-level single-process Evidence maintenance/write serialization boundary**.
+
+Within the supported single-process product architecture, a NEW Evidence attempt holds this boundary across candidate allocation, optional staging, the pre-publication SQLite preflight, final-path existence verification, publication, `BEGIN IMMEDIATE`, transactional `storage_ref` recheck, INSERT, and transaction completion. Reconciliation/cleanup does not run concurrently with that create critical section.
+
+This prevents another in-contract Gate-6C operation in the same process from allocating/publishing the same candidate between the preflight and the transactional recheck. The transactional recheck remains mandatory because it detects unexpected state drift and protects the application contract at the last point before INSERT.
+
+This application-level serialization boundary does **not** claim to protect against arbitrary external processes, out-of-contract direct SQLite manipulation, filesystem tampering, or other writers that bypass the Gate-6C application contract. Such interference is diagnosed through the transactional recheck, restart reconciliation, hash verification, and existing integrity/state-conflict paths rather than assumed impossible.
 
 ## 5. Physical storage directory policy
 
@@ -222,9 +250,11 @@ Rules:
 - never derive the object key from the original filename;
 - never trust directory segments from imported names;
 - allocation collision must fail closed and generate a fresh token rather than overwrite;
+- a committed-SQLite-reference collision detected before publication must abandon the candidate before any final object is published;
+- a pre-existing final-path collision must abandon the candidate rather than overwrite or reuse that object;
 - the final object must be created without overwriting an existing managed object;
 - the extension is normalized separately from the original filename;
-- UUID-v4 collision resistance does not replace the application-level one-row-per-canonical-`storage_ref` invariant in §4.3.
+- UUID-v4 collision resistance does not replace the application-level one-row-per-canonical-`storage_ref` invariant or the two SQLite guards in §4.3.
 
 For the adopted grammar, `<safe-extension>` is lowercase ASCII `a-z0-9`, one short extension segment only, with no leading dot inside the stored value and no separators. A known safe extension may be derived from trusted Camera output metadata or a conservative MIME/filename normalization. Unknown types use a neutral extension such as `bin`. The exact user-facing source filename is retained separately in `file_name` and is never concatenated into a managed path.
 
@@ -257,32 +287,42 @@ Rationale: Evidence is an audit-supporting artifact, and an immutable content di
 
 ## 8. Creation state machine and cross-store atomicity
 
-The canonical application flow is:
+The canonical NEW-attempt application flow is:
 
 ```text
-0  optional early owner preflight (read-only; advisory, not the hard floor)
-1  acquire source
-2  allocate collision-resistant UUID-v4 object token
-3  stream/copy source → evidence/v1/.incoming/<token>.part
-4  finish copy; obtain exact stat; compute required SHA-256
-5  publish complete object → final managed object
-6  BEGIN IMMEDIATE
-7  revalidate owner inside the transaction
-8  query Evidence rows for the exact candidate canonical storage_ref
-9  only when that NEW-attempt query returns zero rows: INSERT Evidence metadata
-10 COMMIT
-11 return committed Evidence result
+0  enter the single-process Evidence maintenance/write serialization boundary
+1  optional early owner preflight (read-only; advisory, not the hard floor)
+2  acquire source
+3  allocate collision-resistant UUID-v4 object token / candidate storage_ref
+4  optionally stream/copy source → evidence/v1/.incoming/<token>.part
+5  read-only SQLite preflight for exact candidate canonical storage_ref
+6  verify exact final managed object path does not already exist
+7  finish staging/stat/hash if not already complete; publish complete final object with no-overwrite semantics
+8  BEGIN IMMEDIATE
+9  revalidate owner inside the transaction
+10 repeat SQLite cardinality query for exact candidate canonical storage_ref
+11 only when transactional recheck returns zero rows: INSERT Evidence metadata
+12 COMMIT
+13 leave serialization boundary and return committed Evidence result
 ```
+
+The read-only SQLite preflight MAY occur before staging to avoid wasted work. Regardless of where optional staging occurs, **steps 5 and 6 MUST complete successfully before step 7 publishes any final managed object**.
 
 The application may perform an early owner preflight to avoid an expensive copy for an obviously invalid owner, but it must revalidate in the SQLite transaction. `trg_evidence_bi` remains authoritative hard enforcement and is never bypassed.
 
-The step-8 `storage_ref` query is an application-level Gate-6C guard required because the current schema has no `UNIQUE(storage_ref)` constraint. Gate 6C-B must apply §4.3 exactly; it must not claim that the schema enforces reference uniqueness.
+Gate 6C-B therefore has two distinct SQLite `storage_ref` guards: the read-only pre-publication collision preflight and the authoritative transactional recheck immediately before INSERT. The second guard is not removed or weakened by the first. Both are application-level Gate-6C requirements because the current schema has no `UNIQUE(storage_ref)` constraint.
+
+The pre-publication SQLite guard prevents a new binary from being published into a physically missing path already named by an unrelated committed historical Evidence row. A missing physical file does not make the historical row's canonical `storage_ref` available for reuse, and a new Evidence attempt must never use its binary to “repair” that historical reference.
+
+The final-path existence guard is separate from the SQLite preflight. Even when SQLite reports zero committed rows, an already existing final managed object is not reusable by a new attempt. It may be an orphan or unresolved residue; the new attempt abandons that candidate and leaves cleanup/reconciliation to §10.
 
 A final `storage_ref` must not be written to SQLite until the storage adapter has positively reported that the complete final object exists. A filesystem failure can never be converted into a metadata-only success.
 
+If the transactional recheck unexpectedly returns one or more committed rows after both pre-publication guards passed and the final object was published, Gate 6C-B MUST NOT INSERT. It surfaces `STORAGE_REF_CONFLICT`, preserves committed rows, and does not automatically delete the final file while a committed row references that same `storage_ref`. This is an exceptional integrity/state-drift path for diagnosis, not the normal collision path.
+
 The publish operation should be implemented as a same-filesystem atomic rename/move from `.incoming` where the platform/API can prove that property. Official Capacitor Filesystem documentation exposes `rename(...)` but does not document an atomicity guarantee. Therefore:
 
-> **REQUIRES EXECUTABLE SPIKE IN 6C-C:** prove whether the selected Android adapter can provide the required complete-object publication semantics, including interruption behavior. Do not infer atomicity from the existence of a `rename` API.
+> **REQUIRES EXECUTABLE SPIKE IN 6C-C:** prove whether the selected Android adapter can provide the required complete-object publication semantics, including interruption behavior and no-overwrite/no-replace behavior at the final managed destination. Do not infer atomicity or no-replace semantics merely from the existence of a `rename` API.
 
 If the official Filesystem API cannot prove the required property, a narrow native implementation behind `EvidenceStorage` may provide it; the domain contract does not change.
 
@@ -298,14 +338,16 @@ If the official Filesystem API cannot prove the required property, a narrow nati
 | copy/write fails | none | partial `.incoming` may remain | `STORAGE_WRITE_FAILED`; startup removes incomplete object |
 | hash fails | none | `.incoming` may remain | `HASH_FAILED`; no publish/DB write; cleanup incoming |
 | stat/metadata finalization fails | none | `.incoming` may remain | `STORAGE_WRITE_FAILED`; no publish/DB write |
+| pre-publish SQLite candidate query returns exactly one committed row | no new row | no new final object published | ordinary candidate collision; abandon identity and allocate fresh UUID/`storage_ref`; never mutate/repair historical row |
+| pre-publish SQLite candidate query returns >1 committed rows | no new row | no new final object published; existing referenced file retained if present | `STORAGE_REF_CONFLICT`; preserve all rows/file; do not publish, choose, delete, or overwrite |
+| pre-publish final managed path already exists after SQLite returned zero rows | no new row | pre-existing final object retained; staged `.incoming` may remain until normal cleanup | abandon candidate and allocate fresh UUID/`storage_ref`; never overwrite/truncate/reuse; reconciliation decides whether pre-existing object is orphan/residue |
 | final publish/rename fails | none | `.incoming`, or implementation-specific unreferenced final residue | `STORAGE_WRITE_FAILED`; no DB write; startup reconciliation cleans proven orphan |
 | process death during `.incoming` copy | none | partial `.incoming` | restart removes `.incoming` before new Evidence work |
 | process death after complete stage but before publish | none | complete `.incoming` | restart removes `.incoming` |
 | process death after final publish but before SQLite BEGIN | none | unreferenced final object | restart deletes only after proving no committed Evidence row references it |
 | SQLite `BEGIN IMMEDIATE` fails | none | unreferenced final object | `SQLITE_FAILED`; best-effort orphan cleanup or restart reconciliation |
 | owner validation fails inside transaction | none | unreferenced final object | rollback; `OWNER_NOT_FOUND` / `OWNER_INVALID`; best-effort cleanup |
-| NEW-attempt candidate `storage_ref` query returns one committed row | no new row | existing referenced file must not be overwritten/deleted | rollback/abandon candidate as a new identity; allocate fresh UUID/`storage_ref`; §4.3 |
-| NEW-attempt candidate `storage_ref` query returns >1 committed rows | no new row | referenced file(s) retained | `STORAGE_REF_CONFLICT`; rollback; do not choose/delete/overwrite; diagnose pre-existing integrity failure |
+| post-publish transactional `storage_ref` recheck unexpectedly returns one or more committed rows | no new row | published final object preserved while committed row(s) reference that canonical `storage_ref` | `STORAGE_REF_CONFLICT`; rollback/no INSERT; do not choose, overwrite, delete rows, or auto-delete referenced final file; diagnose state drift |
 | Evidence INSERT/trigger fails | none after rollback | unreferenced final object | rollback; map owner error when applicable, otherwise `SQLITE_FAILED`; cleanup only after no committed row is proven |
 | process death after INSERT but before COMMIT | none (uncommitted tx rolls back) | unreferenced final object | restart reconciliation deletes proven orphan |
 | COMMIT returns a definite rollback/failure | none | unreferenced final object | `SQLITE_FAILED`; orphan may be removed after DB re-read proves absence |
@@ -376,6 +418,8 @@ A final object is an orphan only after a fresh SQLite read proves that **zero co
 
 This rule safely resolves crashes after final file publication but before database commit. It also protects the uncertain-COMMIT case: if one row actually committed, the fresh SQLite reference set prevents deletion. A canonical `storage_ref` referenced by **more than one** committed Evidence row is also **not an orphan**; it is the duplicate-reference integrity condition defined in §§4.3, 9.1, and 11, and its referenced managed file must not be auto-deleted.
 
+An object discovered by the pre-publication final-path check when SQLite currently reports zero rows is likewise **not overwritten by the new attempt**. It remains untouched until the existing reconciliation/orphan rules prove whether deletion is safe.
+
 ### 10.3 Committed Evidence row whose file is missing
 
 This is **not** an orphan-row cleanup case. It is a broken reference / integrity failure:
@@ -385,9 +429,13 @@ This is **not** an orphan-row cleanup case. It is a broken reference / integrity
 - do not delete the Evidence row;
 - surface `BROKEN_STORAGE_REFERENCE` with the Evidence identity and logical `storage_ref` suitable for diagnosis, without logging file contents or sensitive source URI data.
 
+A later NEW attempt that happens to allocate the same canonical `storage_ref` MUST NOT publish a replacement binary into the missing path. The pre-publication SQLite collision preflight in §4.3 abandons that candidate before publication.
+
 ### 10.4 Cleanup serialization
 
-Startup/init reconciliation MUST run under the same single-process Evidence maintenance/write serialization boundary used by new Evidence persistence, and SHOULD complete before new Evidence acquisition/persistence is accepted. This prevents cleanup racing an active copy.
+Startup/init reconciliation MUST run under the same single-process Evidence maintenance/write serialization boundary used by new Evidence persistence, and SHOULD complete before new Evidence acquisition/persistence is accepted. This prevents cleanup racing an active copy or publish.
+
+Normal Gate-6C Evidence creation holds that same boundary through the pre-publication SQLite guard, final-path existence guard, publication, transactional recheck, and transaction completion as defined in §4.4. This is application-level single-process serialization only; it does not exclude arbitrary external processes or out-of-contract direct manipulation.
 
 If cleanup cannot safely enumerate or delete a confirmed orphan, return/surface `ORPHAN_CLEANUP_FAILED`. New Evidence persistence may be held in a degraded/unavailable state until reconciliation is safe; ordinary domain work must still be able to proceed because Evidence is optional.
 
@@ -445,8 +493,9 @@ All six existing owner kinds are preserved; no new owner kind is introduced.
 Responsibility is layered:
 
 1. **Application preflight:** reject an unknown `owner_kind` as `OWNER_INVALID`; query the selected owner table and return `OWNER_NOT_FOUND` when the requested row does not exist. A read-only early preflight may occur before copying to avoid waste.
-2. **Transactional application validation:** after final file publication, re-check owner existence inside the same `BEGIN IMMEDIATE` that performs the Evidence INSERT and the candidate-`storage_ref` cardinality check in §4.3.
-3. **Database hard floor:** `trg_evidence_bi` remains unchanged and must reject any INSERT whose declared owner does not exist. Application code maps the trigger failure to the meaningful owner error where possible.
+2. **Pre-publication storage-reference guard:** while holding the Evidence maintenance/write serialization boundary, perform the read-only candidate-`storage_ref` lookup and final-path nonexistence check required by §4.3 before final publication.
+3. **Transactional application validation:** after final file publication, re-check owner existence and candidate-`storage_ref` cardinality inside the same `BEGIN IMMEDIATE` that performs the Evidence INSERT.
+4. **Database hard floor:** `trg_evidence_bi` remains unchanged and must reject any INSERT whose declared owner does not exist. Application code maps the trigger failure to the meaningful owner error where possible.
 
 No application preflight weakens, bypasses, replaces, or duplicates the trigger with a looser rule.
 
@@ -525,14 +574,17 @@ The restored-result rule is mandatory:
 App.appRestoredResult Camera result
 → normalize to EvidenceSource
 → re-enter the same owner-confirmation/acquisition orchestration
-→ durable .incoming copy/hash
-→ publish final object
+→ allocate candidate UUID/storage_ref
+→ durable .incoming copy/hash as needed
+→ pre-publish SQLite storage_ref preflight
+→ verify final managed path absent
+→ publish final object with no-overwrite semantics
 → BEGIN IMMEDIATE
-→ owner revalidation + storage_ref cardinality check + Evidence INSERT
+→ owner revalidation + storage_ref cardinality recheck + Evidence INSERT
 → COMMIT
 ```
 
-A restored Camera result must never bypass durable copy, hashing policy, owner validation, `storage_ref` cardinality checks, or SQLite ordering.
+A restored Camera result must never bypass durable copy, hashing policy, owner validation, either `storage_ref` guard, final-path nonexistence verification, or SQLite ordering.
 
 If process death erased volatile owner-selection context, the restored source MUST NOT be auto-attached to a guessed owner. The application must reconstruct the relevant durable domain state from SQLite and require/recover an unambiguous owner selection before commit. If ownership cannot be established unambiguously, the source remains uncommitted and no Evidence row is created. Gate 6C does not add a sidecar authority to remember owner intent.
 
@@ -568,12 +620,14 @@ Gate 6C-B should use a compact Evidence-specific result taxonomy and map it into
 | `OWNER_NOT_FOUND` | valid owner kind but referenced owner row absent | no |
 | `OWNER_INVALID` | owner kind/owner reference shape invalid | no |
 | `SQLITE_FAILED` | SQLite transaction/insert/commit failed and no more specific mapped domain error applies | no or uncertain until re-read |
-| `STORAGE_REF_CONFLICT` | exact canonical `storage_ref` resolves to mismatching committed attempt metadata or to >1 committed Evidence row; deterministic integrity/state conflict | existing row(s)/file retained |
+| `STORAGE_REF_CONFLICT` | exact canonical `storage_ref` exposes duplicate committed references, mismatching uncertain-attempt metadata, or unexpected post-publish transactional state drift | existing row(s)/referenced file retained |
 | `BROKEN_STORAGE_REFERENCE` | committed Evidence points to missing/malformed/unresolvable managed file | row retained |
 | `HASH_MISMATCH` | verified final bytes do not match stored digest | row/file retained |
 | `ORPHAN_CLEANUP_FAILED` | confirmed orphan/incoming cleanup or safe enumeration failed | no domain mutation |
 
-An ordinary NEW-attempt collision with one pre-existing row is not silently accepted and need not become a user-visible integrity error: the candidate is abandoned and a fresh UUID/`storage_ref` is allocated under §4.3. `STORAGE_REF_CONFLICT` is reserved narrowly for mismatching uncertain-attempt state, duplicate committed references, or equivalent integrity conditions. Gate 6C-B may materialize it as `E_EVIDENCE_STORAGE_REF_CONFLICT` in the existing typed Application-Core convention.
+An ordinary NEW-attempt pre-publication collision with one pre-existing committed row is not silently accepted and need not become a user-visible integrity error: no final object is published under that reference, the candidate is abandoned, and a fresh UUID/`storage_ref` is allocated under §4.3. Likewise, if SQLite reports zero rows but the final managed path already exists, the new attempt does not overwrite it; it abandons the candidate and leaves the object to reconciliation.
+
+`STORAGE_REF_CONFLICT` is reserved narrowly for mismatching uncertain-attempt state, duplicate committed references, unexpected post-publish transactional state drift, or equivalent integrity conditions. Gate 6C-B may materialize it as `E_EVIDENCE_STORAGE_REF_CONFLICT` in the existing typed Application-Core convention.
 
 Other codes may likewise be materialized as names such as `E_EVIDENCE_STORAGE_WRITE_FAILED`; the precise TypeScript names are implementation detail. Cancellation is an expected operation outcome, not a domain-corruption exception.
 
@@ -606,11 +660,15 @@ Gate 6C implementation MUST enforce:
 | durable-file-first → SQLite-row ordering | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | preserved exactly |
 | app-private committed Evidence storage | **A — ALREADY GOVERNING / NO NEW OWNER DECISION** | public Gallery/Documents not storage authority |
 | transient source URI is not `storage_ref` | **B — DERIVED TECHNICAL CONSEQUENCE** | required by durable managed-storage contract |
-| one canonical committed `storage_ref` → at most one committed Evidence row | **B — DERIVED TECHNICAL CONSEQUENCE** | Gate-6C application-level invariant; current schema has no `UNIQUE(storage_ref)`; transactional lookup + deterministic recovery/reconciliation enforce semantics |
+| one canonical committed `storage_ref` → at most one committed Evidence row | **B — DERIVED TECHNICAL CONSEQUENCE** | Gate-6C application-level invariant; current schema has no `UNIQUE(storage_ref)` |
+| pre-publish SQLite candidate collision preflight | **B — DERIVED TECHNICAL CONSEQUENCE** | mandatory before final publication; committed reference is never reused to publish a new file |
+| pre-publish final-path nonexistence/no-overwrite guard | **B — DERIVED TECHNICAL CONSEQUENCE** | existing final object is never overwritten/truncated/reused; candidate is abandoned and reconciliation owns cleanup |
+| post-publish `BEGIN IMMEDIATE` cardinality recheck | **B — DERIVED TECHNICAL CONSEQUENCE** | remains mandatory final state-drift guard immediately before INSERT |
+| shared single-process Evidence create/reconciliation serialization | **B — DERIVED TECHNICAL CONSEQUENCE** | protects in-contract same-process operations only; no claim against arbitrary external manipulation |
 | staging/final state distinction and startup reconciliation | **B — DERIVED TECHNICAL CONSEQUENCE** | `.incoming` incomplete; final unreferenced objects cleanable after DB proof |
-| missing committed file behavior | **B — DERIVED TECHNICAL CONSEQUENCE** | retain DB row; surface `BROKEN_STORAGE_REFERENCE` |
+| missing committed file behavior | **B — DERIVED TECHNICAL CONSEQUENCE** | retain DB row; surface `BROKEN_STORAGE_REFERENCE`; new attempt must not fill its path |
 | bounded-memory/streaming requirement | **B — DERIVED TECHNICAL CONSEQUENCE** | no mandatory whole-file Base64 path |
-| restored Camera result uses same pipeline | **B — DERIVED TECHNICAL CONSEQUENCE** | no bypass of copy/hash/owner/SQLite ordering |
+| restored Camera result uses same pipeline | **B — DERIVED TECHNICAL CONSEQUENCE** | no bypass of pre-publish guards/copy/hash/owner/SQLite ordering |
 | current Camera API (`takePhoto` / `chooseFromGallery`) | **B — DERIVED TECHNICAL IMPLEMENTATION DECISION** | preferred for 6C-C; legacy APIs not used for new implementation |
 | Android app-private location / `Directory.Data` | **B — DERIVED TECHNICAL IMPLEMENTATION DECISION** | preferred candidate; verify in 6C-C, not a DIRECT source rule |
 | exact `storage_ref = evidence/v1/objects/<uuid>.<ext>` grammar | **C — OWNER-APPROVED PROJECT DECISION** | **ADOPTED 2026-09-10** |
@@ -619,7 +677,7 @@ Gate 6C implementation MUST enforce:
 | numeric maximum v1 file size | **D — DEFERRED BEYOND GATE 6C unless separately approved** | no arbitrary number adopted; `FILE_TOO_LARGE` reserved |
 | generic Android file-picker implementation | **D — implementation selection deferred to 6C-C spike** | SAF/custom narrow Capacitor plugin is candidate; no third-party plugin adopted |
 | proof of Filesystem `copy(content://...)` bounded-memory behavior | **D — REQUIRES EXECUTABLE SPIKE IN 6C-C** | documentation is insufficient to claim it |
-| proof of atomic/complete-object `rename` publication | **D — REQUIRES EXECUTABLE SPIKE IN 6C-C** | documentation exposes rename but does not promise atomicity |
+| proof of atomic/complete-object `rename` publication | **D — REQUIRES EXECUTABLE SPIKE IN 6C-C** | documentation exposes rename but does not promise atomicity/no-replace semantics |
 | normal committed Evidence deletion/purge/archive policy | **D — DEFERRED BEYOND GATE 6C** | no v1 delete operation |
 | backup/export/cloud/sync retention | **D — DEFERRED BEYOND GATE 6C** | no server/cloud authority introduced |
 
@@ -639,7 +697,7 @@ This is an internal execution decomposition only; it does not replace the adopte
 
 **Entry:** 6C-A contract merged and category-C owner decisions resolved.
 
-**Work:** runtime-neutral source/storage ports and orchestration only; fake/in-memory test adapters; application-level one-row-per-canonical-`storage_ref` guard; host regression coverage for ordering, owner preflight + trigger mapping, new-attempt collision, uncertain-COMMIT 0/1-match/1-mismatch/>1 convergence, cancellation, stage/publish failure, SQLite failures, duplicate-reference restart reconciliation, orphan reconciliation, missing references, and bounded-memory contract seams.
+**Work:** runtime-neutral source/storage ports and orchestration only; fake/in-memory test adapters; application-level one-row-per-canonical-`storage_ref` invariant; shared single-process Evidence maintenance/write serialization; read-only pre-publication SQLite collision preflight; final-path nonexistence/no-overwrite guard; mandatory transactional recheck; host regression coverage for pre-publish 0/1/>1 cardinality, pre-existing final-path collision, missing-file historical-row collision prevention, unexpected post-publish transactional conflict, uncertain-COMMIT 0/1-match/1-mismatch/>1 convergence, cancellation, stage/publish failure, SQLite failures, duplicate-reference restart reconciliation, orphan reconciliation, missing references, and bounded-memory contract seams.
 
 **Exit:** focused host suite passes; closed Gate 5A→5L / 6B contracts are not weakened; no Android-specific type leaks into runtime-neutral core; no schema-level `UNIQUE(storage_ref)` is assumed.
 
@@ -647,7 +705,7 @@ This is an internal execution decomposition only; it does not replace the adopte
 
 **Entry:** 6C-B reviewed/accepted.
 
-**Work:** install only justified official dependencies; implement Camera/gallery adapter; implement/choose generic Android file acquisition; implement app-private EvidenceStorage; handle `appRestoredResult`; execute required spikes for `content://` copy/streaming and complete-object publication; Android/emulator integration checks as appropriate.
+**Work:** install only justified official dependencies; implement Camera/gallery adapter; implement/choose generic Android file acquisition; implement app-private EvidenceStorage; handle `appRestoredResult`; execute required spikes for `content://` copy/streaming and complete-object publication/no-overwrite semantics; Android/emulator integration checks as appropriate.
 
 **Exit:** all `REQUIRES EXECUTABLE SPIKE IN 6C-C` questions have concrete evidence; adapter behavior satisfies 6C-A; no schema/core weakening; host + Android CI checks pass.
 
@@ -679,7 +737,7 @@ Verified points used by this contract:
 - Filesystem `Directory.Data` is application file storage on Android and is deleted on uninstall.
 - Filesystem Android permission methods are required for `Documents` / `ExternalStorage`, not `Data`.
 - Filesystem supports reading Android `content://` paths when used as full paths and exposes `readFileInChunks`, `rename`, `copy`, `stat`, `readdir`, and `getUri`.
-- Official documentation does **not** establish that `copy` accepts every required `content://` source with the required bounded-memory semantics, nor does it promise atomicity for `rename`; those claims are deliberately deferred to executable spikes.
+- Official documentation does **not** establish that `copy` accepts every required `content://` source with the required bounded-memory semantics, nor does it promise atomicity or no-replace behavior for `rename`; those claims are deliberately deferred to executable spikes.
 - Android's official Storage Access Framework provides `ACTION_OPEN_DOCUMENT` for user-selected generic files and returns document URIs suitable for stream access.
 
 ## 24. 6C-A owner-approved decisions and stop rule
@@ -696,6 +754,6 @@ No numeric permanent file-size limit is approved or proposed by this decision.
 
 No third-party generic picker is selected.
 
-No claim is made that Capacitor Filesystem `copy(content://...)` or `rename(...)` already proves the required large-file/atomic-publication semantics.
+No claim is made that Capacitor Filesystem `copy(content://...)` or `rename(...)` already proves the required large-file/atomic-publication/no-replace semantics.
 
 **STOP CONDITION:** 6C-B must not begin from this design branch. It begins only under a separate scoped authorization after 6C-A independent review and merge of the reviewed 6C-A contract/state changes.

@@ -26,6 +26,7 @@ import {
 import { CapacitorEvidenceStorage } from "../device/capacitor-evidence-storage.ts";
 
 const DATABASE = "inspection_gate6c_android_integration_v1";
+const ORPHAN_DATABASE = "inspection_gate6c_android_orphan_reconciliation_v1";
 const FIXED_NOW = "2026-09-10T16:30:00.000Z";
 const FIXED_VISIT_DATE = "2026-09-10";
 const ACTOR = "gate6c-c-integration";
@@ -185,6 +186,25 @@ export interface Gate6CDeviceIntegrationProofResult {
   storageRef: string;
 }
 
+export interface Gate6CZeroRowOrphanReconciliationProofResult {
+  status: "PASS";
+  testedGitCommitSha: string;
+  sourceIsContentUri: boolean;
+  canonicalStorageRef: boolean;
+  canonicalHash: boolean;
+  expectedSize: number;
+  publishedSize: number;
+  expectedHash: string;
+  publishedHash: string;
+  zeroRowsBeforeReopen: boolean;
+  finalExistedBeforeReopen: boolean;
+  reconciliationReportedOrphanRemoved: boolean;
+  readinessAfterReconciliation: string;
+  finalExistsAfterReconciliation: boolean;
+  zeroRowsAfterReconciliation: boolean;
+  storageRef: string;
+}
+
 export async function runGate6CDeviceIntegrationProof(
   sourceRef: string,
   expectedSize: number,
@@ -294,10 +314,93 @@ export async function runGate6CDeviceIntegrationProof(
   }
 }
 
-declare global {
-  interface Window {
-    __gate6cRunIntegrationProof?: typeof runGate6CDeviceIntegrationProof;
+export async function runGate6CZeroRowOrphanReconciliationProof(
+  sourceRef: string,
+  expectedSize: number,
+  expectedHash: string,
+): Promise<Gate6CZeroRowOrphanReconciliationProofResult> {
+  requireTrue(sourceRef.startsWith("content://"), "orphan proof requires a synthetic content:// source");
+  requireTrue(Number.isSafeInteger(expectedSize) && expectedSize > 1, "expectedSize must exceed deliberately false sizeHint");
+  requireTrue(isCanonicalSha256(expectedHash), "expectedHash must be canonical SHA-256");
+
+  await deleteGate6BDatabase(ORPHAN_DATABASE).catch(() => undefined);
+  let storageRef = "";
+
+  try {
+    const opened = await openGate6BDatabase(ORPHAN_DATABASE);
+    await opened.connection.execute(CANONICAL_SCHEMA_SQL, false);
+    await new BootstrapLoader(opened.adapter, CANONICAL_BOOTSTRAP).load();
+
+    const storage = new CapacitorEvidenceStorage();
+    const source: EvidenceSource = {
+      kind: "GENERIC_FILE",
+      sourceRef,
+      displayName: "synthetic-gate6c-zero-row-orphan.bin",
+      declaredMimeType: "application/octet-stream",
+      sizeHint: 1,
+    };
+    const allocation = await storage.allocate(source);
+    const staged = await storage.stage(source, allocation);
+    requireTrue(staged.fileSize === expectedSize, "staged orphan proof size must equal actual copied bytes");
+    requireTrue(staged.contentHash === expectedHash, "staged orphan proof hash must equal independent source digest");
+    const published = await storage.publish(staged);
+    storageRef = published.storageRef;
+    requireTrue(isCanonicalStorageRef(storageRef), "published orphan proof storage_ref must be canonical");
+    requireTrue(published.fileSize === expectedSize, "published orphan proof size must equal actual copied bytes");
+    requireTrue(published.contentHash === expectedHash, "published orphan proof hash must equal independent source digest");
+
+    const rowsBefore = await opened.adapter.query(`SELECT evidence_id FROM evidence WHERE storage_ref = ?`, [storageRef]);
+    requireTrue(rowsBefore.length === 0, "injected post-publication failure point must have zero committed Evidence rows");
+    const existedBefore = await storage.finalExists(storageRef);
+    requireTrue(existedBefore, "published orphan final must exist before runtime recreation");
+    await closeGate6BDatabase(ORPHAN_DATABASE);
+
+    const reopened = await openGate6BDatabase(ORPHAN_DATABASE);
+    const reopenedContext = new EvidenceApplicationContext();
+    const reopenedStorage = new CapacitorEvidenceStorage();
+    const reopenedService = new EvidenceService(reopened.adapter, new CancelledAcquisition(), reopenedStorage, reopenedContext);
+    const reconciliation = await reopenedService.reconcileEvidence({ verifyHashes: true });
+    const orphanRemoved = reconciliation.items.some((item) => item.kind === "ORPHAN_REMOVED" && item.storageRef === storageRef);
+    requireTrue(orphanRemoved, "closed startup reconciliation must classify and remove the zero-row final orphan");
+    requireTrue(reopenedContext.readiness === "READY", "startup must reach READY after successful orphan reconciliation");
+    const existsAfter = await reopenedStorage.finalExists(storageRef);
+    requireTrue(!existsAfter, "reconciliation must remove the unreferenced final orphan");
+    const rowsAfter = await reopened.adapter.query(`SELECT evidence_id FROM evidence WHERE storage_ref = ?`, [storageRef]);
+    requireTrue(rowsAfter.length === 0, "reconciliation must not invent an Evidence row for the orphan");
+    await closeGate6BDatabase(ORPHAN_DATABASE);
+
+    return {
+      status: "PASS",
+      testedGitCommitSha: String(import.meta.env.VITE_GIT_COMMIT ?? "UNAVAILABLE"),
+      sourceIsContentUri: true,
+      canonicalStorageRef: isCanonicalStorageRef(storageRef),
+      canonicalHash: isCanonicalSha256(published.contentHash),
+      expectedSize,
+      publishedSize: published.fileSize,
+      expectedHash,
+      publishedHash: published.contentHash,
+      zeroRowsBeforeReopen: rowsBefore.length === 0,
+      finalExistedBeforeReopen: existedBefore,
+      reconciliationReportedOrphanRemoved: orphanRemoved,
+      readinessAfterReconciliation: reopenedContext.readiness,
+      finalExistsAfterReconciliation: existsAfter,
+      zeroRowsAfterReconciliation: rowsAfter.length === 0,
+      storageRef,
+    };
+  } finally {
+    await closeGate6BDatabase(ORPHAN_DATABASE).catch(() => undefined);
+    await deleteGate6BDatabase(ORPHAN_DATABASE).catch(() => undefined);
   }
 }
 
-if (typeof window !== "undefined") window.__gate6cRunIntegrationProof = runGate6CDeviceIntegrationProof;
+declare global {
+  interface Window {
+    __gate6cRunIntegrationProof?: typeof runGate6CDeviceIntegrationProof;
+    __gate6cRunZeroRowOrphanProof?: typeof runGate6CZeroRowOrphanReconciliationProof;
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.__gate6cRunIntegrationProof = runGate6CDeviceIntegrationProof;
+  window.__gate6cRunZeroRowOrphanProof = runGate6CZeroRowOrphanReconciliationProof;
+}

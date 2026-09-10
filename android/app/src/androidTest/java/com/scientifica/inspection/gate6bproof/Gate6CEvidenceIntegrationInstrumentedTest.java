@@ -1,12 +1,14 @@
 package com.scientifica.inspection.gate6bproof;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.SystemClock;
 import androidx.core.content.FileProvider;
 import androidx.test.core.app.ActivityScenario;
@@ -33,12 +35,13 @@ public final class Gate6CEvidenceIntegrationInstrumentedTest {
     @Test
     public void closedEvidenceOrchestrationConsumesAndroidAdaptersAndSurvivesReopen() throws Exception {
         final Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        final String expectedGitSha = expectedGitSha();
         final File source = syntheticSource(context, "gate6c-integration-source.bin", SOURCE_BYTES);
         final String expectedHash = hash(source);
         final Uri sourceUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", source);
 
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            waitForProofFunction(scenario);
+            waitForProofFunction(scenario, "__gate6cRunIntegrationProof");
             final String invoke =
                 "window.__gate6cIntegrationResult=null;" +
                 "window.__gate6cRunIntegrationProof(" + JSONObject.quote(sourceUri.toString()) + "," + source.length() + "," + JSONObject.quote(expectedHash) + ")" +
@@ -47,7 +50,7 @@ public final class Gate6CEvidenceIntegrationInstrumentedTest {
                 "'STARTED';";
             assertEquals("STARTED", decodeJsValue(evaluate(scenario, invoke)));
 
-            final JSONObject result = new JSONObject(waitForProofResult(scenario));
+            final JSONObject result = new JSONObject(waitForProofResult(scenario, "window.__gate6cIntegrationResult"));
             assertEquals("PASS", result.getString("status"));
             assertTrue(result.getBoolean("sourceIsContentUri"));
             assertTrue(result.getBoolean("canonicalStorageRef"));
@@ -67,7 +70,7 @@ public final class Gate6CEvidenceIntegrationInstrumentedTest {
             assertTrue(result.getString("storageRef").matches("^evidence/v1/objects/[0-9a-f-]+\\.[a-z0-9]+$"));
             assertTrue(result.getInt("evidenceId") > 0);
             assertNotEquals("UNAVAILABLE", result.getString("testedGitCommitSha"));
-            assertEquals(40, result.getString("testedGitCommitSha").length());
+            assertEquals(expectedGitSha, result.getString("testedGitCommitSha"));
 
             final JSONArray events = result.getJSONArray("events");
             assertTrue(events.length() >= 7);
@@ -82,6 +85,7 @@ public final class Gate6CEvidenceIntegrationInstrumentedTest {
                 " storageRef=" + result.getString("storageRef") +
                 " bytes=" + result.getLong("persistedSize") +
                 " hash=" + result.getString("persistedHash") +
+                " resolvedHandle=" + result.getString("resolvedHandle") +
                 " events=" + events.toString()
             );
         } finally {
@@ -90,22 +94,79 @@ public final class Gate6CEvidenceIntegrationInstrumentedTest {
         }
     }
 
-    private static void waitForProofFunction(ActivityScenario<MainActivity> scenario) throws Exception {
+    @Test
+    public void postRenameZeroRowFinalIsRemovedByClosedStartupReconciliation() throws Exception {
+        final Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        final String expectedGitSha = expectedGitSha();
+        final File source = syntheticSource(context, "gate6c-orphan-source.bin", SOURCE_BYTES);
+        final String expectedHash = hash(source);
+        final Uri sourceUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", source);
+
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            waitForProofFunction(scenario, "__gate6cRunZeroRowOrphanProof");
+            final String invoke =
+                "window.__gate6cOrphanResult=null;" +
+                "window.__gate6cRunZeroRowOrphanProof(" + JSONObject.quote(sourceUri.toString()) + "," + source.length() + "," + JSONObject.quote(expectedHash) + ")" +
+                ".then(function(r){window.__gate6cOrphanResult=JSON.stringify(r);})" +
+                ".catch(function(e){window.__gate6cOrphanResult=JSON.stringify({status:'FAIL',error:String(e&&(e.stack||e.message)||e)});});" +
+                "'STARTED';";
+            assertEquals("STARTED", decodeJsValue(evaluate(scenario, invoke)));
+
+            final JSONObject result = new JSONObject(waitForProofResult(scenario, "window.__gate6cOrphanResult"));
+            assertEquals("PASS", result.getString("status"));
+            assertEquals(expectedGitSha, result.getString("testedGitCommitSha"));
+            assertTrue(result.getBoolean("sourceIsContentUri"));
+            assertTrue(result.getBoolean("canonicalStorageRef"));
+            assertTrue(result.getBoolean("canonicalHash"));
+            assertEquals(source.length(), result.getLong("expectedSize"));
+            assertEquals(source.length(), result.getLong("publishedSize"));
+            assertEquals(expectedHash, result.getString("expectedHash"));
+            assertEquals(expectedHash, result.getString("publishedHash"));
+            assertTrue(result.getBoolean("zeroRowsBeforeReopen"));
+            assertTrue(result.getBoolean("finalExistedBeforeReopen"));
+            assertTrue(result.getBoolean("reconciliationReportedOrphanRemoved"));
+            assertEquals("READY", result.getString("readinessAfterReconciliation"));
+            assertFalse(result.getBoolean("finalExistsAfterReconciliation"));
+            assertTrue(result.getBoolean("zeroRowsAfterReconciliation"));
+            assertTrue(result.getString("storageRef").matches("^evidence/v1/objects/[0-9a-f-]+\\.[a-z0-9]+$"));
+
+            System.out.println(
+                "GATE6C_ZERO_ROW_ORPHAN_RECONCILIATION_PASS api=" + Build.VERSION.SDK_INT +
+                " testedSha=" + result.getString("testedGitCommitSha") +
+                " storageRef=" + result.getString("storageRef") +
+                " bytes=" + result.getLong("publishedSize") +
+                " hash=" + result.getString("publishedHash") +
+                " readiness=" + result.getString("readinessAfterReconciliation")
+            );
+        } finally {
+            deleteRecursively(new File(context.getFilesDir(), "evidence"));
+            assertTrue(source.delete() || !source.exists());
+        }
+    }
+
+    private static String expectedGitSha() {
+        final Bundle arguments = InstrumentationRegistry.getArguments();
+        final String value = arguments.getString("gate6cExpectedGitSha");
+        assertTrue("gate6cExpectedGitSha instrumentation argument is required", value != null && value.matches("^[0-9a-f]{40}$"));
+        return value;
+    }
+
+    private static void waitForProofFunction(ActivityScenario<MainActivity> scenario, String functionName) throws Exception {
         for (int i = 0; i < 80; i++) {
-            final Object value = decodeJsValue(evaluate(scenario, "typeof window.__gate6cRunIntegrationProof"));
+            final Object value = decodeJsValue(evaluate(scenario, "typeof window." + functionName));
             if ("function".equals(value)) return;
             SystemClock.sleep(250L);
         }
-        throw new AssertionError("Gate 6C integration proof function did not become available in WebView");
+        throw new AssertionError("Gate 6C proof function did not become available in WebView: " + functionName);
     }
 
-    private static String waitForProofResult(ActivityScenario<MainActivity> scenario) throws Exception {
+    private static String waitForProofResult(ActivityScenario<MainActivity> scenario, String expression) throws Exception {
         for (int i = 0; i < 240; i++) {
-            final Object value = decodeJsValue(evaluate(scenario, "window.__gate6cIntegrationResult===null?null:window.__gate6cIntegrationResult"));
+            final Object value = decodeJsValue(evaluate(scenario, expression + "===null?null:" + expression));
             if (value instanceof String && !((String) value).isEmpty()) return (String) value;
             SystemClock.sleep(250L);
         }
-        throw new AssertionError("Gate 6C integration proof did not complete");
+        throw new AssertionError("Gate 6C integration proof did not complete: " + expression);
     }
 
     private static String evaluate(ActivityScenario<MainActivity> scenario, String script) throws Exception {

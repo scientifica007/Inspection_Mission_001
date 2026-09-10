@@ -327,11 +327,15 @@ jobs:
           script: |
             echo "GATE6C_WEBVIEW_API=${{ matrix.api }}"
             adb shell dumpsys webviewupdate || true
-            for pkg in com.google.android.webview com.android.webview com.android.chrome; do
-              echo "GATE6C_WEBVIEW_PACKAGE=$pkg"
-              adb shell dumpsys package "$pkg" 2>/dev/null | grep -m1 'versionName=' || true
-            done
-            ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest
+            echo "GATE6C_WEBVIEW_PACKAGE=com.google.android.webview"
+            adb shell dumpsys package com.google.android.webview 2>/dev/null | grep -m1 'versionName=' || true
+            echo "GATE6C_WEBVIEW_PACKAGE=com.android.webview"
+            adb shell dumpsys package com.android.webview 2>/dev/null | grep -m1 'versionName=' || true
+            echo "GATE6C_WEBVIEW_PACKAGE=com.android.chrome"
+            adb shell dumpsys package com.android.chrome 2>/dev/null | grep -m1 'versionName=' || true
+            echo "GATE6C_INTEGRATION_TEST_START class=Gate6CEvidenceIntegrationInstrumentedTest expectedSha=$GITHUB_SHA"
+            ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest -Pandroid.testInstrumentationRunnerArguments.gate6cExpectedGitSha=$GITHUB_SHA
+            echo "GATE6C_INTEGRATION_TEST_COMPLETE class=Gate6CEvidenceIntegrationInstrumentedTest expectedSha=$GITHUB_SHA"
       - name: Upload integration Android test reports
         if: always()
         uses: actions/upload-artifact@v4

@@ -257,8 +257,8 @@
     "status": "IN_PROGRESS",
     "current_substage": "6C-C",
     "current_substage_name": "Android Camera/File + durable EvidenceStorage adapters",
-    "current_substage_status": "NEXT_NOT_STARTED",
-    "mode": "IMPLEMENTATION_NOT_STARTED",
+    "current_substage_status": "IN_PROGRESS_IMPLEMENTATION_REVIEW",
+    "mode": "IMPLEMENTATION_REVIEW",
     "design_branch": "design/gate6c-evidence-contract-v1",
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
@@ -274,7 +274,7 @@
       "historical_null_content_hash_valid": true
     },
     "gate6c_b_started": true,
-    "gate6c_c_started": false,
+    "gate6c_c_started": true,
     "gate6c_d_started": false,
     "gate6d_started": false,
     "gate6c_a": {
@@ -318,13 +318,13 @@
     "status": "IN_PROGRESS",
     "role": "CURRENT",
     "current_substage": "6C-C",
-    "current_substage_status": "NEXT_NOT_STARTED"
+    "current_substage_status": "IN_PROGRESS_IMPLEMENTATION_REVIEW"
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_NEXT_NOT_STARTED",
+  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_IN_PROGRESS_IMPLEMENTATION_REVIEW",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C NEXT / NOT_STARTED",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C IN_PROGRESS / IMPLEMENTATION_REVIEW",
     "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",

@@ -32,7 +32,7 @@
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B مغلقتان/مدمجتان كـsub-stages، بينما Gate 6C ككل ما تزال IN_PROGRESS وGate 6C-C هي المرحلة التالية ولم تبدأ.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B مغلقتان/مدمجتان كـsub-stages، بينما Gate 6C ككل ما تزال IN_PROGRESS وGate 6C-C قيد التنفيذ في حالة IMPLEMENTATION_REVIEW.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -94,11 +94,11 @@ These decisions remain **`OWNER_APPROVED / ADOPTED`**.
 
 #### Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters
 
-الحالة: **`NEXT / NOT_STARTED`**.
+الحالة: **`IN_PROGRESS / IMPLEMENTATION_REVIEW`**.
 
-لم يبدأ تنفيذ Camera/gallery/generic-file Android adapters، ولا `content://` streaming/copy spikes، ولا `appRestoredResult`، ولا durable Android EvidenceStorage. تتطلب 6C-C تفويضًا مستقلًا قبل التنفيذ.
+بدأ تنفيذ Android Camera/gallery/generic-file acquisition وdurable EvidenceStorage وتم الوصول إلى executable emulator qualification على API24 وAPI35، بما في ذلك full EvidenceService integration وstartup reconciliation. سجل الإثبات المرشح: `docs/architecture/GATE6C-C-ANDROID-EVIDENCE-QUALIFICATION-v1.md`. هذه الحالة لا تعني إغلاق Gate 6C-C ولا تمثل Gate 6C-D physical qualification.
 
-Gate 6C-D لم تبدأ.
+Gate 6C-D **`NOT_STARTED`**.
 
 ### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
@@ -238,19 +238,19 @@ Gate 6C-B adopted baseline: **85 / 0**. Proven on corrected executable `dadf4d90
 - diagnostic Q12 writer ليس product architecture.
 - Q12 classifier semantics لم تُضعف.
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
-- Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **NEXT / NOT_STARTED**.
+- Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **IN_PROGRESS / IMPLEMENTATION_REVIEW** وليست CLOSED.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
-- Gate 6C-C و6C-D **NOT_STARTED**.
+- Gate 6C-D **NOT_STARTED**.
 - Gate 6D **LATER / NOT_STARTED**.
 
 ## 8) الحالة التالية
 
 Gate 6C-B أُغلقت ودمجت عبر PR #21 بعد independent review وموافقة صريحة من Project Owner.
 
-المرحلة التالية هي:
+المرحلة الفرعية الحالية هي:
 
-**Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters — `NEXT / NOT_STARTED`.**
+**Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters — `IN_PROGRESS / IMPLEMENTATION_REVIEW`.**
 
-لا يبدأ تنفيذ 6C-C إلا بتفويض مستقل مبني على Fresh Read لـ`main` الحي وعقد Gate 6C-A المدمج وGate 6C-B المغلقة.
+Gate 6C-C ليست CLOSED ولم تُنشأ لها provenance خاصة بـPR أو merge؛ ما تزال بانتظار independent review بعد final exact-SHA qualification.
 
 Gate 6C-D لم تبدأ. Gate 6D لم يبدأ.

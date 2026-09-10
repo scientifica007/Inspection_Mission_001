@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "files": [
+    "src/bootstrap/adapter.ts",
+    "src/application/errors.ts",
+    "src/application/evidence-contract.ts",
+    "src/device/evidence-acquisition-mapping.ts",
+    "src/device/gate6c-evidence-native.ts",
+    "src/device/capacitor-evidence-acquisition.ts",
+    "src/device/capacitor-evidence-storage.ts",
+    "src/device/evidence-restored-result.ts",
+    "src/gate6c/device-integration-proof.ts"
+  ],
+  "include": []
+}

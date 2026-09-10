@@ -326,6 +326,8 @@ jobs:
           heap-size: 512M
           script: |
             echo "GATE6C_WEBVIEW_API=${{ matrix.api }}"
+            [ "${{ matrix.api }}" != "24" ] || echo "GATE6C_WEBVIEW_API24_PROVIDER_REQUEST=com.android.chrome"
+            [ "${{ matrix.api }}" != "24" ] || adb shell cmd webviewupdate set-webview-implementation com.android.chrome
             adb shell dumpsys webviewupdate || true
             echo "GATE6C_WEBVIEW_PACKAGE=com.google.android.webview"
             adb shell dumpsys package com.google.android.webview 2>/dev/null | grep -m1 'versionName=' || true

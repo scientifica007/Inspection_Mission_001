@@ -16,11 +16,14 @@
 - Gate 6B merge SHA: `0905c6111269d62480e7ccadc31786bef29f3c51`.
 - Gate 6C-A design base: live `main@0fbd9ca3db6f2a34f063a682e4f997becefb83ad`.
 - Gate 6C-A design branch: `design/gate6c-evidence-contract-v1`.
+- Gate 6C-A PR: `#19`.
+- Gate 6C-A reviewed head: `b267d4ced626b32f7e4a4bad21b37082abc4ae86`.
+- Gate 6C-A merge SHA: `4dfe7afd920285b034b26decb500932de4dae655`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A مغلقة/مدمجة كـsub-stage، بينما Gate 6C ككل ما تزال IN_PROGRESS.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -40,15 +43,17 @@ SQLite candidate: `@capacitor-community/sqlite@8.1.1`.
 
 الحالة: **`IN_PROGRESS`**.
 
-Current sub-stage: **`6C-A — Evidence Storage Contract & Failure Model`**.
+#### Gate 6C-A — Evidence Storage Contract & Failure Model
 
-Sub-stage status: **`DESIGN_REVIEW`**.
+الحالة: **`CLOSED / MERGED`**.
 
-Mode: **DESIGN / CONTRACT ONLY**.
-
-Governing design artifact on the Gate-6C-A branch:
-
-`docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md`
+- design artifact: `docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md`;
+- design branch: `design/gate6c-evidence-contract-v1`;
+- reviewed head: `b267d4ced626b32f7e4a4bad21b37082abc4ae86`;
+- PR: `#19`;
+- merge SHA: `4dfe7afd920285b034b26decb500932de4dae655`;
+- independent review verdict before merge: **`MERGE-READY`**;
+- Project Owner explicitly approved the merge.
 
 Project Owner approval recorded on `2026-09-10` for all three category-C Gate-6C-A decisions:
 
@@ -56,9 +61,15 @@ Project Owner approval recorded on `2026-09-10` for all three category-C Gate-6C
 2. canonical lowercase UUID v4 object token;
 3. mandatory SHA-256 for every newly committed Gate-6C Evidence object in `sha256:<64 lowercase hexadecimal characters>` form, while historical/pre-Gate-6C `content_hash = NULL` remains valid.
 
-These three decisions are now **`OWNER_APPROVED / ADOPTED`** and are no longer pending. Gate 6C-A still does not implement Camera, Filesystem, file picker, Evidence orchestration, UI, APK, or physical-device behavior.
+These decisions remain **`OWNER_APPROVED / ADOPTED`**. Gate 6C-A introduced no Camera, Filesystem, file-picker, Evidence-orchestration, UI, APK, schema, bootstrap, or dependency implementation.
 
-Gate 6C-B / 6C-C / 6C-D have not started.
+#### Gate 6C-B — Runtime-neutral Evidence orchestration + host regressions
+
+الحالة: **`NEXT / NOT_STARTED`**.
+
+Gate 6C-B is the next sub-stage, but executable implementation has **not** started. It requires separate scoped authorization from the merged Gate-6C-A contract.
+
+Gate 6C-C / 6C-D have not started.
 
 ### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
@@ -197,19 +208,18 @@ Gate 6C-A is design-only and introduces no new executable test baseline.
 - diagnostic Q12 writer ليس product architecture.
 - Q12 classifier semantics لم تُضعف.
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
-- Gate 6C **IN_PROGRESS** فقط ضمن sub-stage `6C-A DESIGN_REVIEW`؛ ليست CLOSED.
+- Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`، وGate 6C-B **NEXT / NOT_STARTED**.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
 - Gate 6D **LATER / NOT_STARTED**.
 
 ## 8) الحالة التالية
 
-العمل الحالي هو مراجعة عقد **Gate 6C-A — Evidence Storage Contract & Failure Model** فقط.
+Gate 6C-A أُغلقت ودمجت عبر PR #19. لا توجد أعمال تصميمية إضافية مطلوبة لإغلاقها.
 
-قبل بدء 6C-B يجب:
+المرحلة التالية هي:
 
-1. مراجعة artifact الفعلي لـGate 6C-A مراجعة مستقلة؛
-2. التحقق من أن القرارات الثلاثة المسجلة تطابق موافقة المالك ولا توسّع النطاق؛
-3. دمج عقد 6C-A وحالة المشروع بعد المراجعة/موافقة المالك؛
-4. إصدار scope/authorization مستقل لـ6C-B.
+**Gate 6C-B — Runtime-neutral Evidence orchestration + host regressions — `NEXT / NOT_STARTED`.**
 
-لا يوجد في Gate 6C-A أي تنفيذ لـCamera/Filesystem/picker/Evidence service، ولا physical Android proof. Gate 6D لم يبدأ.
+قبل أي تنفيذ في 6C-B يجب إصدار scope/authorization مستقل مبني على عقد Gate 6C-A المدمج وFresh Read للـ`main` الحي.
+
+Gate 6C-C و6C-D لم تبدأا. Gate 6D لم يبدأ.

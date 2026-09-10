@@ -13,6 +13,9 @@
     "last_gate6b_pr": 17,
     "gate6c_a_design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "gate6c_a_owner_decision_date": "2026-09-10",
+    "last_gate6c_a_pr": 19,
+    "last_gate6c_a_reviewed_head": "b267d4ced626b32f7e4a4bad21b37082abc4ae86",
+    "last_gate6c_a_merge_sha": "4dfe7afd920285b034b26decb500932de4dae655",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -41,7 +44,8 @@
     "5K",
     "5L",
     "6A",
-    "6B"
+    "6B",
+    "6C-A"
   ],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
@@ -300,10 +304,10 @@
     "id": "6C",
     "name": "Evidence Storage + Camera/File Pipeline",
     "status": "IN_PROGRESS",
-    "current_substage": "6C-A",
-    "current_substage_name": "Evidence Storage Contract & Failure Model",
-    "current_substage_status": "DESIGN_REVIEW",
-    "mode": "DESIGN_CONTRACT_ONLY",
+    "current_substage": "6C-B",
+    "current_substage_name": "Runtime-neutral Evidence orchestration + host regressions",
+    "current_substage_status": "NEXT_NOT_STARTED",
+    "mode": "IMPLEMENTATION_NOT_STARTED",
     "design_branch": "design/gate6c-evidence-contract-v1",
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
@@ -321,21 +325,33 @@
     "gate6c_b_started": false,
     "gate6c_c_started": false,
     "gate6c_d_started": false,
-    "gate6d_started": false
+    "gate6d_started": false,
+    "gate6c_a": {
+      "status": "CLOSED",
+      "merge_status": "MERGED",
+      "pr": 19,
+      "design_branch": "design/gate6c-evidence-contract-v1",
+      "governing_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
+      "reviewed_head": "b267d4ced626b32f7e4a4bad21b37082abc4ae86",
+      "merge_sha": "4dfe7afd920285b034b26decb500932de4dae655",
+      "independent_review_verdict": "MERGE_READY",
+      "owner_merge_approval": true,
+      "closure_status": "CLOSED_MERGED"
+    }
   },
   "next_gate": {
     "id": "6C",
     "name": "Evidence Storage + Camera/File Pipeline",
     "status": "IN_PROGRESS",
     "role": "CURRENT",
-    "current_substage": "6C-A",
-    "current_substage_status": "DESIGN_REVIEW"
+    "current_substage": "6C-B",
+    "current_substage_status": "NEXT_NOT_STARTED"
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_DESIGN_REVIEW_OWNER_DECISIONS_APPROVED",
+  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_NEXT_NOT_STARTED",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A DESIGN_REVIEW / OWNER DECISIONS APPROVED",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B NEXT / NOT_STARTED",
     "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",

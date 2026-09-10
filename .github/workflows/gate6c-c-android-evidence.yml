@@ -381,7 +381,9 @@ jobs:
             [ "${{ matrix.api }}" != "24" ] || adb shell cmd webviewupdate set-webview-implementation com.android.chrome | tee /tmp/gate6c-provider-result.txt
             [ "${{ matrix.api }}" != "24" ] || grep -Fx 'Success' /tmp/gate6c-provider-result.txt
             adb shell dumpsys webviewupdate | tee /tmp/gate6c-webviewupdate.txt
-            [ "${{ matrix.api }}" != "24" ] || grep -F 'com.android.chrome' /tmp/gate6c-webviewupdate.txt
+            [ "${{ matrix.api }}" != "24" ] || adb shell settings get secure webview_provider | tee /tmp/gate6c-webview-provider-secure.txt
+            [ "${{ matrix.api }}" != "24" ] || grep -Fx 'com.android.chrome' /tmp/gate6c-webview-provider-secure.txt
+            [ "${{ matrix.api }}" != "24" ] || echo "GATE6C_WEBVIEW_API24_ACTIVE_PROVIDER=com.android.chrome"
             [ "${{ matrix.api }}" != "24" ] || adb shell dumpsys package com.android.chrome | grep -m1 -F 'versionName=69.0.3497.100'
             [ "${{ matrix.api }}" = "24" ] || grep -F 'Current WebView package (name, version): (com.android.webview,' /tmp/gate6c-webviewupdate.txt
             [ "${{ matrix.api }}" = "24" ] || echo "GATE6C_WEBVIEW_PACKAGE=com.android.webview"

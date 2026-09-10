@@ -59,7 +59,11 @@ function dataToOutcome(methodName: "takePhoto" | "chooseFromGallery", data: unkn
 
 class PendingSourceAcquisition implements EvidenceSourceAcquisition {
   private consumed = false;
-  constructor(private readonly source: EvidenceSource) {}
+  private readonly source: EvidenceSource;
+
+  constructor(source: EvidenceSource) {
+    this.source = source;
+  }
 
   private consume(kind: EvidenceSourceKind): Promise<AcquisitionOutcome> {
     if (this.consumed || this.source.kind !== kind) return Promise.resolve({ status: "USER_CANCELLED" });

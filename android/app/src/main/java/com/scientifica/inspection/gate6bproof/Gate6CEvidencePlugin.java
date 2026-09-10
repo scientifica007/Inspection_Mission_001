@@ -85,7 +85,7 @@ public final class Gate6CEvidencePlugin extends Plugin {
         final String displayName = queryDisplayName(getContext(), uri);
         if (displayName != null) out.put("displayName", displayName);
         final String mime = resolver.getType(uri);
-        if (mime != null && !mime.isBlank()) out.put("declaredMimeType", mime);
+        if (mime != null && !mime.trim().isEmpty()) out.put("declaredMimeType", mime);
         final Long size = querySize(getContext(), uri);
         if (size != null && size >= 0) out.put("sizeHint", size);
         call.resolve(out);
@@ -288,7 +288,7 @@ public final class Gate6CEvidencePlugin extends Plugin {
 
     private static String required(PluginCall call, String key) {
         final String value = call.getString(key);
-        if (value == null || value.isBlank()) throw new IllegalArgumentException(key + " is required");
+        if (value == null || value.trim().isEmpty()) throw new IllegalArgumentException(key + " is required");
         return value;
     }
 
@@ -309,7 +309,7 @@ public final class Gate6CEvidencePlugin extends Plugin {
                 final int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                 if (index >= 0) {
                     final String value = cursor.getString(index);
-                    if (value != null && !value.isBlank()) return value.replace('\r', ' ').replace('\n', ' ').trim();
+                    if (value != null && !value.trim().isEmpty()) return value.replace('\r', ' ').replace('\n', ' ').trim();
                 }
             }
         } catch (RuntimeException ignored) { }

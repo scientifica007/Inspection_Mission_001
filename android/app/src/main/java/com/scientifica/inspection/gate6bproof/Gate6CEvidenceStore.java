@@ -318,7 +318,7 @@ final class Gate6CEvidenceStore {
     }
 
     private Uri parseSourceUri(String sourceRef) throws IOException {
-        if (sourceRef == null || sourceRef.isBlank()) throw new IOException("sourceRef is required");
+        if (sourceRef == null || sourceRef.trim().isEmpty()) throw new IOException("sourceRef is required");
         final Uri uri = Uri.parse(sourceRef);
         final String scheme = uri.getScheme();
         if (!ContentResolver.SCHEME_CONTENT.equals(scheme) && !ContentResolver.SCHEME_FILE.equals(scheme)) {
@@ -451,7 +451,7 @@ final class Gate6CEvidenceStore {
     private void fsyncDirectory(File directory) throws IOException {
         FileDescriptor fd = null;
         try {
-            fd = Os.open(directory.getAbsolutePath(), OsConstants.O_RDONLY | OsConstants.O_DIRECTORY, 0);
+            fd = Os.open(directory.getAbsolutePath(), OsConstants.O_RDONLY, 0);
             Os.fsync(fd);
         } catch (ErrnoException e) {
             throw new IOException("Unable to fsync Evidence directory", e);

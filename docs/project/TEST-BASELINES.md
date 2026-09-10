@@ -2,12 +2,13 @@
 
 > **الغرض:** آخر regression baselines المعتمدة التي يجب أن تبقى خضراء عند مواصلة المشروع. هذه الأرقام ليست بديلًا عن CI status حي.
 
-## 1) Gate 6B adopted baselines
+## 1) Adopted baselines
 
 Gate 6B مغلقة/مدمجة ولا تعيد كتابة Application Core. suites الخاصة بها أصبحت جزءًا من baselines التاريخية المعتمدة:
 
 | Suite | Passed | Failed |
 |---|---:|---:|
+| Gate 6C-B Evidence host regression | 85 | 0 |
 | Gate 6B host adapter contract | 16 | 0 |
 | Gate 6B canonical-schema execution | 8 | 0 |
 | Gate 6B Q12 diagnostic/classifier | 20 | 0 |
@@ -50,12 +51,14 @@ tests/gate5l_regression.ts
 tests/gate4a_regression.py
 ```
 
-Gate 6C-B candidate suite files are additionally present on `implementation/gate6c-b-evidence-orchestration-v1`; their result is recorded below as candidate branch evidence and is not an adopted baseline.
+Gate 6C-B suite files are now part of the adopted regression surface after PR #21 merged at `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`.
 
 ## 3) أوامر التشغيل المرجعية
 
 ```bash
 npm run typecheck
+npm run typecheck:gate6c
+npm run gate6c:host
 npm run gate6b:host
 npm run gate6b:schema-host
 npm run gate6b:q12-host
@@ -139,23 +142,29 @@ bootstrap/v1/checklist-v1.json
 d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
 ```
 
-## 9) Gate 6C-B CURRENT / CANDIDATE BRANCH EVIDENCE
+## 9) Gate 6C-B adopted baseline and closure evidence
 
-Gate 6C is **`IN_PROGRESS`**. Gate 6C-A is **`CLOSED / MERGED`**. Gate 6C-B is **`IN_PROGRESS / IMPLEMENTATION_REVIEW`** and is not an adopted closed baseline.
+Gate 6C is **`IN_PROGRESS`**. Gate 6C-A and Gate 6C-B are **`CLOSED / MERGED`**. Gate 6C-C is **`NEXT / NOT_STARTED`**.
 
-Candidate provenance:
+Gate 6C-B provenance:
 
 - branch: `implementation/gate6c-b-evidence-orchestration-v1`;
 - governing base: `953610be8815725bb55bbdc62ac2ca375ee4ffa3`;
 - initial implementation checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`;
 - corrected executable validation SHA: `dadf4d90a10d7348fea0543c1885ecf5b0846578`;
 - corrected executable GitHub Actions run: `34483510338` — **SUCCESS**;
+- final reviewed head: `ea88fac83d60b99b7d50828915173d3aa14bb5d6`;
+- final-head GitHub Actions run: `34484231771` — **SUCCESS**;
+- independent PR-review verdict: **`MERGE-READY`**;
+- Project Owner explicitly approved merge;
+- PR: `#21`;
+- merge SHA: `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`;
 - Gate-6C-B host regression: **85 / 0**;
 - Gate-6C-B typecheck: PASS;
 - production build: PASS;
 - canonical hash, runtime-neutrality, historical regression, no-drift, dependency-set, synthetic-only, and `git diff --check` guards: PASS.
 
-These results are **CURRENT / CANDIDATE BRANCH EVIDENCE** pending independent branch review and later governance. They do not mark Gate 6C-B CLOSED.
+**85 / 0 is now the adopted Gate-6C-B regression baseline.**
 
 ## 10) قاعدة عدم الإضعاف والحالة الحالية
 
@@ -171,6 +180,8 @@ Gate 6C: **`IN_PROGRESS`**.
 
 Gate 6C-A: **`CLOSED / MERGED`**.
 
-Gate 6C-B: **`IN_PROGRESS / IMPLEMENTATION_REVIEW`**.
+Gate 6C-B: **`CLOSED / MERGED`** عبر PR #21 / merge `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`.
 
-Gate 6C-C / 6C-D / Gate 6D: **`NOT_STARTED`**.
+Gate 6C-C: **`NEXT / NOT_STARTED`**.
+
+Gate 6C-D / Gate 6D: **`NOT_STARTED`**.

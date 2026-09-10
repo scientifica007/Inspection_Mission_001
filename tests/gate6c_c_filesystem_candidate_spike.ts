@@ -1,5 +1,12 @@
 import fs from "node:fs";
-import path from "node:path";
+
+type Lockfile = {
+  packages?: Record<string, { dependencies?: Record<string, string> }>;
+};
+
+type Manifest = {
+  dependencies?: Record<string, string>;
+};
 
 let passed = 0;
 let failed = 0;
@@ -14,78 +21,33 @@ function check(name: string, condition: boolean, detail: string): void {
   }
 }
 
-function findFile(root: string, basename: string): string | null {
-  const stack = [root];
-  while (stack.length > 0) {
-    const current = stack.pop()!;
-    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
-      const full = path.join(current, entry.name);
-      if (entry.isDirectory()) stack.push(full);
-      else if (entry.isFile() && entry.name === basename) return full;
-    }
-  }
-  return null;
-}
+const manifest = JSON.parse(fs.readFileSync("package.json", "utf8")) as Manifest;
+const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8")) as Lockfile;
+const rootLockDependencies = lock.packages?.[""]?.dependencies ?? {};
+const lockPackages = lock.packages ?? {};
 
-function interfaceBlock(text: string, name: string): string {
-  const marker = `export interface ${name}`;
-  const start = text.indexOf(marker);
-  if (start < 0) return "";
-  const next = text.indexOf("\nexport ", start + marker.length);
-  return text.slice(start, next < 0 ? text.length : next);
-}
+check(
+  "G6C-C-FS01 rejected Filesystem dependency absent from manifest",
+  manifest.dependencies?.["@capacitor/filesystem"] === undefined,
+  "@capacitor/filesystem is not a production dependency",
+);
+check(
+  "G6C-C-FS02 rejected Filesystem dependency absent from lock root",
+  rootLockDependencies["@capacitor/filesystem"] === undefined,
+  "package-lock root dependency set excludes @capacitor/filesystem",
+);
+check(
+  "G6C-C-FS03 rejected Filesystem package absent from lock graph",
+  lockPackages["node_modules/@capacitor/filesystem"] === undefined,
+  "package-lock contains no @capacitor/filesystem package node",
+);
+check(
+  "G6C-C-FS04 Filesystem-only synapse transitive remnant absent",
+  lockPackages["node_modules/@capacitor/synapse"] === undefined,
+  "package-lock contains no @capacitor/synapse remnant",
+);
 
-function methodOptionType(text: string, method: string): string | null {
-  const match = new RegExp(`\\b${method}\\s*\\(\\s*options\\s*:\\s*([A-Za-z0-9_]+)`).exec(text);
-  return match === null ? null : match[1];
-}
-
-function resolveOptionsBlock(text: string, typeName: string | null): { block: string; resolution: string } {
-  if (typeName === null) return { block: "", resolution: "missing" };
-  const direct = interfaceBlock(text, typeName);
-  if (direct.length > 0) return { block: direct, resolution: typeName };
-  const alias = new RegExp(`export\\s+type\\s+${typeName}\\s*=\\s*([A-Za-z0-9_]+)\\s*;`).exec(text);
-  if (alias === null) return { block: "", resolution: typeName };
-  const aliased = interfaceBlock(text, alias[1]);
-  return { block: aliased, resolution: `${typeName}->${alias[1]}` };
-}
-
-const root = path.resolve("node_modules/@capacitor/filesystem");
-const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")) as { version?: string };
-const pluginPath = findFile(root, "FilesystemPlugin.kt");
-const definitionsPath = findFile(root, "definitions.d.ts");
-
-check("G6C-C-FS01 exact candidate version", packageJson.version === "8.1.3", `version=${String(packageJson.version)}`);
-check("G6C-C-FS02 Android implementation source present", pluginPath !== null, String(pluginPath));
-check("G6C-C-FS03 public TypeScript definitions present", definitionsPath !== null, String(definitionsPath));
-
-if (pluginPath !== null && definitionsPath !== null) {
-  const android = fs.readFileSync(pluginPath, "utf8");
-  const definitions = fs.readFileSync(definitionsPath, "utf8");
-  const copyType = methodOptionType(definitions, "copy");
-  const renameType = methodOptionType(definitions, "rename");
-  const copy = resolveOptionsBlock(definitions, copyType);
-  const rename = resolveOptionsBlock(definitions, renameType);
-
-  check("G6C-C-FS04 candidate copy delegates to opaque controller operation", android.includes("controller.copy(source, destination)"), "FilesystemPlugin.copy delegates source/destination to controller.copy");
-  check("G6C-C-FS05 candidate rename delegates to opaque controller operation", android.includes("controller.move(source, destination)"), "FilesystemPlugin.rename delegates source/destination to controller.move");
-  check("G6C-C-FS06 copy public option type found", copy.block.length > 0, `copy options=${copy.resolution}`);
-  check("G6C-C-FS07 rename public option type found", rename.block.length > 0, `rename options=${rename.resolution}`);
-
-  const noReplaceVocabulary = /noReplace|failIfExists|replaceExisting|atomicMove|createNew/i;
-  const copyCanExpressNoReplace = noReplaceVocabulary.test(copy.block);
-  const renameCanExpressNoReplace = noReplaceVocabulary.test(rename.block);
-  check("G6C-C-FS08 copy cannot express primitive-level no-replace policy", !copyCanExpressNoReplace, copy.block.replace(/\s+/g, " ").slice(0, 400));
-  check("G6C-C-FS09 rename cannot express primitive-level no-replace policy", !renameCanExpressNoReplace, rename.block.replace(/\s+/g, " ").slice(0, 400));
-
-  const fullContractProvable = copyCanExpressNoReplace || renameCanExpressNoReplace;
-  check("G6C-C-FS10 full EvidenceStorage publication contract is not provable through candidate API", !fullContractProvable, "no public no-replace primitive is exposed; API names alone cannot prove required publication semantics");
-
-  if (!fullContractProvable) {
-    console.log("DISPOSITION: FILESYSTEM_PLUGIN_REJECTED_FOR_EVIDENCE_STORAGE");
-    console.log("RATIONALE: Gate 6C-C requires proven content-source bounded-memory persistence AND primitive-level complete no-replace publication. The installed Filesystem 8.1.3 API cannot express the latter, so the conjunction cannot be proved and the candidate must not be adopted for EvidenceStorage.");
-  }
-}
-
-console.log(`Gate 6C-C Filesystem candidate spike: ${passed} passed, ${failed} failed`);
+console.log("DISPOSITION: FILESYSTEM_PLUGIN_REJECTED_FOR_EVIDENCE_STORAGE");
+console.log("RATIONALE: the earlier executable candidate spike established that Filesystem 8.1.3 did not expose a primitive-level no-replace publication contract; final Gate 6C-C production dependencies therefore exclude it.");
+console.log(`Gate 6C-C Filesystem rejection guard: ${passed} passed, ${failed} failed`);
 if (failed !== 0) process.exitCode = 1;

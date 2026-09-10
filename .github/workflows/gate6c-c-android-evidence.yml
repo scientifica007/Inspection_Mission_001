@@ -376,21 +376,16 @@ jobs:
           disk-size: 4096M
           heap-size: 512M
           script: |
-            set -euo pipefail
             echo "GATE6C_WEBVIEW_API=${{ matrix.api }}"
-            if [ "${{ matrix.api }}" = "24" ]; then
-              echo "GATE6C_WEBVIEW_API24_PROVIDER_REQUEST=com.android.chrome"
-              provider_result="$(adb shell cmd webviewupdate set-webview-implementation com.android.chrome)"
-              echo "GATE6C_WEBVIEW_API24_PROVIDER_RESULT=$provider_result"
-              echo "$provider_result" | grep -F 'Success'
-              adb shell dumpsys webviewupdate | tee /tmp/gate6c-webviewupdate.txt
-              grep -F 'com.android.chrome' /tmp/gate6c-webviewupdate.txt
-              adb shell dumpsys package com.android.chrome | grep -m1 -F 'versionName=69.0.3497.100'
-            else
-              adb shell dumpsys webviewupdate || true
-              echo "GATE6C_WEBVIEW_PACKAGE=com.android.webview"
-              adb shell dumpsys package com.android.webview 2>/dev/null | grep -m1 'versionName=' || true
-            fi
+            [ "${{ matrix.api }}" != "24" ] || echo "GATE6C_WEBVIEW_API24_PROVIDER_REQUEST=com.android.chrome"
+            [ "${{ matrix.api }}" != "24" ] || adb shell cmd webviewupdate set-webview-implementation com.android.chrome | tee /tmp/gate6c-provider-result.txt
+            [ "${{ matrix.api }}" != "24" ] || grep -Fx 'Success' /tmp/gate6c-provider-result.txt
+            adb shell dumpsys webviewupdate | tee /tmp/gate6c-webviewupdate.txt
+            [ "${{ matrix.api }}" != "24" ] || grep -F 'com.android.chrome' /tmp/gate6c-webviewupdate.txt
+            [ "${{ matrix.api }}" != "24" ] || adb shell dumpsys package com.android.chrome | grep -m1 -F 'versionName=69.0.3497.100'
+            [ "${{ matrix.api }}" = "24" ] || grep -F 'Current WebView package (name, version): (com.android.webview,' /tmp/gate6c-webviewupdate.txt
+            [ "${{ matrix.api }}" = "24" ] || echo "GATE6C_WEBVIEW_PACKAGE=com.android.webview"
+            [ "${{ matrix.api }}" = "24" ] || adb shell dumpsys package com.android.webview 2>/dev/null | grep -m1 'versionName='
             echo "GATE6C_INTEGRATION_TEST_START class=Gate6CEvidenceIntegrationInstrumentedTest expectedSha=$GITHUB_SHA"
             ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest -Pandroid.testInstrumentationRunnerArguments.gate6cExpectedGitSha=$GITHUB_SHA
             echo "GATE6C_INTEGRATION_TEST_COMPLETE class=Gate6CEvidenceIntegrationInstrumentedTest expectedSha=$GITHUB_SHA"

@@ -7,6 +7,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(Gate6BCompetingWriterPlugin.class);
+        registerPlugin(Gate6CEvidencePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

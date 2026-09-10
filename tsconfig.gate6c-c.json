@@ -9,7 +9,8 @@
     "src/application/evidence-contract.ts",
     "src/device/evidence-acquisition-mapping.ts",
     "src/device/gate6c-evidence-native.ts",
-    "src/device/capacitor-evidence-acquisition.ts"
+    "src/device/capacitor-evidence-acquisition.ts",
+    "src/device/capacitor-evidence-storage.ts"
   ],
   "include": []
 }

@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { gate6cRestoredResultCoordinator } from "./device/evidence-restored-result.ts";
 import "./gate6c/device-integration-proof.ts";
 import { Gate6CDPhysicalEvidenceQualificationApp } from "./ui/Gate6CDPhysicalEvidenceQualificationApp.tsx";
+import { Gate6CDPhysicalQualificationAugment } from "./ui/Gate6CDPhysicalQualificationAugment.tsx";
 import "./ui/gate6cd-physical.css";
 
 if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
@@ -17,6 +18,11 @@ if (root === null) throw new Error("root element missing");
 
 createRoot(root).render(
   <StrictMode>
-    <Gate6CDPhysicalEvidenceQualificationApp />
+    <>
+      <Gate6CDPhysicalEvidenceQualificationApp />
+      <main className="g6cd-shell">
+        <Gate6CDPhysicalQualificationAugment />
+      </main>
+    </>
   </StrictMode>,
 );

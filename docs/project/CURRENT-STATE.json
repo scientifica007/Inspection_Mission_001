@@ -306,7 +306,7 @@
       "review_status": "MERGE_READY",
       "implementation_branch": "implementation/gate6c-b-evidence-orchestration-v1",
       "governing_base_sha": "953610be8815725bb55bbdc62ac2ca375ee4ffa3",
-      "initial_checkpoint": "64b424670ea4384b7e9d6c01eea952c201a573d7",
+      "initial_checkpoint_sha": "64b424670ea4384b7e9d6c01eea952c201a573d7",
       "corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
       "corrected_executable_ci_run": 34483510338,
       "corrected_executable_ci_conclusion": "SUCCESS",

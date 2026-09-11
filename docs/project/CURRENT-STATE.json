@@ -29,6 +29,9 @@
     "last_gate6c_c_reviewed_head": "9de6c69eef90c490319c02eac48d236482597210",
     "last_gate6c_c_merge_sha": "f221b215358f83dce381ac5261a856a7de4e5c98",
     "last_gate6c_c_final_head_ci_run": 34531511138,
+    "gate6c_d_governing_base_sha": "20d194959afa50ce705198ba993554c7f9cc210d",
+    "gate6c_d_qualification_branch": "qualification/gate6c-d-physical-evidence-v1",
+    "gate6c_d_initial_checkpoint_sha": "33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -262,8 +265,8 @@
     "status": "IN_PROGRESS",
     "current_substage": "6C-D",
     "current_substage_name": "Gate 6C-D",
-    "current_substage_status": "NEXT_NOT_STARTED",
-    "mode": "IMPLEMENTATION_NOT_STARTED",
+    "current_substage_status": "IN_PROGRESS_QUALIFICATION_PREPARATION",
+    "mode": "QUALIFICATION_PREPARATION",
     "design_branch": "design/gate6c-evidence-contract-v1",
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
@@ -280,7 +283,7 @@
     },
     "gate6c_b_started": true,
     "gate6c_c_started": true,
-    "gate6c_d_started": false,
+    "gate6c_d_started": true,
     "gate6d_started": false,
     "gate6c_a": {
       "status": "CLOSED",
@@ -351,6 +354,19 @@
       },
       "closed": true,
       "merged": true
+    },
+    "gate6c_d": {
+      "status": "STARTED",
+      "phase": "QUALIFICATION_PREPARATION_IN_PROGRESS",
+      "qualification_branch": "qualification/gate6c-d-physical-evidence-v1",
+      "governing_base_sha": "20d194959afa50ce705198ba993554c7f9cc210d",
+      "initial_checkpoint_sha": "33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82",
+      "physical_device_evidence_status": "PENDING_OWNER_EXECUTION",
+      "physical_device_pass_claimed": false,
+      "gate_closure_status": "NOT_CLOSED",
+      "gate6d_started": false,
+      "field_usable_v1": false,
+      "closed": false
     }
   },
   "next_gate": {
@@ -359,13 +375,13 @@
     "status": "IN_PROGRESS",
     "role": "CURRENT",
     "current_substage": "6C-D",
-    "current_substage_status": "NEXT_NOT_STARTED"
+    "current_substage_status": "IN_PROGRESS_QUALIFICATION_PREPARATION"
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_CLOSED_MERGED_6C_D_NEXT_NOT_STARTED",
+  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_CLOSED_MERGED_6C_D_QUALIFICATION_PREPARATION_IN_PROGRESS",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C CLOSED / MERGED / 6C-D NEXT / NOT_STARTED",
+    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C CLOSED / MERGED / 6C-D STARTED / QUALIFICATION PREPARATION",
     "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",

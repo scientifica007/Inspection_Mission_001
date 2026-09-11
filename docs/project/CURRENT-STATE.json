@@ -33,6 +33,7 @@
     "gate6c_d_qualification_branch": "qualification/gate6c-d-physical-evidence-v1",
     "gate6c_d_initial_checkpoint_sha": "33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82",
     "gate6c_d_correction_branch": "correction/gate6c-d-camera-process-death-v1",
+    "gate6c_d_gallery_correction_branch": "correction/gate6c-d-gallery-native-picker-v1",
     "gate6c_d_physically_tested_correction_sha": "560e5cf9c7b84554e79bb434afb6a662ac7d9376",
     "gate6c_d_documentation_checkpoint_live_main_sha": "20d194959afa50ce705198ba993554c7f9cc210d",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
@@ -305,7 +306,7 @@
       "review_status": "MERGE_READY",
       "implementation_branch": "implementation/gate6c-b-evidence-orchestration-v1",
       "governing_base_sha": "953610be8815725bb55bbdc62ac2ca375ee4ffa3",
-      "initial_checkpoint_sha": "64b424670ea4384b7e9d6c01eea952c201a573d7",
+      "initial_checkpoint": "64b424670ea4384b7e9d6c01eea952c201a573d7",
       "corrected_executable_sha": "dadf4d90a10d7348fea0543c1885ecf5b0846578",
       "corrected_executable_ci_run": 34483510338,
       "corrected_executable_ci_conclusion": "SUCCESS",
@@ -363,6 +364,7 @@
       "phase": "PHYSICAL_QUALIFICATION_IN_PROGRESS",
       "qualification_branch": "qualification/gate6c-d-physical-evidence-v1",
       "correction_branch": "correction/gate6c-d-camera-process-death-v1",
+      "gallery_correction_branch": "correction/gate6c-d-gallery-native-picker-v1",
       "governing_base_sha": "20d194959afa50ce705198ba993554c7f9cc210d",
       "initial_checkpoint_sha": "33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82",
       "historical_failure": {
@@ -378,6 +380,21 @@
         "artifact_name": "gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376",
         "artifact_zip_sha256": "920df2197ca1fe42b5b5183f17950ef48f34b283b3fa274d772e020da0d047be",
         "q01_camera_commit": "PENDING_PHYSICAL_PASS",
+        "q02_gallery_commit": {
+          "status": "FAIL_CORRECTION_REQUIRED",
+          "classification": "Q02_FAIL_REPRODUCIBLE_DEPENDENCY_CRASH_IN_CHOOSEFROMGALLERY_IONCAMERA_POST_SELECTION_PROCESSING",
+          "tested_sha": "560e5cf9c7b84554e79bb434afb6a662ac7d9376",
+          "attempts": [
+            {"pid": 4875, "timestamp": "2026-09-11 15:15:04", "source_location": "DCIM/Screenshots", "exception": "java.io.FileNotFoundException: Permission denied"},
+            {"pid": 6805, "timestamp": "2026-09-11 15:16:13", "source_location": "WhatsApp/Media/WhatsApp Images", "exception": "java.io.FileNotFoundException: Permission denied"}
+          ],
+          "older_dropbox_occurrence": "2026-09-11 09:18:11 / same exception pattern",
+          "stack_components": ["android.media.ExifInterface.<init>","IONCAMRMediaProcessor.createImageMediaResult","IONCAMRGalleryManager.createMediaResult","IONCAMRGalleryManager.onChooseFromGalleryResult","IonCameraFlow.processResultFromGallery"],
+          "failure_boundary": "BEFORE_EVIDENCE_SERVICE_USABLE_GALLERY_SOURCE",
+          "direct_root_cause": "UNCAUGHT_FILENOTFOUNDEXCEPTION_PERMISSION_DENIED_IN_IONCAMERA_GALLERY_POST_SELECTION_RAW_PATH_PROCESSING",
+          "raw_crash_files_committed": false,
+          "physical_retest_required": true
+        },
         "q07_process_death_recovery": {
           "status": "PASS",
           "camera_method": "getPhoto",
@@ -437,9 +454,9 @@
         "coloros_trigger": "UNKNOWN / UNESTABLISHED",
         "not_conclusively_attributed_to": ["cable","low memory","USB hardware","application"]
       },
-      "physical_device_evidence_status": "PARTIAL_Q07_PASS_Q13_PASS_REMAINING_MATRIX_PENDING",
+      "physical_device_evidence_status": "Q02_FAIL_CORRECTION_REQUIRED_Q07_PASS_Q13_PASS_REMAINING_MATRIX_PENDING",
       "physical_device_pass_claimed": false,
-      "pending_scenarios": ["Q01 correction-candidate normal Camera Commit","Q02","Q03","Q04","Q05","Q06","Q08 formal committed-Evidence restart","Q09","Q10","Q11","Q12"],
+      "pending_scenarios": ["Q01 correction-candidate normal Camera Commit","Q02 native Gallery correction physical retest","Q03","Q04","Q05","Q06","Q08 formal committed-Evidence restart","Q09","Q10","Q11","Q12"],
       "literal_enospc_gap": true,
       "gate_closure_status": "NOT_CLOSED",
       "gate6d_started": false,

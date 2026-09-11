@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import {
   legacyCameraPhotoToEvidenceSource,
+  mapCameraError,
   nativeGalleryResultToOutcome,
   nativeGenericResultToOutcome,
 } from "../src/device/evidence-acquisition-mapping.ts";
@@ -145,6 +146,34 @@ await test("G6CD-CAM-C10 corrected restored path never commits directly", () => 
   assert(!/INSERT\s+INTO\s+evidence/i.test(source), "restored coordinator must not write Evidence SQL");
   assert(!source.includes("new EvidenceService"), "restored coordinator must not instantiate commit service");
   assert(source.includes("adoptPending"), "explicit adoption seam must remain");
+});
+
+await test("G6CD-CAM-C11 known structured cancellation code maps USER_CANCELLED", () => {
+  assert(mapCameraError({ code: "OS-PLUG-CAMR-0006", message: "structured cancellation" }).status === "USER_CANCELLED", "known cancellation code must map USER_CANCELLED");
+});
+
+await test("G6CD-CAM-C12 exact legacy getPhoto cancellation message maps USER_CANCELLED without code", () => {
+  assert(mapCameraError({ message: "User cancelled photos app" }).status === "USER_CANCELLED", "physical legacy cancellation message must map USER_CANCELLED");
+});
+
+await test("G6CD-CAM-C13 legacy cancellation message normalization permits surrounding whitespace and CRLF", () => {
+  assert(mapCameraError({ message: " \r\n User cancelled photos app \r\n " }).status === "USER_CANCELLED", "normalized exact legacy cancellation message must map USER_CANCELLED");
+});
+
+await test("G6CD-CAM-C14 unknown message without code remains SOURCE_UNAVAILABLE", () => {
+  assert(mapCameraError({ message: "Camera provider returned an unknown failure" }).status === "SOURCE_UNAVAILABLE", "unknown message must fail closed as SOURCE_UNAVAILABLE");
+});
+
+await test("G6CD-CAM-C15 known permission code remains PERMISSION_DENIED", () => {
+  assert(mapCameraError({ code: "OS-PLUG-CAMR-0003", message: "permission denied" }).status === "PERMISSION_DENIED", "permission mapping must remain unchanged");
+});
+
+await test("G6CD-CAM-C16 known unsupported code remains UNSUPPORTED_SOURCE", () => {
+  assert(mapCameraError({ code: "OS-PLUG-CAMR-0031", message: "unsupported" }).status === "UNSUPPORTED_SOURCE", "unsupported mapping must remain unchanged");
+});
+
+await test("G6CD-CAM-C17 known unavailable code remains SOURCE_UNAVAILABLE", () => {
+  assert(mapCameraError({ code: "OS-PLUG-CAMR-0007", message: "unavailable" }).status === "SOURCE_UNAVAILABLE", "unavailable mapping must remain unchanged");
 });
 
 console.log(`Gate 6C-D Camera process-death correction regression: ${passed} passed, ${failed} failed`);

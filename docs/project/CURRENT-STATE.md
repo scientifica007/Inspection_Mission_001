@@ -34,11 +34,14 @@
 - Gate 6C-C final-head qualification run: `34531511138` — SUCCESS.
 - Gate 6C-C PR: `#23`.
 - Gate 6C-C merge SHA: `f221b215358f83dce381ac5261a856a7de4e5c98`.
+- Gate 6C-D governing qualification base: `20d194959afa50ce705198ba993554c7f9cc210d`.
+- Gate 6C-D qualification branch: `qualification/gate6c-d-physical-evidence-v1`.
+- Gate 6C-D executable preparation started at checkpoint: `33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B وGate 6C-C مغلقة/مدمجة كـsub-stages، بينما Gate 6C ككل ما تزال `IN_PROGRESS`. المرحلة التالية فقط هي Gate 6C-D بحالة `NEXT / NOT_STARTED`.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B وGate 6C-C مغلقة/مدمجة كـsub-stages، بينما Gate 6C ككل ما تزال `IN_PROGRESS`. Gate 6C-D بدأت فقط في وضع **qualification preparation**؛ لم تُقبل ولم تُغلق، وGate 6D ما تزال `NOT_STARTED`.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -137,11 +140,20 @@ Final APK provenance, with hashes intentionally distinct:
 - actual `app-debug.apk` SHA-256: `da98c8437619a9e93d0d28df5bb1e2b20bf0d2f20120600e0bbbff10a40e9112`;
 - GitHub artifact ZIP SHA-256: `2718aa9309b69fad63c8054ef6d941f13c63821991382b83513d72aa1af6dded`.
 
-#### Gate 6C-D
+#### Gate 6C-D — Physical Android Evidence qualification + Gate closure
 
-الحالة: **`NEXT / NOT_STARTED`**.
+الحالة: **`STARTED / QUALIFICATION_PREPARATION_IN_PROGRESS`**.
 
-لم تبدأ. لا يجوز اعتبارها started أو تنفيذ أي جزء منها في post-merge closure reconciliation الخاص بـ6C-C.
+- qualification branch: `qualification/gate6c-d-physical-evidence-v1`;
+- governing base: `20d194959afa50ce705198ba993554c7f9cc210d`;
+- purpose of the current work: prepare a diagnostic APK/harness for Project Owner physical execution only;
+- physical-device Evidence qualification: **PENDING / NOT EXECUTED BY THIS IMPLEMENTATION TASK**;
+- Gate 6C-D: **NOT ACCEPTED / NOT CLOSED**;
+- Gate 6C as a whole: **IN_PROGRESS**;
+- Gate 6D: **NOT_STARTED**;
+- `field_usable_v1=false`.
+
+The diagnostic harness must remain visibly marked as not field UI, use only synthetic Mission/Institution/Visit data, and preserve the closed Gate-6C-A/B/C production Evidence path. CI/emulator success may qualify the harness build and regressions but must not be represented as physical-device Gate-6C-D PASS.
 
 ### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
@@ -288,16 +300,14 @@ Gate 6C-C adopted repeatable host baselines: **14 / 0**, **11 / 0**, and **4 / 0
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
 - Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **CLOSED / MERGED** عند `f221b215358f83dce381ac5261a856a7de4e5c98`.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
-- Gate 6C-D **NEXT / NOT_STARTED**.
+- Gate 6C-D **STARTED / QUALIFICATION_PREPARATION_IN_PROGRESS**; physical-device qualification remains pending and Gate 6C-D is not closed.
 - Gate 6D **LATER / NOT_STARTED**.
 - `field_usable_v1=false`.
 
 ## 8) الحالة التالية
 
-Gate 6C-C أُغلقت ودمجت عبر PR #23 بعد independent review وموافقة صريحة من Project Owner.
+Gate 6C-D هي المرحلة الفرعية الحالية داخل Gate 6C، لكن العمل الحالي محصور في **qualification preparation** وبناء diagnostic harness/APK.
 
-المرحلة الفرعية التالية فقط هي:
+**Gate 6C-D — `STARTED / QUALIFICATION_PREPARATION_IN_PROGRESS`.**
 
-**Gate 6C-D — `NEXT / NOT_STARTED`.**
-
-Gate 6C ككل ما تزال **`IN_PROGRESS`**. Gate 6C-D لم تبدأ. Gate 6D لم يبدأ. `field_usable_v1=false`.
+Gate 6C ككل ما تزال **`IN_PROGRESS`**. لا يوجد physical-device PASS بعد، Gate 6C-D لم تُقبل ولم تُغلق، Gate 6D لم يبدأ، و`field_usable_v1=false`.

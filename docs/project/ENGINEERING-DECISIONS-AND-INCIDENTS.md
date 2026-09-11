@@ -375,12 +375,25 @@ If a root cause was not established, record `UNKNOWN / UNESTABLISHED`. A later P
 
 ## 2) Current disposition
 
-At the creation of this index:
+Current disposition after PR #26 reconciliation:
 
 - Gates 1→5L, 6A, 6B, 6C-A, 6C-B, 6C-C are closed/merged in their recorded scopes.
-- Gate 6C remains `IN_PROGRESS`.
-- Gate 6C-D is `OPEN / IN_PROGRESS`; Q01 correction-candidate normal Camera Commit is `INTERRUPTED_PROCESS_DEATH_NO_PASS`, Q02 Gallery Commit is `FAIL / CORRECTION_REQUIRED` pending physical retest of the native-picker correction, Q05 is `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`, Q07 correction path is physically PASS, and the current Q13 durability/retrieval run is PASS with its actual runtime-recreation mechanism recorded; the remaining qualification matrix is incomplete.
-- Gate 6D is `NOT_STARTED`.
+- Gate 6C remains `IN_PROGRESS`; Gate 6C-D remains `OPEN / IN_PROGRESS` and physical qualification remains incomplete.
+- Q01 normal Camera Commit remains **`UNRESOLVED / INTERRUPTED_PROCESS_DEATH_NO_PASS`** on the correction candidate; no valid Q01 PASS was produced, and the process-death cause remains **`UNKNOWN / UNESTABLISHED`**.
+- Q02 Gallery Commit is **PHYSICAL PASS** on `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3` and is no longer a blocker. The earlier IonCamera Gallery failure on `560e5cf9c7b84554e79bb434afb6a662ac7d9376` remains historical FAIL evidence in INC-017 and is not rewritten.
+- Q03 Generic File Commit is **PHYSICAL PASS** on `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3`, recorded after Q02 without a DB reset. No canonical JSON fields beyond those actually preserved are claimed.
+- Q04 Camera cancellation is **PHYSICAL PASS** on `44a231a8281d1031a40e7105160c919633d32531`: `USER_CANCELLED`, rows `0 → 0`, `pendingSourceCreated=false`. The earlier `4ac992...` Q04 result remains historical **BLOCKED** evidence and is not rewritten.
+- Q05 remains **`PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`**; no CAMERA permission or synthetic PASS is implied.
+- Q06 is **PENDING**.
+- Q07 controlled Camera process-death recovery remains **PHYSICAL PASS** on `560e5cf9c7b84554e79bb434afb6a662ac7d9376`; it remains distinct from Q01 normal Camera Commit and does not substitute for Q01 PASS.
+- Q08 has **`OBSERVED REOPEN / RECONCILIATION SUCCESS`** on the recorded `4ac992...` sequence, but it is **`NOT YET STRICT Q08 PROTOCOL PASS`** because the required preceding `adb shell am force-stop com.scientifica.inspection.gate6bproof` was not recorded in that execution.
+- Q09 is **PENDING**.
+- Q10 is **PENDING**.
+- Q11 is **PENDING**.
+- Q12 is **PENDING**; a controlled real write failure, when exercised, does not prove literal ENOSPC.
+- Q13 current physical durability/retrieval is **PASS** on `560e5cf9c7b84554e79bb434afb6a662ac7d9376`. The recorded PASS followed real runtime recreation and did not record an explicit `adb shell am force-stop` for that execution; a strict repetition after Q11 may still be required by the versioned qualification contract.
+- Literal `REAL_DEVICE_ENOSPC` remains a named qualification gap.
+- Gate 6D remains `NOT_STARTED`.
 - `field_usable_v1=false`.
 
 Always verify these statements against live `docs/project/CURRENT-STATE.json` before acting; this log records engineering history, not the authoritative live HEAD.

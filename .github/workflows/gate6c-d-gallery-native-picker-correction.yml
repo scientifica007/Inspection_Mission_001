@@ -1,0 +1,364 @@
+name: Gate 6C-D Gallery Native Picker Correction
+
+on:
+  push:
+    branches:
+      - correction/gate6c-d-gallery-native-picker-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate6c-d-gallery-correction-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  CORRECTION_BASE_SHA: 93b237bab6368c5060b78b20e2d91c3625eee444
+  GOVERNING_MAIN_SHA: 20d194959afa50ce705198ba993554c7f9cc210d
+  SCHEMA_SHA256: c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7
+  BOOTSTRAP_SHA256: d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
+
+jobs:
+  host-correction-and-baselines:
+    name: Host / Gallery correction + preserved baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Guard exact correction lineage and narrow scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git merge-base "$CORRECTION_BASE_SHA" HEAD)" = "$CORRECTION_BASE_SHA"
+          python3 - <<'PY'
+          import subprocess
+          allowed = {
+            '.github/workflows/gate6c-d-gallery-native-picker-correction.yml',
+            'android/app/src/androidTest/java/com/scientifica/inspection/gate6bproof/Gate6CGalleryPickerInstrumentedTest.java',
+            'android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java',
+            'docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md',
+            'docs/project/CURRENT-STATE.json',
+            'docs/project/CURRENT-STATE.md',
+            'docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md',
+            'package.json',
+            'src/device/capacitor-evidence-acquisition.ts',
+            'src/device/evidence-acquisition-mapping.ts',
+            'src/device/gate6c-evidence-native.ts',
+            'tests/gate6c_d_camera_process_death_correction_regression.ts',
+            'tests/gate6c_d_gallery_native_picker_correction_regression.ts',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', '93b237bab6368c5060b78b20e2d91c3625eee444...HEAD'],
+              text=True,
+          ).splitlines())
+          unexpected = sorted(changed - allowed)
+          if unexpected:
+              raise SystemExit('Unexpected Gallery correction paths: ' + ', '.join(unexpected))
+          print('Narrow Gallery correction allowlist: PASS')
+          for path in sorted(changed):
+              print(path)
+          PY
+
+      - name: Guard canonical authorities and untouched closed seams
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' "$SCHEMA_SHA256" docs/schema/schema.sql | sha256sum -c -
+          printf '%s  %s\n' "$BOOTSTRAP_SHA256" bootstrap/v1/checklist-v1.json | sha256sum -c -
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- src/application
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- src/bootstrap
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- docs/schema/schema.sql
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- bootstrap/v1/checklist-v1.json
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- src/device/capacitor-evidence-storage.ts
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- src/device/capacitor-sqlite-adapter.ts
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- src/device/evidence-restored-result.ts
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- src/gate6c/physical-qualification.ts
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- android/app/src/main/AndroidManifest.xml
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidenceStore.java
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/MainActivity.java
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- package-lock.json
+          git diff --exit-code "$CORRECTION_BASE_SHA" -- sources
+          grep -F 'minSdkVersion = 24' android/variables.gradle
+          grep -F 'target: "chrome69"' vite.config.ts
+          ! grep -R --line-number -E 'READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|MANAGE_EXTERNAL_STORAGE' android/app/src/main/AndroidManifest.xml
+
+      - name: Guard exact retained dependency versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./node_modules/@capacitor/core/package.json').version")" = "8.5.1"
+          test "$(node -p "require('./node_modules/@capacitor/android/package.json').version")" = "8.5.1"
+          test "$(node -p "require('./node_modules/@capacitor-community/sqlite/package.json').version")" = "8.1.1"
+          test "$(node -p "require('./node_modules/@capacitor/camera/package.json').version")" = "8.2.4"
+          test "$(node -p "require('./node_modules/@capacitor/app/package.json').version")" = "8.1.1"
+          node <<'NODE'
+          const pkg = require('./package.json');
+          const expected = {
+            '@capacitor/camera': '8.2.4',
+            '@capacitor/app': '8.1.1',
+            '@capacitor/core': '8.5.1',
+            '@capacitor/android': '8.5.1',
+            '@capacitor-community/sqlite': '8.1.1',
+          };
+          for (const [name, version] of Object.entries(expected)) {
+            if (pkg.dependencies[name] !== version) throw new Error(`${name} dependency drift`);
+          }
+          if (pkg.dependencies['@capacitor/filesystem'] !== undefined) throw new Error('Filesystem dependency reintroduced');
+          NODE
+
+      - name: Guard exact Camera and Gallery acquisition routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'Camera.getPhoto({' src/device/capacitor-evidence-acquisition.ts
+          grep -F 'source: CameraSource.Camera' src/device/capacitor-evidence-acquisition.ts
+          grep -F 'resultType: CameraResultType.Uri' src/device/capacitor-evidence-acquisition.ts
+          grep -F 'quality: 100' src/device/capacitor-evidence-acquisition.ts
+          grep -F 'saveToGallery: false' src/device/capacitor-evidence-acquisition.ts
+          grep -F 'allowEditing: false' src/device/capacitor-evidence-acquisition.ts
+          grep -F 'correctOrientation: true' src/device/capacitor-evidence-acquisition.ts
+          ! grep -F 'Camera.takePhoto(' src/device/capacitor-evidence-acquisition.ts
+          ! grep -F 'Camera.chooseFromGallery' src/device/capacitor-evidence-acquisition.ts
+          ! grep -F 'Camera.pickImages' src/device/capacitor-evidence-acquisition.ts
+          grep -F 'this.native.chooseGalleryMedia()' src/device/capacitor-evidence-acquisition.ts
+          grep -F 'chooseGalleryMedia(): Promise<NativePickerAcquisitionResult>' src/device/gate6c-evidence-native.ts
+          grep -F 'Intent.ACTION_OPEN_DOCUMENT' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java
+          grep -F 'new String[]{ "image/*", "video/*" }' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java
+          grep -F 'resolver.openInputStream(uri)' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java
+          ! grep -F 'ExifInterface' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java
+          ! grep -E 'MediaStore\.MediaColumns\.DATA|MediaStore\.Images\.Media\.DATA|"_data"' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java
+          if grep -R -nE 'Base64|\bBlob\b|ArrayBuffer' \
+            src/device/capacitor-evidence-acquisition.ts \
+            src/device/evidence-acquisition-mapping.ts \
+            src/device/gate6c-evidence-native.ts; then
+            echo 'Whole-binary JavaScript transport leaked into Gallery correction' >&2
+            exit 1
+          fi
+
+      - name: Validate project state and Q02 incident classification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/project/CURRENT-STATE.json >/dev/null
+          grep -F 'INC-017 — Q02 Gallery Commit crashes in IonCamera raw-path EXIF processing' docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md
+          grep -F 'Q02 FAIL — REPRODUCIBLE DEPENDENCY CRASH IN chooseFromGallery / IonCamera POST-SELECTION PROCESSING' docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md
+          grep -F 'FileNotFoundException' docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md
+          grep -F 'Permission denied' docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md
+          grep -F 'Q02' docs/project/CURRENT-STATE.md
+          grep -F 'FAIL_CORRECTION_REQUIRED' docs/project/CURRENT-STATE.json
+          grep -F 'FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY' docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md
+          grep -F 'Q07 correction path' docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md
+          grep -F 'Q13' docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md
+          grep -F 'Gate 6C-D remains `OPEN / IN_PROGRESS`' docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md
+          grep -F 'Gate 6D remains `NOT_STARTED`' docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md
+          grep -F '`field_usable_v1=false`' docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md
+
+      - name: Typecheck Gate 6C-B, 6C-C and 6C-D
+        run: |
+          npm run typecheck:gate6c
+          npm run typecheck:gate6c-c
+          npm run typecheck:gate6c-d
+
+      - name: Gate 6C-D Gallery native picker correction regression
+        run: npm run gate6c-d:gallery-correction-host
+
+      - name: Gate 6C-D Camera correction regression remains green
+        run: npm run gate6c-d:camera-correction-host
+
+      - name: Gate 6C-D qualification harness regression remains green
+        run: npm run gate6c-d:host
+
+      - name: Gate 6C-C preserved host regressions
+        run: npm run gate6c-c:host
+
+      - name: Gate 6C-B adopted host regression
+        run: npm run gate6c:host
+
+      - name: Gate 6B adopted host baselines
+        run: |
+          npm run gate6b:host
+          npm run gate6b:schema-host
+          npm run gate6b:q12-host
+
+      - name: Historical Gate 5 regressions
+        run: |
+          node tests/gate5b_adapter_regression.ts
+          node tests/gate5b_regression.ts
+          node tests/gate5c_regression.ts
+          node tests/gate5d_regression.ts
+          node tests/gate5e_regression.ts
+          node tests/gate5f_regression.ts
+          node tests/gate5g_regression.ts
+          node tests/gate5h_regression.ts
+          node tests/gate5i_regression.ts
+          node tests/gate5j_regression.ts
+          node tests/gate5k_regression.ts
+          node tests/gate5l_regression.ts
+
+      - name: Schema regression
+        run: python3 tests/gate4a_regression.py
+
+      - name: Production build embeds exact Gallery correction SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          VITE_GIT_COMMIT="$GITHUB_SHA" npm run build
+          grep -R -F "$GITHUB_SHA" dist >/dev/null
+
+      - name: Diff whitespace check
+        run: git diff --check "$CORRECTION_BASE_SHA"..HEAD
+
+      - name: Capacitor Android sync and exact runtime plugin set
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx cap sync android 2>&1 | tee /tmp/cap-sync.log
+          grep -F '[info] Found 3 Capacitor plugins for android:' /tmp/cap-sync.log
+          grep -F '@capacitor-community/sqlite@8.1.1' /tmp/cap-sync.log
+          grep -F '@capacitor/app@8.1.1' /tmp/cap-sync.log
+          grep -F '@capacitor/camera@8.2.4' /tmp/cap-sync.log
+          ! grep -Fi '@capacitor/filesystem' /tmp/cap-sync.log
+
+      - name: Preserve SQLCipher 4.17.0 resolution
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./android/gradlew -p android :app:dependencies --configuration debugRuntimeClasspath > /tmp/deps.txt
+          grep -F 'net.zetetic:sqlcipher-android:4.17.0' /tmp/deps.txt
+
+      - name: Gradle assembleDebug
+        run: ./android/gradlew -p android assembleDebug
+
+      - name: Gallery correction APK SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum "$APK" | tee gate6c-d-gallery-correction-apk.sha256
+
+      - name: Upload Gate 6C-D Gallery correction APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate6c-d-gallery-correction-apk-${{ github.sha }}
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            gate6c-d-gallery-correction-apk.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  android-native-preservation:
+    name: Native Evidence + Gallery intent proof / API ${{ matrix.api }}
+    needs: host-correction-and-baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 24
+            arch: x86
+          - api: 35
+            arch: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Build exact-SHA bundle and sync Android
+        run: |
+          VITE_GIT_COMMIT="$GITHUB_SHA" npm run build
+          npx cap sync android
+      - name: Enable KVM group access
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run native storage and Gallery intent proofs
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: ${{ matrix.arch }}
+          target: default
+          profile: pixel_2
+          disable-animations: true
+          disk-size: 4096M
+          heap-size: 512M
+          script: |
+            ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceStoreInstrumentedTest
+            ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CGalleryPickerInstrumentedTest
+
+  android-integration-preservation:
+    name: Full Evidence integration preservation / API ${{ matrix.api }}
+    needs: android-native-preservation
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 24
+            arch: x86
+            target: google_apis
+          - api: 35
+            arch: x86_64
+            target: default
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Build exact-SHA bundle and sync Android
+        run: |
+          VITE_GIT_COMMIT="$GITHUB_SHA" npm run build
+          npx cap sync android
+      - name: Enable KVM group access
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run preserved full production-bundle integration
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: ${{ matrix.arch }}
+          target: ${{ matrix.target }}
+          profile: pixel_2
+          disable-animations: true
+          disk-size: 4096M
+          heap-size: 512M
+          script: |
+            [ "${{ matrix.api }}" != "24" ] || adb shell cmd webviewupdate set-webview-implementation com.android.chrome | tee /tmp/provider.txt
+            [ "${{ matrix.api }}" != "24" ] || grep -Fx 'Success' /tmp/provider.txt
+            echo "GATE6CD_GALLERY_CORRECTION_INTEGRATION_START expectedSha=$GITHUB_SHA"
+            ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest -Pandroid.testInstrumentationRunnerArguments.gate6cExpectedGitSha=$GITHUB_SHA
+            echo "GATE6CD_GALLERY_CORRECTION_INTEGRATION_COMPLETE expectedSha=$GITHUB_SHA"

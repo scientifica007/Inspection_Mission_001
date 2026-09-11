@@ -37,7 +37,8 @@ Fresh Read main
 → PR to main
 → merge
 → Fresh Read main
-→ mark Gate CLOSED/ADOPTED/MERGED
+→ reconcile CURRENT-STATE / baselines / engineering memory
+→ mark Gate CLOSED/ADOPTED/MERGED when closure conditions are satisfied
 → only then consider the next Gate
 ```
 
@@ -69,6 +70,7 @@ Fresh Read main
 - يتحقق من remote branch بعد push.
 - يرفع recommendation للمالك، وينشئ PR/merge فقط عندما يكون مخولًا بذلك.
 - يجري Fresh Read نهائية بعد merge.
+- يتحقق من أن القرارات والحوادث المهمة التي تؤثر في العمل المستقبلي موثقة في `docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md` أو مرتبطة منه إلى سجل أكثر تفصيلًا.
 
 ### Independent ChatGPT Implementation Agent — DEFAULT
 
@@ -79,6 +81,7 @@ Fresh Read main
 - لا يبدأ Gate لاحقة.
 - يشغّل focused tests وrequired regressions ضمن النطاق.
 - يقدّم final implementation report يتضمن branch/SHA/diff/CI.
+- يذكر صراحة أي incident أو workaround أو rejected candidate أو assumption تغيّر أثناء التنفيذ إذا كان له أثر مستقبلي.
 - يتوقف بعد التسليم للمراجعة ولا يدمج إلى `main` دون owner approval/authorization.
 
 ### Alternative implementation / local execution agent
@@ -107,7 +110,7 @@ architecture/gate6a-product-runtime-v1
 docs/memory-handoff-hardening-v1
 ```
 
-لا تعمل مباشرة على `main` في تطوير Gate عادية.
+لا تعمل مباشرة على `main` في تطوير Gate عادية أو documentation hardening متعمد. إذا وقع write مباشر إلى `main` خطأً، لا تُخفه ولا تعيد كتابة التاريخ: أوقف العمل، أعد tree إلى الحالة المقصودة بأضيق corrective commit، وثّق الحادث إذا كان ذا قيمة تشغيلية، ثم استأنف على branch مستقلة.
 
 قبل العمل على الفرع:
 
@@ -139,6 +142,7 @@ Gate مغلقة لا تُفتح بسبب:
 5. لا تحول التصحيح إلى redesign.
 6. أعد regression suite الخاصة بالـGate وكل baselines الأعلى المتأثرة.
 7. اذكر التصحيح صراحة في PR/merge history.
+8. أضف/حدّث سجل incident/decision في `ENGINEERING-DECISIONS-AND-INCIDENTS.md` إذا كان التصحيح يؤثر في المعرفة المستقبلية للمشروع.
 
 Gate 5E contextual AUTO-NA correction مثال معتمد على هذا الاستثناء.
 
@@ -153,6 +157,31 @@ Gate 5E contextual AUTO-NA correction مثال معتمد على هذا الاس
 ملفات `sources/` لا تُعدل عند اشتقاق requirement أو design.
 
 قرارات أدوات التنفيذ والـdefault workflow تصنّف `PROJECT` ما لم يوجد مصدر رسمي مستقل يقول غير ذلك.
+
+### 6A) سجل القرارات والحوادث الهندسية
+
+الملف:
+
+`docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md`
+
+هو index دائم للقرارات والحوادث الهندسية ذات القيمة المستقبلية. لا يحل محل العقود أو proof documents أو Git history؛ بل يربطها في سجل واحد قابل للقراءة.
+
+سجّل بندًا عندما يتحقق واحد أو أكثر مما يلي:
+
+- ظهر executable contradiction أو failure مهم؛
+- ثبت root cause يجب ألا يُنسى؛
+- رُفض candidate/primitive/plugin بعد اختبار أو تحليل؛
+- اتُّخذ قرار PROJECT يفرض قيدًا أو compatibility floor أو threat boundary؛
+- تغيّر تفسير failure من product defect إلى tooling/CI/qualification defect أو العكس؛
+- حدث incident في workflow قد يتكرر؛
+- تم تصحيح closed Gate بتفويض ضيق؛
+- نتج عن القرار baseline أو guard أو constraint يجب الحفاظ عليه مستقبلًا.
+
+الحد الأدنى لكل سجل:
+
+`ID / date / Gate / type / status / classification / problem-or-decision / evidence / root-cause-or-rationale / decision-or-resolution / consequences / validation / authoritative references`.
+
+إذا لم يكن root cause مثبتًا، اكتب `UNKNOWN/UNESTABLISHED` بدل التخمين. لا تعِد تصنيف evidence تاريخية بعد نجاح لاحق؛ سجل progression صراحة.
 
 ## 7) مراجعة implementation-sensitive Gates
 
@@ -197,7 +226,8 @@ Gate 5E contextual AUTO-NA correction مثال معتمد على هذا الاس
 - تحقق من HEAD/status.
 - يمكن حذف feature branch محليًا وبعيدًا بعد التأكد من الدمج، ما لم يكن الفرع محفوظًا كexperiment evidence بقرار صريح.
 - حدّث `CURRENT-STATE` عندما يتغير: آخر Gate مغلقة، Gate التالية، baselines، roadmap أو default workflow.
-- إذا أصبح README أو START-HERE stale، أصلحه قبل تراكم drift.
+- حدّث `ENGINEERING-DECISIONS-AND-INCIDENTS.md` عندما يُغلق incident أو يُعتمد قرار ذو أثر مستقبلي.
+- إذا أصبح README أو START-HERE أو WORKFLOW stale، أصلحه قبل تراكم drift.
 
 ## 11) حدود البيانات الحساسة
 
@@ -218,13 +248,15 @@ GitHub ليس storage للتشغيل الميداني الحقيقي.
 
 - Gates 1→5L مغلقة؛ وتصحيح Gate 5B الضيق حول `SqlResult.lastInsertRowid` **MERGED / RESOLVED** عند `608314ae62721af44d8ed4f50c1c618ac469fc66`.
 - Gate 6A **CLOSED / MERGED**.
-- Gate 6B **CLOSED / MERGED** عبر PR #17؛ implementation branch `implementation/gate6b-android-runtime-proof-v1`؛ reviewed head `04dcf001e5494c38258c7112619ea1d508af694c`؛ merge SHA `0905c6111269d62480e7ccadc31786bef29f3c51`.
+- Gate 6B **CLOSED / MERGED** عبر PR #17؛ reviewed head `04dcf001e5494c38258c7112619ea1d508af694c`؛ merge SHA `0905c6111269d62480e7ccadc31786bef29f3c51`.
 - Adapter Qualification الفيزيائية على `87135cfe80ae3de79a34e941828249fc6889139c` **PASS Q1→Q12**؛ Q12=`PHYSICAL_PASS_REVIEW_ACCEPTED`.
-- Application-Core Proof وfinal real Force Stop/Restart من `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى accepted evidence بإعادة استخدام مبنية على non-drift؛ `same_binary=false` بين targetي APK.
-- `@capacitor-community/sqlite@8.1.1` أصبح **ADOPTED_BY_CLOSED_GATE6B** بعد device qualification + independent review + owner-approved merge.
-- historical Q8/Q12 failures والrestart negative control تبقى تاريخية ولا يعاد تصنيفها.
-- لا يُطلب أي physical retest جديد لإغلاق Gate 6B.
-- **Gate 6C هي NEXT / NOT_STARTED**؛ لا تبدأ implementation دون scope/authorization مستقل.
-- Gate 6D→6H مراحل لاحقة حسب Roadmap.
+- Gate 6C-A **CLOSED / MERGED**.
+- Gate 6C-B **CLOSED / MERGED** عبر PR #21؛ adopted host baseline **85 / 0**.
+- Gate 6C-C **CLOSED / MERGED**: final reviewed head `9de6c69eef90c490319c02eac48d236482597210`؛ exact-final-SHA qualification run `34531511138` SUCCESS؛ implementation merge عبر PR #23 عند `f221b215358f83dce381ac5261a856a7de4e5c98`؛ post-merge closure reconciliation عبر PR #24.
+- Gate 6C ككل **IN_PROGRESS**.
+- **Gate 6C-D = NEXT / NOT_STARTED**؛ `gate6c_d_started=false`.
+- Gate 6D = **NOT_STARTED**؛ `field_usable_v1=false`.
 - HNT-001/HNT-002 tooling experiment: `CLOSED`.
 - Default implementation workflow: `ChatGPT + GitHub + GitHub Actions`؛ Harness/local execution agent: `ON_DEMAND_ONLY`.
+
+لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read من `main` يبقى الحاكم.

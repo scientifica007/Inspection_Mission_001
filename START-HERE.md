@@ -10,7 +10,7 @@
 - لا تُستخدم ذاكرة ChatGPT، أو ملخصات المحادثات، أو Prompt خارجي، أو فرع قديم، بوصفها مرجعًا رسميًا للحالة.
 - قبل أي قرار جوهري: **Fresh Read من `main` الحالي**.
 
-إذا تعارض أي تلخيص خارجي مع ملفات `main` الحية، فـ`main` هو المرجع.
+إذا تعارض أي تلخيص خارجي مع ملفات `main` الحية، فـ`main` هو المرجع. إذا تعارض ملف مختصر داخل المستودع مع artifact تنفيذي أو `CURRENT-STATE` أحدث، حقق التعارض ولا تفترض أن الملخص الأقدم هو الحاكم.
 
 ## 2) ابدأ بهذه القراءة، بهذا الترتيب
 
@@ -19,10 +19,12 @@
 3. `docs/project/CURRENT-STATE.json` — الحالة نفسها بصيغة machine-readable.
 4. `docs/project/WORKFLOW.md` — طريقة إدارة Gates والمراجعة والدمج.
 5. `docs/project/TEST-BASELINES.md` — baselines الاختبارات الحاكمة.
-6. `docs/architecture/PRODUCT-ROADMAP-v1.md` — ترتيب مراحل المنتج بعد Application Core.
-7. `docs/architecture/PRODUCT-ARCHITECTURE-v1.md` — المعمارية المعتمدة للمنتج.
-8. `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md` — عقد الـdevice/native SQLite adapter الذي أغلقته Gate 6B.
-9. عند مراجعة تاريخ Gate 6B أو adapter/device proof: `docs/architecture/GATE6B-ANDROID-RUNTIME-PROOF-v1.md` و`docs/architecture/GATE6B-Q12-COMPETING-WRITER-PROOF-v1.md`.
+6. `docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md` — السجل الدائم للقرارات الهندسية والحوادث والأخطاء والتصحيحات المهمة.
+7. `docs/architecture/PRODUCT-ROADMAP-v1.md` — ترتيب مراحل المنتج بعد Application Core.
+8. `docs/architecture/PRODUCT-ARCHITECTURE-v1.md` — المعمارية المعتمدة للمنتج.
+9. `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md` — عقد الـdevice/native SQLite adapter الذي أغلقته Gate 6B.
+10. عند مراجعة تاريخ Gate 6B أو adapter/device proof: `docs/architecture/GATE6B-ANDROID-RUNTIME-PROOF-v1.md` و`docs/architecture/GATE6B-ANDROID-SCHEMA-EXECUTION-CORRECTION-v1.md` و`docs/architecture/GATE6B-Q12-COMPETING-WRITER-PROOF-v1.md`.
+11. عند مراجعة Evidence/Gate 6C: `docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md` و`docs/architecture/GATE6C-C-ANDROID-EVIDENCE-QUALIFICATION-v1.md`.
 
 ثم اقرأ الملفات المعيارية الخاصة بالمهمة التي تعمل عليها فقط.
 
@@ -36,8 +38,8 @@
 | `docs/data-model/` | النموذج المنطقي وEntity Catalog | مرجع الكيانات والعلاقات |
 | `docs/schema/` | المخطط الفيزيائي والقيود | `schema.sql` هو المخطط التنفيذي الحاكم |
 | `docs/application/` | عقود Application Core والمعاملات والتعافي | يفسر semantics للخدمات المغلقة |
-| `docs/architecture/` | معمارية المنتج وRoadmap ووثائق Gate 6B المغلقة | الحاكم لتسلسل المنتج |
-| `docs/project/` | حالة المشروع، handoff، workflow، test baselines | ذاكرة تشغيلية مختصرة قابلة للتسليم |
+| `docs/architecture/` | معمارية المنتج وRoadmap وعقود/أدلة Gates المعمارية | الحاكم لتسلسل المنتج والعقود الهندسية |
+| `docs/project/` | الحالة، handoff، workflow، test baselines، سجل القرارات والحوادث | الذاكرة التشغيلية المختصرة القابلة للتسليم |
 | `bootstrap/` | bootstrap artifact canonical | تعريفات checklist المرجعية المحملة |
 | `src/bootstrap/` | bootstrap/runtime seam | يتضمن `SqlAdapter` المحايد للـruntime |
 | `src/application/` | Application Core التنفيذي | لا يُعاد تصميمه بلا contradiction تنفيذي ملموس |
@@ -51,24 +53,28 @@
 - `DERIVED` = أثر تنفيذي مشتق من متطلب رسمي.
 - `PROJECT` = قرار/مطلب صريح من مالك المشروع، وليس من المصادر الرسمية.
 
-لا تنسب متطلبًا `PROJECT` إلى مصدر رسمي.
+لا تنسب متطلبًا أو قرارًا `PROJECT` إلى مصدر رسمي.
 
 ## 5) الحالة التنفيذية الحالية
 
 راجع `docs/project/CURRENT-STATE.md` و`.json` بدل الاعتماد على هذا القسم وحده.
 
-الخلاصة الحالية:
+الخلاصة الحالية بعد إغلاق Gate 6C-C:
 
 - Gates 1→5L: مغلقة/معتمدة/مدمجة.
-- Gate 6A — Product Runtime Architecture & Delivery Roadmap: مغلقة/معتمدة/مدمجة.
-- **Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof: CLOSED / MERGED.**
-- Gate 6B PR: `#17`؛ reviewed branch head: `04dcf001e5494c38258c7112619ea1d508af694c`؛ merge SHA: `0905c6111269d62480e7ccadc31786bef29f3c51`.
-- Adapter Qualification الفيزيائية على Android الحقيقي عند SHA `87135cfe80ae3de79a34e941828249fc6889139c`: **PASS لـQ1→Q12**؛ Q12=`PHYSICAL_PASS_REVIEW_ACCEPTED`.
-- أدلة Application-Core و`currentVisitState` zero-write وT11 وreal Force Stop/Restart من SHA `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى **مقبولة بإعادة استخدام evidence مبنية على non-drift**؛ `same_binary=false` ولا يُدعى أن APK البناءين متطابقتان.
-- `@capacitor-community/sqlite@8.1.1`: **ADOPTED_BY_CLOSED_GATE6B** مع بقاء `SqlAdapter` وcanonical schema/bootstrap هي السلطات الحاكمة في نطاقاتها.
-- `closure_authorized=true` لـGate 6B المغلقة بعد owner-approved merge.
-- **Gate 6C: NEXT / NOT_STARTED.** لم يبدأ تنفيذ Gate 6C بعد.
-- Field-usable v1: غير مكتملة بعد.
+- Gate 6A — Product Runtime Architecture & Delivery Roadmap: **CLOSED / MERGED**.
+- Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof: **CLOSED / MERGED** عبر PR #17؛ merge SHA `0905c6111269d62480e7ccadc31786bef29f3c51`.
+- Adapter Qualification الفيزيائية على Android الحقيقي عند `87135cfe80ae3de79a34e941828249fc6889139c`: **PASS Q1→Q12**؛ Q12=`PHYSICAL_PASS_REVIEW_ACCEPTED`.
+- Gate 6C-A — Evidence Storage Contract: **CLOSED / MERGED**.
+- Gate 6C-B — Runtime-neutral Evidence orchestration: **CLOSED / MERGED** عبر PR #21؛ adopted host baseline **85 / 0**.
+- Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters: **CLOSED / MERGED**. التنفيذ دُمج عبر PR #23 عند merge SHA `f221b215358f83dce381ac5261a856a7de4e5c98`، ثم أُغلقت حالة المشروع توثيقيًا عبر PR #24.
+- Gate 6C-C final reviewed head: `9de6c69eef90c490319c02eac48d236482597210`؛ exact-final-SHA qualification run: `34531511138` — SUCCESS.
+- Gate 6C ككل: **IN_PROGRESS**.
+- **Gate 6C-D: NEXT / NOT_STARTED**؛ `gate6c_d_started=false`.
+- Gate 6D: **NOT_STARTED**.
+- `field_usable_v1=false`.
+
+لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read لـ`main` يبقى إلزاميًا.
 
 ## 6) ما لا يجوز استنتاجه من المستودع
 
@@ -82,15 +88,19 @@ GitHub هو ذاكرة **الهندسة والقرارات والعقود**، و
 
 1. اقرأ HEAD الحي لـ`main`.
 2. اقرأ `CURRENT-STATE.md` و`CURRENT-STATE.json`.
-3. اقرأ الـRoadmap والعقد الخاص بالـGate الحالية/التالية.
-4. اقرأ فقط العقود والملفات المغلقة ذات الصلة المباشرة.
-5. إذا ظهر تعارض بين وثيقة مختصرة وartifact تنفيذي حاكم، لا تخمّن: حقق التعارض وبلّغ عنه.
+3. اقرأ `WORKFLOW.md` و`TEST-BASELINES.md`.
+4. راجع `ENGINEERING-DECISIONS-AND-INCIDENTS.md` للحوادث/القرارات السابقة التي قد تمنع تكرار خطأ أو إعادة فتح قرار محسوم.
+5. اقرأ الـRoadmap والعقد الخاص بالـGate الحالية/التالية.
+6. اقرأ فقط العقود والملفات المغلقة ذات الصلة المباشرة.
+7. إذا ظهر تعارض بين وثيقة مختصرة وartifact تنفيذي حاكم، لا تخمّن: حقق التعارض وبلّغ عنه.
 
 ## 8) قاعدة Gates المغلقة
 
 لا تُفتح Gate مغلقة لمجرد التحسين أو إعادة التصميم.
 
 يُسمح بتصحيح ضيق داخل Gate مغلقة فقط إذا ظهر **contradiction تنفيذي ملموس وقابل للتكرار** مع عقد معتمد. عندئذ يُوثق السبب، يبقى التصحيح في أضيق نطاق، تعاد regressions المتأثرة، ولا تتحول المراجعة إلى redesign عام.
+
+كل contradiction أو incident مهم وكل قرار معماري/تشغيلي يترتب عليه قيد مستقبلي يجب أن يُسجل أو يُربط في `docs/project/ENGINEERING-DECISIONS-AND-INCIDENTS.md`.
 
 ## 9) كيف تستلم المشروع عمليًا
 
@@ -100,9 +110,10 @@ Fresh Read main
 → CURRENT-STATE
 → WORKFLOW
 → TEST-BASELINES
+→ ENGINEERING-DECISIONS-AND-INCIDENTS
 → PRODUCT-ROADMAP
 → gate-specific contracts
 → scoped work only
 ```
 
-الحالة التالية بعد إغلاق Gate 6B هي **Gate 6C — NEXT / NOT_STARTED**. لا يعني ذلك السماح ببدء تنفيذها دون scope/authorization مستقل.
+الحالة التالية هي **Gate 6C-D — NEXT / NOT_STARTED**. لا يعني ذلك السماح ببدء تنفيذها دون scope/authorization مستقل.

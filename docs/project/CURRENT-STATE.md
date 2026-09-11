@@ -37,11 +37,14 @@
 - Gate 6C-D governing qualification base: `20d194959afa50ce705198ba993554c7f9cc210d`.
 - Gate 6C-D qualification branch: `qualification/gate6c-d-physical-evidence-v1`.
 - Gate 6C-D executable preparation started at checkpoint: `33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82`.
+- Gate 6C-D Camera process-death correction branch: `correction/gate6c-d-camera-process-death-v1`.
+- Gate 6C-D physically tested correction SHA: `560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
+- Correction APK artifact: `10191115023` / `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B وGate 6C-C مغلقة/مدمجة كـsub-stages، بينما Gate 6C ككل ما تزال `IN_PROGRESS`. Gate 6C-D بدأت فقط في وضع **qualification preparation**؛ لم تُقبل ولم تُغلق، وGate 6D ما تزال `NOT_STARTED`.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B وGate 6C-C مغلقة/مدمجة كـsub-stages، بينما Gate 6C ككل ما تزال `IN_PROGRESS`. Gate 6C-D هي **OPEN / IN_PROGRESS** وتوجد عليها الآن physical qualification evidence جزئية؛ لم تُقبل ولم تُغلق، وGate 6D ما تزال `NOT_STARTED`.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -142,18 +145,25 @@ Final APK provenance, with hashes intentionally distinct:
 
 #### Gate 6C-D — Physical Android Evidence qualification + Gate closure
 
-الحالة: **`STARTED / QUALIFICATION_PREPARATION_IN_PROGRESS`**.
+الحالة: **`OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS`**.
 
-- qualification branch: `qualification/gate6c-d-physical-evidence-v1`;
-- governing base: `20d194959afa50ce705198ba993554c7f9cc210d`;
-- purpose of the current work: prepare a diagnostic APK/harness for Project Owner physical execution only;
-- physical-device Evidence qualification: **PENDING / NOT EXECUTED BY THIS IMPLEMENTATION TASK**;
-- Gate 6C-D: **NOT ACCEPTED / NOT CLOSED**;
-- Gate 6C as a whole: **IN_PROGRESS**;
-- Gate 6D: **NOT_STARTED**;
-- `field_usable_v1=false`.
+- governing base recorded for Gate 6C-D: `20d194959afa50ce705198ba993554c7f9cc210d`;
+- current correction branch: `correction/gate6c-d-camera-process-death-v1`;
+- physically tested correction SHA: `560e5cf9c7b84554e79bb434afb6a662ac7d9376`;
+- correction APK SHA-256: `e855ff9d266dbfe22eca81fa2959939d71b62113640f1dd73c1332de6a22967d`;
+- artifact ID/name: `10191115023` / `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`;
+- artifact ZIP SHA-256: `920df2197ca1fe42b5b5183f17950ef48f34b283b3fa274d772e020da0d047be`.
 
-The diagnostic harness must remain visibly marked as not field UI, use only synthetic Mission/Institution/Visit data, and preserve the closed Gate-6C-A/B/C production Evidence path. CI/emulator success may qualify the harness build and regressions but must not be represented as physical-device Gate-6C-D PASS.
+Historical Camera failure remains preserved: tested SHA `d4f7f9f34a48202aea0639ab77b10b7f9262bd57` remains **`FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY`** and the Android process-death cause remains **`UNKNOWN / UNESTABLISHED`**. It is not reclassified by later correction evidence.
+
+Current physical correction evidence on `560e5cf9...`:
+
+- **Q07 process-death recovery: PASS.** Camera method physically observed as `getPhoto`; old PID `20398`; `run-as` SIGKILL succeeded; immediate `pidof` returned no PID; recreated PID `25602`; real `appRestoredResult` arrived with `pluginId=Camera`, `methodName=getPhoto`, `success=true`; restored source was `getPhoto / CAMERA_PHOTO`; before adoption owner was not reconstructed and readiness was `NOT_OPEN`; Q08 Reopen + Reconcile reconstructed owner `1` and readiness `READY` without consuming the restored pending source; explicit Q07 Adopt then committed Evidence ID `1`, rows `0 → 1`, acquisition outcome `RESTORED_SUCCESS`, explicit owner reconstruction, `MATCH`, `RESOLVED`, file size `4984630`, canonical storage ref/hash.
+- Q07 committed `storageRef`: `evidence/v1/objects/b0b4c6e0-c5b6-45d4-be2b-eb55ae06dc7a.jpg`; `contentHash`: `sha256:e73171389429fa084b9188246f67852dbf96c73c82d3698082ce6b12b45cabc4`.
+- Q07 external physical evidence: `https://drive.google.com/drive/folders/1rsZkAJZkK1UyjrZETdgUyB9B_-lpRdiS?usp=drive_link`.
+- **Q13 durability/retrieval: PASS for the observed runtime recreation.** Evidence ID `1`, SQLite row count `1`, metadata survived restart, reconciliation `VALID_REFERENCE`, hash `MATCH`, resolve `RESOLVED`, and the same ref/hash/file size survived. External evidence: `https://drive.google.com/drive/folders/1_5aypRPoBtZbooKvQdp-PncIuV4VfeFi?usp=drive_link`. This run followed a real runtime recreation observed after leaving the app for Drive; it did **not** record an explicit `adb shell am force-stop` for that exact Q13 execution. A later strict Q13 repetition after Q11 may still be required by the versioned protocol.
+
+Qualification remains incomplete: Q01 correction-candidate normal Camera Commit is not yet physically PASS; Q02/Q03/Q04/Q05/Q06, formal committed-Evidence Q08 restart, Q09/Q10/Q11/Q12 remain pending; literal ENOSPC remains a named qualification gap. Gate 6C-D is not accepted/closed, Gate 6C remains `IN_PROGRESS`, Gate 6D remains `NOT_STARTED`, and `field_usable_v1=false`.
 
 ### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
@@ -300,14 +310,14 @@ Gate 6C-C adopted repeatable host baselines: **14 / 0**, **11 / 0**, and **4 / 0
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
 - Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **CLOSED / MERGED** عند `f221b215358f83dce381ac5261a856a7de4e5c98`.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
-- Gate 6C-D **STARTED / QUALIFICATION_PREPARATION_IN_PROGRESS**; physical-device qualification remains pending and Gate 6C-D is not closed.
+- Gate 6C-D **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS**; Q07 correction path and current Q13 durability evidence are physical PASS results, while the remaining qualification matrix is pending and Gate 6C-D is not closed.
 - Gate 6D **LATER / NOT_STARTED**.
 - `field_usable_v1=false`.
 
 ## 8) الحالة التالية
 
-Gate 6C-D هي المرحلة الفرعية الحالية داخل Gate 6C، لكن العمل الحالي محصور في **qualification preparation** وبناء diagnostic harness/APK.
+Gate 6C-D هي المرحلة الفرعية الحالية داخل Gate 6C وهي الآن **physical qualification in progress**.
 
-**Gate 6C-D — `STARTED / QUALIFICATION_PREPARATION_IN_PROGRESS`.**
+**Gate 6C-D — `OPEN / IN_PROGRESS`.**
 
-Gate 6C ككل ما تزال **`IN_PROGRESS`**. لا يوجد physical-device PASS بعد، Gate 6C-D لم تُقبل ولم تُغلق، Gate 6D لم يبدأ، و`field_usable_v1=false`.
+Q07 correction path = physical PASS وQ13 current durability/retrieval evidence = PASS ضمن آلية runtime recreation الموثقة، لكن Q01 correction-candidate Camera Commit وبقية المصفوفة المحددة أعلاه ما تزال pending. Gate 6C ككل تبقى **`IN_PROGRESS`**؛ Gate 6C-D لم تُقبل ولم تُغلق، Gate 6D لم يبدأ، و`field_usable_v1=false`.

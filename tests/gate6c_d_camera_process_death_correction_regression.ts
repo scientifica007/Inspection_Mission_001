@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import {
-  cameraMediaToEvidenceSource,
   legacyCameraPhotoToEvidenceSource,
+  nativeGalleryResultToOutcome,
   nativeGenericResultToOutcome,
 } from "../src/device/evidence-acquisition-mapping.ts";
 import { EvidenceRestoredResultCoordinator } from "../src/device/evidence-restored-result.ts";
@@ -111,15 +111,21 @@ await test("G6CD-CAM-C07 restored getPhoto adoption is explicit and one-shot", a
   assert((await acquisition.takeCameraPhoto()).status === "USER_CANCELLED", "adopted source must be one-shot");
 });
 
-await test("G6CD-CAM-C08 gallery MediaResult mapping is unchanged", () => {
-  const outcome = cameraMediaToEvidenceSource("GALLERY_MEDIA", {
-    uri: "content://synthetic.gallery/unchanged/1",
-    metadata: { size: 44, format: "png", creationDate: "2026-09-11T08:00:00Z" },
+await test("G6CD-CAM-C08 gallery now uses project-owned native URI picker without changing Camera correction", () => {
+  const outcome = nativeGalleryResultToOutcome({
+    status: "SUCCESS",
+    sourceRef: "content://synthetic.gallery/native/1",
+    displayName: "gallery.png",
+    declaredMimeType: "image/png",
+    sizeHint: 44,
   });
-  assert(outcome.status === "SUCCESS" && outcome.source.kind === "GALLERY_MEDIA", "gallery mapping remains successful");
-  assert(outcome.source.sizeHint === 44 && outcome.source.declaredMimeType === "image/png", "gallery metadata remains mapped");
+  assert(outcome.status === "SUCCESS" && outcome.source.kind === "GALLERY_MEDIA", "native gallery mapping must remain successful");
+  assert(outcome.source.sizeHint === 44 && outcome.source.declaredMimeType === "image/png", "native gallery metadata remains mapped");
   const source = readFileSync(new URL("../src/device/capacitor-evidence-acquisition.ts", import.meta.url), "utf8");
-  assert(source.includes("Camera.chooseFromGallery({"), "gallery API must remain chooseFromGallery");
+  const galleryMethod = source.slice(source.indexOf("async chooseGalleryMedia"), source.indexOf("async chooseGenericFile"));
+  assert(galleryMethod.includes("this.native.chooseGalleryMedia()"), "gallery must use project-owned native picker");
+  assert(!galleryMethod.includes("Camera.chooseFromGallery"), "obsolete IonCamera gallery route must not return");
+  assert(source.includes("Camera.getPhoto({"), "Camera getPhoto correction remains intact");
 });
 
 await test("G6CD-CAM-C09 generic file mapping is unchanged", () => {

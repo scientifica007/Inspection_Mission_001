@@ -21,7 +21,7 @@
 - Gate 6C-A merge SHA: `4dfe7afd920285b034b26decb500932de4dae655`.
 - Gate 6C-B governing implementation base: `953610be8815725bb55bbdc62ac2ca375ee4ffa3`.
 - Gate 6C-B implementation branch: `implementation/gate6c-b-evidence-orchestration-v1`.
-- Gate 6C-B initial implementation checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`.
+- Gate 6C-B initial checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`.
 - Gate 6C-B corrected executable validation SHA: `dadf4d90a10d7348fea0543c1885ecf5b0846578`.
 - Gate 6C-B corrected executable CI run: `34483510338` — SUCCESS.
 - Gate 6C-B final reviewed head: `ea88fac83d60b99b7d50828915173d3aa14bb5d6`.
@@ -38,6 +38,7 @@
 - Gate 6C-D qualification branch: `qualification/gate6c-d-physical-evidence-v1`.
 - Gate 6C-D executable preparation started at checkpoint: `33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82`.
 - Gate 6C-D Camera process-death correction branch: `correction/gate6c-d-camera-process-death-v1`.
+- Gate 6C-D Gallery native-picker correction branch: `correction/gate6c-d-gallery-native-picker-v1`.
 - Gate 6C-D physically tested correction SHA: `560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
 - Correction APK artifact: `10191115023` / `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
@@ -148,7 +149,8 @@ Final APK provenance, with hashes intentionally distinct:
 الحالة: **`OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS`**.
 
 - governing base recorded for Gate 6C-D: `20d194959afa50ce705198ba993554c7f9cc210d`;
-- current correction branch: `correction/gate6c-d-camera-process-death-v1`;
+- Camera correction branch: `correction/gate6c-d-camera-process-death-v1`;
+- Gallery correction branch: `correction/gate6c-d-gallery-native-picker-v1`;
 - physically tested correction SHA: `560e5cf9c7b84554e79bb434afb6a662ac7d9376`;
 - correction APK SHA-256: `e855ff9d266dbfe22eca81fa2959939d71b62113640f1dd73c1332de6a22967d`;
 - artifact ID/name: `10191115023` / `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`;
@@ -162,8 +164,11 @@ Current physical correction evidence on `560e5cf9...`:
 - Q07 committed `storageRef`: `evidence/v1/objects/b0b4c6e0-c5b6-45d4-be2b-eb55ae06dc7a.jpg`; `contentHash`: `sha256:e73171389429fa084b9188246f67852dbf96c73c82d3698082ce6b12b45cabc4`.
 - Q07 external physical evidence: `https://drive.google.com/drive/folders/1rsZkAJZkK1UyjrZETdgUyB9B_-lpRdiS?usp=drive_link`.
 - **Q13 durability/retrieval: PASS for the observed runtime recreation.** Evidence ID `1`, SQLite row count `1`, metadata survived restart, reconciliation `VALID_REFERENCE`, hash `MATCH`, resolve `RESOLVED`, and the same ref/hash/file size survived. External evidence: `https://drive.google.com/drive/folders/1_5aypRPoBtZbooKvQdp-PncIuV4VfeFi?usp=drive_link`. This run followed a real runtime recreation observed after leaving the app for Drive; it did **not** record an explicit `adb shell am force-stop` for that exact Q13 execution. A later strict Q13 repetition after Q11 may still be required by the versioned protocol.
+- **Q02 Gallery Commit: FAIL / CORRECTION_REQUIRED on the same physical-tested APK.** Two recent reproducible attempts failed before EvidenceService received a usable Gallery source: PID `4875` at `2026-09-11 15:15:04` selecting from DCIM/Screenshots, and PID `6805` at `2026-09-11 15:16:13` selecting from WhatsApp Media. Both produced uncaught `java.io.FileNotFoundException ... (Permission denied)` in the IonCamera Gallery post-selection stack (`ExifInterface` → `IONCAMRMediaProcessor` → `IONCAMRGalleryManager` → `IonCameraFlow`). An older Dropbox occurrence at `09:18:11` showed the same pattern. Raw crash files remain external. This is not attributed to EvidenceService, SQLite, Evidence storage/hash, low memory, USB, or process-death recovery.
 
-Qualification remains incomplete: Q01 correction-candidate normal Camera Commit is not yet physically PASS; Q02/Q03/Q04/Q05/Q06, formal committed-Evidence Q08 restart, Q09/Q10/Q11/Q12 remain pending; literal ENOSPC remains a named qualification gap. Gate 6C-D is not accepted/closed, Gate 6C remains `IN_PROGRESS`, Gate 6D remains `NOT_STARTED`, and `field_usable_v1=false`.
+The narrow Q02 correction routes Gallery/media selection through the project-owned `Gate6CEvidence` native plugin using Android `ACTION_OPEN_DOCUMENT` and URI authority (`content://`/`file://`) without broad storage permissions, dependency upgrade/fork, Filesystem plugin, raw external DATA paths, or whole-file JavaScript buffering. The correction requires a new physical Q02 retest; automated PASS cannot convert the recorded physical failure to PASS.
+
+Qualification remains incomplete: Q01 correction-candidate normal Camera Commit is not yet physically PASS; Q02 remains `FAIL / CORRECTION_REQUIRED` pending physical retest of the native-picker correction; Q03/Q04/Q05/Q06, formal committed-Evidence Q08 restart, Q09/Q10/Q11/Q12 remain pending; literal ENOSPC remains a named qualification gap. Gate 6C-D is not accepted/closed, Gate 6C remains `IN_PROGRESS`, Gate 6D remains `NOT_STARTED`, and `field_usable_v1=false`.
 
 ### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
@@ -310,7 +315,7 @@ Gate 6C-C adopted repeatable host baselines: **14 / 0**, **11 / 0**, and **4 / 0
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
 - Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **CLOSED / MERGED** عند `f221b215358f83dce381ac5261a856a7de4e5c98`.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
-- Gate 6C-D **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS**; Q07 correction path and current Q13 durability evidence are physical PASS results, while the remaining qualification matrix is pending and Gate 6C-D is not closed.
+- Gate 6C-D **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS**; Q02 is a reproducible physical FAIL requiring the native-picker correction retest, Q07 correction path and current Q13 durability evidence remain physical PASS results, and the remaining qualification matrix is pending. Gate 6C-D is not closed.
 - Gate 6D **LATER / NOT_STARTED**.
 - `field_usable_v1=false`.
 
@@ -320,4 +325,4 @@ Gate 6C-D هي المرحلة الفرعية الحالية داخل Gate 6C و�
 
 **Gate 6C-D — `OPEN / IN_PROGRESS`.**
 
-Q07 correction path = physical PASS وQ13 current durability/retrieval evidence = PASS ضمن آلية runtime recreation الموثقة، لكن Q01 correction-candidate Camera Commit وبقية المصفوفة المحددة أعلاه ما تزال pending. Gate 6C ككل تبقى **`IN_PROGRESS`**؛ Gate 6C-D لم تُقبل ولم تُغلق، Gate 6D لم يبدأ، و`field_usable_v1=false`.
+Q02 Gallery Commit remains **FAIL / CORRECTION_REQUIRED** until the project-owned native Gallery URI picker passes a new physical retest. Q07 correction path remains physical PASS وQ13 current durability/retrieval evidence remains PASS ضمن آلية runtime recreation الموثقة، بينما Q01 correction-candidate Camera Commit وبقية المصفوفة المحددة أعلاه ما تزال غير مكتملة. Gate 6C ككل تبقى **`IN_PROGRESS`**؛ Gate 6C-D لم تُقبل ولم تُغلق، Gate 6D لم يبدأ، و`field_usable_v1=false`.

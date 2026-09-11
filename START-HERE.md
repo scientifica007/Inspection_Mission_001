@@ -24,7 +24,7 @@
 8. `docs/architecture/PRODUCT-ARCHITECTURE-v1.md` — المعمارية المعتمدة للمنتج.
 9. `docs/architecture/DEVICE-ADAPTER-CONTRACT-v1.md` — عقد الـdevice/native SQLite adapter الذي أغلقته Gate 6B.
 10. عند مراجعة تاريخ Gate 6B أو adapter/device proof: `docs/architecture/GATE6B-ANDROID-RUNTIME-PROOF-v1.md` و`docs/architecture/GATE6B-ANDROID-SCHEMA-EXECUTION-CORRECTION-v1.md` و`docs/architecture/GATE6B-Q12-COMPETING-WRITER-PROOF-v1.md`.
-11. عند مراجعة Evidence/Gate 6C: `docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md` و`docs/architecture/GATE6C-C-ANDROID-EVIDENCE-QUALIFICATION-v1.md`.
+11. عند مراجعة Evidence/Gate 6C: `docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md` و`docs/architecture/GATE6C-C-ANDROID-EVIDENCE-QUALIFICATION-v1.md` و`docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`.
 
 ثم اقرأ الملفات المعيارية الخاصة بالمهمة التي تعمل عليها فقط.
 
@@ -70,7 +70,7 @@
 - Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters: **CLOSED / MERGED**. التنفيذ دُمج عبر PR #23 عند merge SHA `f221b215358f83dce381ac5261a856a7de4e5c98`، ثم أُغلقت حالة المشروع توثيقيًا عبر PR #24.
 - Gate 6C-C final reviewed head: `9de6c69eef90c490319c02eac48d236482597210`؛ exact-final-SHA qualification run: `34531511138` — SUCCESS.
 - Gate 6C ككل: **IN_PROGRESS**.
-- **Gate 6C-D: NEXT / NOT_STARTED**؛ `gate6c_d_started=false`.
+- **Gate 6C-D: OPEN / IN_PROGRESS**؛ `gate6c_d_started=true`. التصحيح الميداني عند `560e5cf9c7b84554e79bb434afb6a662ac7d9376` أثبت Q07 process-death recovery = PASS وQ13 durability/retrieval = PASS ضمن الآليات الموصوفة في عقد التأهيل، مع بقاء Q01 Camera Commit وبقية المصفوفة المطلوبة قيد التأهيل.
 - Gate 6D: **NOT_STARTED**.
 - `field_usable_v1=false`.
 
@@ -116,4 +116,4 @@ Fresh Read main
 → scoped work only
 ```
 
-الحالة التالية هي **Gate 6C-D — NEXT / NOT_STARTED**. لا يعني ذلك السماح ببدء تنفيذها دون scope/authorization مستقل.
+الحالة الحالية هي **Gate 6C-D — OPEN / IN_PROGRESS**. يوجد physical correction evidence جزئي فقط؛ Gate 6C-D وGate 6C لم تُغلقا، Gate 6D لم يبدأ، و`field_usable_v1=false`. راجع عقد Gate 6C-D و`CURRENT-STATE` قبل أي استكمال للمصفوفة أو قرار إغلاق.

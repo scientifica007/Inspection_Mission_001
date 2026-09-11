@@ -18,6 +18,12 @@ export interface CameraMediaLike {
   } | null;
 }
 
+export interface LegacyCameraPhotoLike {
+  path?: unknown;
+  format?: unknown;
+  webPath?: unknown;
+}
+
 const CAMERA_PERMISSION_CODES = new Set(["OS-PLUG-CAMR-0003", "OS-PLUG-CAMR-0005"]);
 const CAMERA_CANCEL_CODES = new Set(["OS-PLUG-CAMR-0006", "OS-PLUG-CAMR-0020"]);
 const CAMERA_UNAVAILABLE_CODES = new Set([
@@ -31,6 +37,7 @@ const CAMERA_UNAVAILABLE_CODES = new Set([
   "OS-PLUG-CAMR-0033",
 ]);
 const CAMERA_UNSUPPORTED_CODES = new Set(["OS-PLUG-CAMR-0031"]);
+const LEGACY_CAMERA_CANCEL_MESSAGE = "User cancelled photos app";
 
 function detail(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null) return undefined;
@@ -47,6 +54,7 @@ export function mapCameraError(error: unknown): AcquisitionOutcome {
   const d = detail(error);
   if (CAMERA_PERMISSION_CODES.has(code)) return d ? { status: "PERMISSION_DENIED", detail: d } : { status: "PERMISSION_DENIED" };
   if (CAMERA_CANCEL_CODES.has(code)) return { status: "USER_CANCELLED" };
+  if (code.length === 0 && d === LEGACY_CAMERA_CANCEL_MESSAGE) return { status: "USER_CANCELLED" };
   if (CAMERA_UNSUPPORTED_CODES.has(code)) return d ? { status: "UNSUPPORTED_SOURCE", detail: d } : { status: "UNSUPPORTED_SOURCE" };
   if (CAMERA_UNAVAILABLE_CODES.has(code)) return d ? { status: "SOURCE_UNAVAILABLE", detail: d } : { status: "SOURCE_UNAVAILABLE" };
   return d ? { status: "SOURCE_UNAVAILABLE", detail: d } : { status: "SOURCE_UNAVAILABLE" };
@@ -110,7 +118,27 @@ export function cameraMediaToEvidenceSource(kind: Exclude<EvidenceSourceKind, "G
   return { status: "SUCCESS", source };
 }
 
-export interface NativeGenericAcquisitionResult {
+export function legacyCameraPhotoToEvidenceSource(photo: unknown): AcquisitionOutcome {
+  const record = typeof photo === "object" && photo !== null ? photo as LegacyCameraPhotoLike : null;
+  if (record === null || typeof record.path !== "string" || record.path.trim().length === 0) {
+    return { status: "SOURCE_UNAVAILABLE", detail: "Legacy Camera result did not contain a native photo path" };
+  }
+  const sourceRef = record.path.trim();
+  if (!/^(content|file):\/\//i.test(sourceRef)) {
+    return { status: "UNSUPPORTED_SOURCE", detail: "Legacy Camera photo path uses an unsupported scheme" };
+  }
+  const format = normalizedFormat(record.format);
+  const source: EvidenceSource = {
+    kind: "CAMERA_PHOTO",
+    sourceRef,
+    displayName: `camera-evidence.${format ?? "bin"}`,
+  };
+  const declaredMimeType = mimeFromFormat(format);
+  if (declaredMimeType !== undefined) source.declaredMimeType = declaredMimeType;
+  return { status: "SUCCESS", source };
+}
+
+export interface NativePickerAcquisitionResult {
   status: "SUCCESS" | "USER_CANCELLED" | "PERMISSION_DENIED" | "SOURCE_UNAVAILABLE" | "UNSUPPORTED_SOURCE";
   sourceRef?: string;
   displayName?: string;
@@ -119,20 +147,44 @@ export interface NativeGenericAcquisitionResult {
   detail?: string;
 }
 
-export function nativeGenericResultToOutcome(result: NativeGenericAcquisitionResult): AcquisitionOutcome {
+export type NativeGenericAcquisitionResult = NativePickerAcquisitionResult;
+
+function safeDescriptiveText(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.replace(/[\r\n\u0000]+/g, " ").trim();
+  return normalized.length === 0 ? undefined : normalized.slice(0, 512);
+}
+
+function nativePickerResultToOutcome(
+  kind: "GALLERY_MEDIA" | "GENERIC_FILE",
+  label: "Gallery picker" | "Generic picker",
+  result: NativePickerAcquisitionResult,
+): AcquisitionOutcome {
   if (result.status === "USER_CANCELLED") return { status: "USER_CANCELLED" };
   if (result.status === "PERMISSION_DENIED") return result.detail ? { status: "PERMISSION_DENIED", detail: result.detail } : { status: "PERMISSION_DENIED" };
   if (result.status === "SOURCE_UNAVAILABLE") return result.detail ? { status: "SOURCE_UNAVAILABLE", detail: result.detail } : { status: "SOURCE_UNAVAILABLE" };
   if (result.status === "UNSUPPORTED_SOURCE") return result.detail ? { status: "UNSUPPORTED_SOURCE", detail: result.detail } : { status: "UNSUPPORTED_SOURCE" };
   if (typeof result.sourceRef !== "string" || result.sourceRef.trim().length === 0) {
-    return { status: "SOURCE_UNAVAILABLE", detail: "Generic picker returned no source URI" };
+    return { status: "SOURCE_UNAVAILABLE", detail: `${label} returned no source URI` };
   }
-  if (!/^(content|file):\/\//i.test(result.sourceRef.trim())) {
-    return { status: "UNSUPPORTED_SOURCE", detail: "Generic picker returned an unsupported URI scheme" };
+  const sourceRef = result.sourceRef.trim();
+  if (!/^(content|file):\/\//i.test(sourceRef)) {
+    return { status: "UNSUPPORTED_SOURCE", detail: `${label} returned an unsupported URI scheme` };
   }
-  const source: EvidenceSource = { kind: "GENERIC_FILE", sourceRef: result.sourceRef.trim() };
-  if (typeof result.displayName === "string" && result.displayName.trim().length > 0) source.displayName = result.displayName.trim();
-  if (typeof result.declaredMimeType === "string" && result.declaredMimeType.trim().length > 0) source.declaredMimeType = result.declaredMimeType.trim();
-  if (typeof result.sizeHint === "number" && Number.isSafeInteger(result.sizeHint) && result.sizeHint >= 0) source.sizeHint = result.sizeHint;
+  const source: EvidenceSource = { kind, sourceRef };
+  const displayName = safeDescriptiveText(result.displayName);
+  if (displayName !== undefined) source.displayName = displayName;
+  const declaredMimeType = safeDescriptiveText(result.declaredMimeType);
+  if (declaredMimeType !== undefined) source.declaredMimeType = declaredMimeType;
+  const size = sizeHint(result.sizeHint);
+  if (size !== undefined) source.sizeHint = size;
   return { status: "SUCCESS", source };
+}
+
+export function nativeGalleryResultToOutcome(result: NativePickerAcquisitionResult): AcquisitionOutcome {
+  return nativePickerResultToOutcome("GALLERY_MEDIA", "Gallery picker", result);
+}
+
+export function nativeGenericResultToOutcome(result: NativePickerAcquisitionResult): AcquisitionOutcome {
+  return nativePickerResultToOutcome("GENERIC_FILE", "Generic picker", result);
 }

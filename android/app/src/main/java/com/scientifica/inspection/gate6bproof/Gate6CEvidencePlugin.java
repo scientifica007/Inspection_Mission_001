@@ -34,6 +34,21 @@ public final class Gate6CEvidencePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void chooseGalleryMedia(PluginCall call) {
+        final Intent intent = buildGalleryMediaIntent();
+        try {
+            startActivityForResult(call, intent, "galleryMediaResult");
+        } catch (RuntimeException error) {
+            reject(call, "G6C_UNSUPPORTED_SOURCE", "Android system gallery/document picker is unavailable", error);
+        }
+    }
+
+    @ActivityCallback
+    private void galleryMediaResult(PluginCall call, ActivityResult result) {
+        resolvePickerResult(call, result, true, "Gallery picker");
+    }
+
+    @PluginMethod
     public void chooseGenericFile(PluginCall call) {
         final Intent intent = buildGenericFileIntent();
         try {
@@ -45,23 +60,29 @@ public final class Gate6CEvidencePlugin extends Plugin {
 
     @ActivityCallback
     private void genericFileResult(PluginCall call, ActivityResult result) {
+        resolvePickerResult(call, result, false, "System picker");
+    }
+
+    private void resolvePickerResult(PluginCall call, ActivityResult result, boolean mediaOnly, String pickerLabel) {
         if (call == null) return;
         if (result.getResultCode() == Activity.RESULT_CANCELED) {
-            JSObject out = new JSObject();
+            final JSObject out = new JSObject();
             out.put("status", "USER_CANCELLED");
             call.resolve(out);
             return;
         }
         if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null || result.getData().getData() == null) {
-            resolveAcquisitionFailure(call, "SOURCE_UNAVAILABLE", "System picker returned no readable document URI");
+            resolveAcquisitionFailure(call, "SOURCE_UNAVAILABLE", pickerLabel + " returned no readable document URI");
             return;
         }
+
         final Uri uri = result.getData().getData();
         final String scheme = uri.getScheme();
         if (!ContentResolver.SCHEME_CONTENT.equals(scheme) && !ContentResolver.SCHEME_FILE.equals(scheme)) {
-            resolveAcquisitionFailure(call, "UNSUPPORTED_SOURCE", "System picker returned unsupported URI scheme");
+            resolveAcquisitionFailure(call, "UNSUPPORTED_SOURCE", pickerLabel + " returned unsupported URI scheme");
             return;
         }
+
         final ContentResolver resolver = getContext().getContentResolver();
         try (InputStream input = resolver.openInputStream(uri)) {
             if (input == null) {
@@ -79,13 +100,18 @@ public final class Gate6CEvidencePlugin extends Plugin {
             return;
         }
 
+        final String mime = queryMimeType(getContext(), uri);
+        if (mediaOnly && mime != null && !isSupportedGalleryMime(mime)) {
+            resolveAcquisitionFailure(call, "UNSUPPORTED_SOURCE", "Gallery picker returned a non-image/non-video MIME type");
+            return;
+        }
+
         final JSObject out = new JSObject();
         out.put("status", "SUCCESS");
         out.put("sourceRef", uri.toString());
         final String displayName = queryDisplayName(getContext(), uri);
         if (displayName != null) out.put("displayName", displayName);
-        final String mime = resolver.getType(uri);
-        if (mime != null && !mime.trim().isEmpty()) out.put("declaredMimeType", mime);
+        if (mime != null) out.put("declaredMimeType", mime);
         final Long size = querySize(getContext(), uri);
         if (size != null && size >= 0) out.put("sizeHint", size);
         call.resolve(out);
@@ -266,6 +292,16 @@ public final class Gate6CEvidencePlugin extends Plugin {
         }
     }
 
+    static Intent buildGalleryMediaIntent() {
+        final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{ "image/*", "video/*" });
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        return intent;
+    }
+
     static Intent buildGenericFileIntent() {
         final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -324,5 +360,20 @@ public final class Gate6CEvidencePlugin extends Plugin {
             }
         } catch (RuntimeException ignored) { }
         return null;
+    }
+
+    private static String queryMimeType(Context context, Uri uri) {
+        try {
+            final String value = context.getContentResolver().getType(uri);
+            if (value == null) return null;
+            final String normalized = value.trim().toLowerCase(java.util.Locale.ROOT);
+            return normalized.isEmpty() ? null : normalized;
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private static boolean isSupportedGalleryMime(String mime) {
+        return mime.startsWith("image/") || mime.startsWith("video/");
     }
 }

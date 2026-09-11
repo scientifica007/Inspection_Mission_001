@@ -1,6 +1,6 @@
 import { registerPlugin } from "@capacitor/core";
 import type { ManagedEvidenceObjectKind } from "../application/evidence-contract.ts";
-import type { NativeGenericAcquisitionResult } from "./evidence-acquisition-mapping.ts";
+import type { NativePickerAcquisitionResult } from "./evidence-acquisition-mapping.ts";
 
 export interface NativeAllocationResult {
   storageRef: string;
@@ -30,7 +30,8 @@ export interface NativeManagedObject {
 }
 
 export interface Gate6CEvidenceNativePlugin {
-  chooseGenericFile(): Promise<NativeGenericAcquisitionResult>;
+  chooseGalleryMedia(): Promise<NativePickerAcquisitionResult>;
+  chooseGenericFile(): Promise<NativePickerAcquisitionResult>;
   allocate(options: {
     sourceRef: string;
     displayName?: string;

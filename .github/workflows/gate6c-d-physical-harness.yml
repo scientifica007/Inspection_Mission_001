@@ -1,0 +1,368 @@
+name: Gate 6C-D Physical Qualification Harness
+
+on:
+  push:
+    branches:
+      - qualification/gate6c-d-physical-evidence-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate6c-d-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  GOVERNING_BASE: 20d194959afa50ce705198ba993554c7f9cc210d
+  SCHEMA_SHA256: c9c8682ec721b5c24ef3950c49f5a5c402f053d99aa88c617dfd7fe8a7c19ba7
+  BOOTSTRAP_SHA256: d43fe2b928116c71ab9b53653d71f832086e8cb01ba817ecac0a17562d3404fd
+
+jobs:
+  host-harness-and-closed-baselines:
+    name: Host / harness + closed baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Validate Gate 6C-D preparation state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/project/CURRENT-STATE.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          state = json.loads(Path('docs/project/CURRENT-STATE.json').read_text(encoding='utf-8'))
+          gate = state['gate_6c']
+          assert gate['status'] == 'IN_PROGRESS'
+          assert gate['current_substage'] == '6C-D'
+          assert gate['current_substage_status'] == 'IN_PROGRESS_QUALIFICATION_PREPARATION'
+          assert gate['mode'] == 'QUALIFICATION_PREPARATION'
+          assert gate['implementation_started'] is True
+          assert gate['gate6c_d_started'] is True
+          assert gate['gate6d_started'] is False
+          assert gate['gate6c_d']['status'] == 'STARTED'
+          assert gate['gate6c_d']['phase'] == 'QUALIFICATION_PREPARATION_IN_PROGRESS'
+          assert gate['gate6c_d']['physical_device_evidence_status'] == 'PENDING_OWNER_EXECUTION'
+          assert gate['gate6c_d']['physical_device_pass_claimed'] is False
+          assert gate['gate6c_d']['gate_closure_status'] == 'NOT_CLOSED'
+          assert gate['gate6c_d']['closed'] is False
+          assert state['field_usable_v1'] is False
+          assert '6C-D' not in state['closed_gates']
+          assert state['next_gate']['current_substage'] == '6C-D'
+          assert state['next_gate']['current_substage_status'] == 'IN_PROGRESS_QUALIFICATION_PREPARATION'
+          assert state['gate_6c_status'] == 'IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_CLOSED_MERGED_6C_D_QUALIFICATION_PREPARATION_IN_PROGRESS'
+          assert any('6C-D STARTED / QUALIFICATION PREPARATION' in item for item in state['roadmap'])
+          print('Gate 6C-D state projection: PASS')
+          PY
+          grep -F 'Gate 6C-D — Physical Android Evidence qualification + Gate closure' docs/project/CURRENT-STATE.md
+          grep -F '`STARTED / QUALIFICATION_PREPARATION_IN_PROGRESS`' docs/project/CURRENT-STATE.md
+          grep -F 'Gate 6D **LATER / NOT_STARTED**' docs/project/CURRENT-STATE.md
+          grep -F '`field_usable_v1=false`' docs/project/CURRENT-STATE.md
+
+      - name: Guard canonical authorities and closed seams
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' "$SCHEMA_SHA256" docs/schema/schema.sql | sha256sum -c -
+          printf '%s  %s\n' "$BOOTSTRAP_SHA256" bootstrap/v1/checklist-v1.json | sha256sum -c -
+          git diff --exit-code "$GOVERNING_BASE" -- src/application
+          git diff --exit-code "$GOVERNING_BASE" -- src/bootstrap
+          git diff --exit-code "$GOVERNING_BASE" -- src/device/capacitor-sqlite-adapter.ts
+          git diff --exit-code "$GOVERNING_BASE" -- src/device/capacitor-evidence-acquisition.ts
+          git diff --exit-code "$GOVERNING_BASE" -- src/device/capacitor-evidence-storage.ts
+          git diff --exit-code "$GOVERNING_BASE" -- src/device/evidence-restored-result.ts
+          git diff --exit-code "$GOVERNING_BASE" -- src/device/gate6c-evidence-native.ts
+          git diff --exit-code "$GOVERNING_BASE" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidenceStore.java
+          git diff --exit-code "$GOVERNING_BASE" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java
+          git diff --exit-code "$GOVERNING_BASE" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6BCompetingWriterPlugin.java
+          grep -F 'minSdkVersion = 24' android/variables.gradle
+          grep -F 'target: "chrome69"' vite.config.ts
+          ! grep -R --line-number -E 'READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|MANAGE_EXTERNAL_STORAGE' android/app/src/main/AndroidManifest.xml
+          ! grep -R --line-number -E '@capacitor/(core|android)"[[:space:]]*:[[:space:]]*"9\.|@capacitor/(camera|app|filesystem)"[[:space:]]*:[[:space:]]*"9\.' package.json package-lock.json
+
+      - name: Guard publication, binary-transport and dependency boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CAtomicPublisher.java
+          test ! -e android/app/src/main/cpp/gate6c_atomic_publish.c
+          test ! -e android/app/src/main/cpp/CMakeLists.txt
+          ! grep -nE 'externalNativeBuild|gate6c_atomic_publish|Gate6CAtomicPublisher' android/app/build.gradle
+          ! grep -R -nE 'renameat2|RENAME_NOREPLACE|gate6c_atomic_publish|Gate6CAtomicPublisher|syscall\(' android/app/src/main android/app/build.gradle
+          ! grep -R -nF 'Os.link(' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6C*.java
+          if grep -R -nE 'Base64|\bBlob\b|ArrayBuffer|Uint8Array' \
+            src/device/capacitor-evidence-acquisition.ts \
+            src/device/capacitor-evidence-storage.ts \
+            src/device/gate6c-evidence-native.ts \
+            src/gate6c/device-integration-proof.ts \
+            src/gate6c/physical-qualification.ts \
+            src/ui/Gate6CDPhysicalEvidenceQualificationApp.tsx \
+            src/ui/Gate6CDPhysicalQualificationAugment.tsx; then
+            echo 'Whole-binary JavaScript transport primitive leaked into Evidence qualification path' >&2
+            exit 1
+          fi
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          if (pkg.dependencies?.['@capacitor/filesystem'] !== undefined) throw new Error('Filesystem remains in package.json');
+          if (lock.packages?.['']?.dependencies?.['@capacitor/filesystem'] !== undefined) throw new Error('Filesystem remains in package-lock root');
+          if (lock.packages?.['node_modules/@capacitor/filesystem'] !== undefined) throw new Error('Filesystem package remains in lock graph');
+          NODE
+          test "$(node -p "require('./node_modules/@capacitor/core/package.json').version")" = "8.5.1"
+          test "$(node -p "require('./node_modules/@capacitor/android/package.json').version")" = "8.5.1"
+          test "$(node -p "require('./node_modules/@capacitor-community/sqlite/package.json').version")" = "8.1.1"
+          test "$(node -p "require('./node_modules/@capacitor/camera/package.json').version")" = "8.2.4"
+          test "$(node -p "require('./node_modules/@capacitor/app/package.json').version")" = "8.1.1"
+
+      - name: Guard diagnostic-only repository scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$GOVERNING_BASE"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -Ei '\.(db|sqlite|sqlite3|keystore|jks|pem|p12|pfx|jpg|jpeg|png|heic|webp|mp4|mov)$'; then
+            echo 'Real/binary/database/credential-like artifact changed in Gate 6C-D candidate' >&2
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -Ei '(^|/)(gate6d)(/|[-_.])'; then
+            echo 'Gate 6D path changed outside authorized scope' >&2
+            exit 1
+          fi
+          grep -F 'GATE 6C-D PHYSICAL EVIDENCE QUALIFICATION — NOT FIELD UI' src/ui/Gate6CDPhysicalEvidenceQualificationApp.tsx
+          grep -F 'gate6cRestoredResultCoordinator.start()' src/main.tsx
+          grep -F 'import "./gate6c/device-integration-proof.ts"' src/main.tsx
+
+      - name: Typecheck Gate 6C-B, 6C-C and 6C-D
+        run: |
+          npm run typecheck:gate6c
+          npm run typecheck:gate6c-c
+          npm run typecheck:gate6c-d
+
+      - name: Gate 6C-D qualification harness host regression
+        run: npm run gate6c-d:host
+
+      - name: Gate 6C-C adopted host regressions
+        run: npm run gate6c-c:host
+
+      - name: Gate 6C-B adopted host regression
+        run: npm run gate6c:host
+
+      - name: Gate 6B adopted host baselines
+        run: |
+          npm run gate6b:host
+          npm run gate6b:schema-host
+          npm run gate6b:q12-host
+
+      - name: Historical Gate 5 regressions
+        run: |
+          node tests/gate5b_adapter_regression.ts
+          node tests/gate5b_regression.ts
+          node tests/gate5c_regression.ts
+          node tests/gate5d_regression.ts
+          node tests/gate5e_regression.ts
+          node tests/gate5f_regression.ts
+          node tests/gate5g_regression.ts
+          node tests/gate5h_regression.ts
+          node tests/gate5i_regression.ts
+          node tests/gate5j_regression.ts
+          node tests/gate5k_regression.ts
+          node tests/gate5l_regression.ts
+
+      - name: Schema regression
+        run: python3 tests/gate4a_regression.py
+
+      - name: Production build embeds exact tested SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          VITE_GIT_COMMIT="$GITHUB_SHA" npm run build
+          grep -R -F "$GITHUB_SHA" dist >/dev/null
+
+      - name: Diff whitespace check before generated sync
+        run: git diff --check "$GOVERNING_BASE"..HEAD
+
+      - name: Capacitor Android sync and exact runtime plugin set
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx cap sync android 2>&1 | tee /tmp/cap-sync.log
+          grep -F '[info] Found 3 Capacitor plugins for android:' /tmp/cap-sync.log
+          grep -F '@capacitor-community/sqlite@8.1.1' /tmp/cap-sync.log
+          grep -F '@capacitor/app@8.1.1' /tmp/cap-sync.log
+          grep -F '@capacitor/camera@8.2.4' /tmp/cap-sync.log
+          ! grep -Fi '@capacitor/filesystem' /tmp/cap-sync.log
+
+      - name: Preserve SQLCipher 4.17.0 resolution
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./android/gradlew -p android :app:dependencies --configuration debugRuntimeClasspath > /tmp/deps.txt
+          grep -F 'net.zetetic:sqlcipher-android:4.17.0' /tmp/deps.txt
+          if grep -E 'net\.zetetic:sqlcipher-android:[^4]|net\.zetetic:sqlcipher-android:4\.(0|1[0-6])\.' /tmp/deps.txt; then
+            echo 'Unexpected SQLCipher version detected' >&2
+            exit 1
+          fi
+
+      - name: Gradle assembleDebug
+        run: ./android/gradlew -p android assembleDebug
+
+      - name: Qualification APK SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum "$APK" | tee gate6c-d-physical-apk.sha256
+
+      - name: Upload Gate 6C-D physical qualification APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate6c-d-physical-qualification-apk-${{ github.sha }}
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            gate6c-d-physical-apk.sha256
+            docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md
+          if-no-files-found: error
+          retention-days: 30
+
+  android-native-preservation:
+    name: Preserved native Evidence proof / API ${{ matrix.api }}
+    needs: host-harness-and-closed-baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 24
+            arch: x86
+          - api: 35
+            arch: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Build exact-SHA bundle and sync Android
+        run: |
+          VITE_GIT_COMMIT="$GITHUB_SHA" npm run build
+          npx cap sync android
+      - name: Enable KVM group access
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run preserved native storage/publication proof
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: ${{ matrix.arch }}
+          target: default
+          profile: pixel_2
+          disable-animations: true
+          disk-size: 4096M
+          heap-size: 512M
+          script: ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceStoreInstrumentedTest
+      - name: Upload preserved native reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate6c-d-preserved-native-api-${{ matrix.api }}-${{ github.sha }}
+          path: |
+            android/app/build/reports/androidTests/connected/**
+            android/app/build/outputs/androidTest-results/connected/**
+          if-no-files-found: warn
+          retention-days: 30
+
+  android-integration-preservation:
+    name: Preserved full Evidence integration / API ${{ matrix.api }}
+    needs: android-native-preservation
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 24
+            arch: x86
+            target: google_apis
+          - api: 35
+            arch: x86_64
+            target: default
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Build exact-SHA bundle and sync Android
+        run: |
+          VITE_GIT_COMMIT="$GITHUB_SHA" npm run build
+          npx cap sync android
+      - name: Enable KVM group access
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run preserved full production-bundle integration
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: ${{ matrix.arch }}
+          target: ${{ matrix.target }}
+          profile: pixel_2
+          disable-animations: true
+          disk-size: 4096M
+          heap-size: 512M
+          script: |
+            echo "GATE6CD_PRESERVED_WEBVIEW_API=${{ matrix.api }}"
+            [ "${{ matrix.api }}" != "24" ] || echo "GATE6CD_WEBVIEW_API24_PROVIDER_REQUEST=com.android.chrome"
+            [ "${{ matrix.api }}" != "24" ] || adb shell cmd webviewupdate set-webview-implementation com.android.chrome | tee /tmp/gate6cd-provider-result.txt
+            [ "${{ matrix.api }}" != "24" ] || grep -Fx 'Success' /tmp/gate6cd-provider-result.txt
+            adb shell dumpsys webviewupdate | tee /tmp/gate6cd-webviewupdate.txt
+            [ "${{ matrix.api }}" != "24" ] || adb shell dumpsys package com.android.chrome | grep -m1 -F 'versionName=69.0.3497.100'
+            [ "${{ matrix.api }}" = "24" ] || grep -F 'Current WebView package (name, version): (com.android.webview,' /tmp/gate6cd-webviewupdate.txt
+            [ "${{ matrix.api }}" = "24" ] || adb shell dumpsys package com.android.webview 2>/dev/null | grep -m1 'versionName='
+            echo "GATE6CD_INTEGRATION_TEST_START expectedSha=$GITHUB_SHA"
+            ./android/gradlew -p android :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.scientifica.inspection.gate6bproof.Gate6CEvidenceIntegrationInstrumentedTest -Pandroid.testInstrumentationRunnerArguments.gate6cExpectedGitSha=$GITHUB_SHA
+            echo "GATE6CD_INTEGRATION_TEST_COMPLETE expectedSha=$GITHUB_SHA"
+      - name: Upload preserved integration reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate6c-d-preserved-integration-api-${{ matrix.api }}-${{ github.sha }}
+          path: |
+            android/app/build/reports/androidTests/connected/**
+            android/app/build/outputs/androidTest-results/connected/**
+          if-no-files-found: warn
+          retention-days: 30

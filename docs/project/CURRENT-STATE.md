@@ -21,7 +21,7 @@
 - Gate 6C-A merge SHA: `4dfe7afd920285b034b26decb500932de4dae655`.
 - Gate 6C-B governing implementation base: `953610be8815725bb55bbdc62ac2ca375ee4ffa3`.
 - Gate 6C-B implementation branch: `implementation/gate6c-b-evidence-orchestration-v1`.
-- Gate 6C-B initial implementation checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`.
+- Gate 6C-B initial checkpoint: `64b424670ea4384b7e9d6c01eea952c201a573d7`.
 - Gate 6C-B corrected executable validation SHA: `dadf4d90a10d7348fea0543c1885ecf5b0846578`.
 - Gate 6C-B corrected executable CI run: `34483510338` — SUCCESS.
 - Gate 6C-B final reviewed head: `ea88fac83d60b99b7d50828915173d3aa14bb5d6`.
@@ -34,11 +34,21 @@
 - Gate 6C-C final-head qualification run: `34531511138` — SUCCESS.
 - Gate 6C-C PR: `#23`.
 - Gate 6C-C merge SHA: `f221b215358f83dce381ac5261a856a7de4e5c98`.
+- Gate 6C-D governing qualification base: `20d194959afa50ce705198ba993554c7f9cc210d`.
+- Gate 6C-D qualification branch: `qualification/gate6c-d-physical-evidence-v1`.
+- Gate 6C-D executable preparation started at checkpoint: `33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82`.
+- Gate 6C-D Camera process-death correction branch: `correction/gate6c-d-camera-process-death-v1`.
+- Gate 6C-D Gallery native-picker correction branch: `correction/gate6c-d-gallery-native-picker-v1`.
+- Historical physically tested Camera-correction SHA: `560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
+- Q02/Q03 physical Gallery-correction SHA: `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3`.
+- Q02/Q03 physical artifact: `10273428748` / `gate6c-d-gallery-correction-apk-4ac992eb3fb4062ffbd3040db5ef967e3e126fd3`.
+- Latest physically tested correction SHA — Q04 retest: `44a231a8281d1031a40e7105160c919633d32531`.
+- Latest physically tested correction artifact: `10280027500` / `gate6c-d-gallery-correction-apk-44a231a8281d1031a40e7105160c919633d32531`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B وGate 6C-C مغلقة/مدمجة كـsub-stages، بينما Gate 6C ككل ما تزال `IN_PROGRESS`. المرحلة التالية فقط هي Gate 6C-D بحالة `NEXT / NOT_STARTED`.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B وGate 6C-C مغلقة/مدمجة كـsub-stages، بينما Gate 6C ككل ما تزال `IN_PROGRESS`. Gate 6C-D هي **OPEN / IN_PROGRESS** وتوجد عليها physical qualification evidence جزئية؛ لم تُقبل ولم تُغلق، وGate 6D ما تزال `NOT_STARTED`.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -137,11 +147,34 @@ Final APK provenance, with hashes intentionally distinct:
 - actual `app-debug.apk` SHA-256: `da98c8437619a9e93d0d28df5bb1e2b20bf0d2f20120600e0bbbff10a40e9112`;
 - GitHub artifact ZIP SHA-256: `2718aa9309b69fad63c8054ef6d941f13c63821991382b83513d72aa1af6dded`.
 
-#### Gate 6C-D
+#### Gate 6C-D — Physical Android Evidence qualification + Gate closure
 
-الحالة: **`NEXT / NOT_STARTED`**.
+الحالة: **`OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS`**.
 
-لم تبدأ. لا يجوز اعتبارها started أو تنفيذ أي جزء منها في post-merge closure reconciliation الخاص بـ6C-C.
+- governing base recorded for Gate 6C-D: `20d194959afa50ce705198ba993554c7f9cc210d`;
+- Camera correction branch: `correction/gate6c-d-camera-process-death-v1`;
+- Gallery correction branch: `correction/gate6c-d-gallery-native-picker-v1`;
+- historical Camera-correction physical SHA `560e5cf9...`: APK SHA-256 `e855ff9d266dbfe22eca81fa2959939d71b62113640f1dd73c1332de6a22967d`; artifact `10191115023` / `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`; ZIP SHA-256 `920df2197ca1fe42b5b5183f17950ef48f34b283b3fa274d772e020da0d047be`;
+- Q02/Q03 physical Gallery-correction SHA `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3`: APK SHA-256 `e67b64eec70b0e9610bb5ac744cb57cb2debd5e0eee13ac3609843163a815445`; artifact `10273428748` / `gate6c-d-gallery-correction-apk-4ac992eb3fb4062ffbd3040db5ef967e3e126fd3`; ZIP SHA-256 `559d12d334890048404f57108ccd7cd5213baf8983c5c8a80cd20e3f6741f80a`;
+- latest Q04 physical correction/retest SHA `44a231a8281d1031a40e7105160c919633d32531`: APK SHA-256 `d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2`; artifact `10280027500` / `gate6c-d-gallery-correction-apk-44a231a8281d1031a40e7105160c919633d32531`; ZIP SHA-256 `0d2dd011583c9bb188fe807477bca1137dfb453fd0928c5ea17b09c46205b50b`; both artifact/APK hashes independently verified locally before installation.
+
+Historical Camera failure remains preserved: tested SHA `d4f7f9f34a48202aea0639ab77b10b7f9262bd57` remains **`FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY`** and the Android process-death cause remains **`UNKNOWN / UNESTABLISHED`**. It is not reclassified by later correction evidence.
+
+Physical evidence state:
+
+- **Q07 process-death recovery: PASS on `560e5cf9...`.** Camera method physically observed as `getPhoto`; old PID `20398`; `run-as` SIGKILL succeeded; immediate `pidof` returned no PID; recreated PID `25602`; real `appRestoredResult` arrived with `pluginId=Camera`, `methodName=getPhoto`, `success=true`; restored source was `getPhoto / CAMERA_PHOTO`; before adoption owner was not reconstructed and readiness was `NOT_OPEN`; Q08 Reopen + Reconcile reconstructed owner `1` and readiness `READY` without consuming the restored pending source; explicit Q07 Adopt then committed Evidence ID `1`, rows `0 → 1`, acquisition outcome `RESTORED_SUCCESS`, explicit owner reconstruction, `MATCH`, `RESOLVED`, file size `4984630`, canonical storage ref/hash.
+- Q07 committed `storageRef`: `evidence/v1/objects/b0b4c6e0-c5b6-45d4-be2b-eb55ae06dc7a.jpg`; `contentHash`: `sha256:e73171389429fa084b9188246f67852dbf96c73c82d3698082ce6b12b45cabc4`.
+- Q07 external physical evidence: `https://drive.google.com/drive/folders/1rsZkAJZkK1UyjrZETdgUyB9B_-lpRdiS?usp=drive_link`.
+- **Q13 durability/retrieval: PASS for the observed runtime recreation on `560e5cf9...`.** Evidence ID `1`, SQLite row count `1`, metadata survived restart, reconciliation `VALID_REFERENCE`, hash `MATCH`, resolve `RESOLVED`, and the same ref/hash/file size survived. External evidence: `https://drive.google.com/drive/folders/1_5aypRPoBtZbooKvQdp-PncIuV4VfeFi?usp=drive_link`. This exact run did **not** record an explicit `adb shell am force-stop`; a later strict repetition may still be required by the protocol.
+- **Historical Q02 failure on `560e5cf9...`: preserved.** Two reproducible attempts failed before EvidenceService received a usable Gallery source with uncaught `java.io.FileNotFoundException ... (Permission denied)` in the IonCamera Gallery post-selection stack. This remains historical evidence for the replaced path and is not reclassified.
+- **Q02 Gallery Commit: PHYSICAL PASS on `4ac992...`.** Verdict: `ACCEPT — Q02 GALLERY COMMIT PHYSICAL RETEST PASSED`. `status=PASS`, `acquisitionOutcome=SUCCESS`, `sourceKind=GALLERY_MEDIA`, Evidence ID `1`, row count `1`, file size `222222`, canonical storage ref/hash true, hash `MATCH`, resolve `RESOLVED`; `storageRef=evidence/v1/objects/4fb1acd6-08d3-4f4d-b6d8-eed2bccd79c5.jpg`; `contentHash=sha256:863bedd52b2269ad33dd57d863c3055a3676a24ff3f9519237c7f8c99d483912`; timestamp `2026-09-11T18:05:18.517Z`. PID remained `16121` before/after, so this attempt did not recreate the process. External evidence: `https://drive.google.com/drive/folders/1uFtiNs_bXYMmsADpzg7v4TMQ2ECTm4hl?usp=drive_link`. Q02 is no longer a blocker.
+- **Q03 Generic File Commit: PHYSICAL PASS on the same `4ac992...` runtime without DB reset.** Evidence row count `1 → 2`; new Evidence ID `2`; bytes `187387`; `storage_ref=evidence/v1/objects/b1e341a3-9b4f-4e16-9b81-c7ce6958e3f5.pdf`; `content_hash=sha256:4370b50c534ef391ba2380e002d2975e62377ab590b2463c8662882f30391eb6`. Q02 Evidence ID `1` remained present with bytes `222222` and its prior hash. A complete canonical Q03 JSON was not preserved outside the conversation, so no additional Q03 fields are invented.
+- **Observed reopen/reconciliation success after Q02/Q03: not formal Q08 PASS.** Initial reopened state was owner not reconstructed / readiness `NOT_OPEN` / no volatile or restored source. **Q08 Reopen + Reconcile** restored owner `1` and readiness `READY`; committed Evidence remained. This observation did not record the strict preceding `adb shell am force-stop`, so it is classified `OBSERVED REOPEN / RECONCILIATION SUCCESS — NOT YET STRICT Q08 PROTOCOL PASS`.
+- **Historical Q04 Camera cancellation: BLOCKED on `4ac992...`.** Real Camera opened; cancellation returned without captured/accepted photo. Harness reported `status=BLOCKED`, `acquisitionOutcome=SOURCE_UNAVAILABLE`, expected `USER_CANCELLED`, rows `2 → 2`, `pendingSourceCreated=false`, `failureCode=null`. Safe behavior was correct (no new row/pending source), classification was wrong. Diagnostic log established physical legacy `Camera.getPhoto()` error message `User cancelled photos app` with no `error.code`. Verdict: `Q04 BLOCKED — REAL CANCELLATION SAFE, LEGACY getPhoto CANCELLATION MISCLASSIFIED`. This historical result is preserved and not rewritten.
+- **Q04 Camera cancellation: PHYSICAL PASS on `44a231...`.** Verdict: `ACCEPT — Q04 REAL CAMERA CANCELLATION PHYSICAL RETEST PASSED`. Fresh/reset synthetic DB; owner `1`; readiness `READY`; committed rows `0`; setup `PASS`. Real external OPPO Camera opened from **Q04 Camera → Cancel**; no photo was captured or accepted; cancellation returned to the qualification app; harness reported `status=PASS`, `acquisitionOutcome=USER_CANCELLED`, expected `USER_CANCELLED`, rows `0 → 0`, `pendingSourceCreated=false`. Android log evidence shows `android.media.action.IMAGE_CAPTURE` launched `com.oppo.camera/.Camera`, focus left and returned to the qualification app. A later death of `com.oppo.camera` is external Camera-process activity, not process death of `com.scientifica.inspection.gate6bproof`. The preserved retest logcat did not retain the exact Capacitor text `User cancelled photos app`; no such claim is made. External evidence: `https://drive.google.com/drive/folders/1oQ1iEhkDu25q-E9Fujat-MLHf1uiMJm9?usp=drive_link`. Screenshot SHA-256 `41a9444dfb53162c5b1dc70843a7725a8685c93c81f5783f9bf0972860604d9a`; logcat SHA-256 `329d927b25ea425d2d684525bff98ef0a387083c4cb2e14de5527a1f6fd7a2ea`. Q04 no longer awaits physical retest.
+- **Q05 permission-denial protocol: PROTOCOL_REVIEW_REQUIRED.** The current package manifest does not declare `android.permission.CAMERA`, so the former `pm revoke ... CAMERA` + permission-prompt procedure is not a valid guaranteed physical protocol. No synthetic denial may substitute for Q05, and no CAMERA permission is added by the current correction. Q05 needs a separate narrow design/Project Owner decision.
+
+Qualification remains incomplete: Q01 correction-candidate normal Camera Commit is not yet physically PASS; Q02 and Q03 are physical PASS on `4ac992...`; Q04 is physical PASS on `44a231...`; Q05 remains `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`; Q06, formal strict Q08, Q09/Q10/Q11/Q12 remain pending; literal ENOSPC remains a named qualification gap. Gate 6C-D is not accepted/closed, Gate 6C remains `IN_PROGRESS`, Gate 6D remains `NOT_STARTED`, and `field_usable_v1=false`.
 
 ### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
@@ -288,16 +321,14 @@ Gate 6C-C adopted repeatable host baselines: **14 / 0**, **11 / 0**, and **4 / 0
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
 - Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **CLOSED / MERGED** عند `f221b215358f83dce381ac5261a856a7de4e5c98`.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
-- Gate 6C-D **NEXT / NOT_STARTED**.
+- Gate 6C-D **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS**; Q02 and Q03 are physical PASS on `4ac992...`, Q04 is physical PASS on `44a231...`, Q05 remains protocol-review-required under the current manifest, Q07 correction path and current Q13 durability evidence remain physical PASS results. Gate 6C-D is not closed.
 - Gate 6D **LATER / NOT_STARTED**.
 - `field_usable_v1=false`.
 
 ## 8) الحالة التالية
 
-Gate 6C-C أُغلقت ودمجت عبر PR #23 بعد independent review وموافقة صريحة من Project Owner.
+Gate 6C-D هي المرحلة الفرعية الحالية داخل Gate 6C وهي الآن **physical qualification in progress**.
 
-المرحلة الفرعية التالية فقط هي:
+**Gate 6C-D — `OPEN / IN_PROGRESS`.**
 
-**Gate 6C-D — `NEXT / NOT_STARTED`.**
-
-Gate 6C ككل ما تزال **`IN_PROGRESS`**. Gate 6C-D لم تبدأ. Gate 6D لم يبدأ. `field_usable_v1=false`.
+Q02 Gallery Commit is **PHYSICAL PASS on `4ac992...`** and no longer a blocker. Q03 Generic File Commit is **PHYSICAL PASS on `4ac992...`** on the observed same-runtime sequence. Historical Q04 on `4ac992...` remains preserved as **BLOCKED — safe cancellation misclassified**. The later Q04 correction/retest is **PHYSICAL PASS on `44a231...`** with `USER_CANCELLED`, rows `0 → 0`, and no pending source; Q04 no longer awaits physical retest. Q05 remains **PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST** and has not been synthetically passed. Q07 correction path remains physical PASS and current Q13 durability/retrieval evidence remains PASS ضمن آلية runtime recreation الموثقة، بينما Q01 correction-candidate Camera Commit وبقية المصفوفة المحددة أعلاه ما تزال غير مكتملة. Gate 6C ككل تبقى **`IN_PROGRESS`**؛ Gate 6C-D لم تُقبل ولم تُغلق، Gate 6D لم يبدأ، و`field_usable_v1=false`.

@@ -270,6 +270,23 @@ If a root cause was not established, record `UNKNOWN / UNESTABLISHED`. A later P
 - **New guard:** documentation hardening is subject to the same branch discipline as implementation; after any failed branch-targeted write, re-read target branch before retrying a mutation.
 - **References:** commits `8551dc8e9eba3e980ac857ae6c7a8bf93bcd2db1` and `b2fdfa3c4d1ad2bdd69be45f9a47fbdec43cc8b4`; `docs/project/WORKFLOW.md` branch rule.
 
+## INC-013 — Gate 6C-D Camera process-death restoration failure on first physical candidate
+
+- **Date:** 2026-09-11
+- **Gate:** 6C-D / Q01-Q07 Camera lifecycle qualification
+- **Type:** INCIDENT + NARROW COMPATIBILITY CORRECTION
+- **Status:** HISTORICAL FAIL PRESERVED / CORRECTION CANDIDATE REQUIRES PHYSICAL RETEST
+- **Classification:** physical qualification evidence + PROJECT engineering correction decision
+- **Historical verdict:** **`FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY`** on tested qualification SHA `d4f7f9f34a48202aea0639ab77b10b7f9262bd57`. A later PASS must not erase or relabel this result.
+- **Physical evidence:** Q01 successfully launched the external Camera. While Camera was foreground, the original app process died; the observed app PID changed and Android recreated the application process. Camera plugin registration occurred in the new process, but when the Camera activity returned the result, logcat reported `Unable to find a Capacitor plugin to handle requestCode ...`. The application-layer `Restored Camera source` remained `none`; no Evidence row was created; Q08 reopened an intact synthetic SQLite database with Evidence row count still `0`.
+- **Android process-death cause:** **`UNKNOWN / UNESTABLISHED`**. This incident does not claim why Android killed the original process.
+- **Technical diagnosis:** the failed candidate used `Camera.takePhoto()` from `@capacitor/camera@8.2.4`. In the tested physical sequence, that new Camera path (implemented through the plugin's IonCameraFlow path) did not demonstrate the required restoration behavior after process death and request-code return. This is an observed compatibility failure for the project qualification path, not a general claim that the Camera plugin cannot restore any external-activity call.
+- **PROJECT correction decision:** for Android `CAMERA_PHOTO` capture only, route the existing production acquisition adapter through the dependency's legacy `Camera.getPhoto()` API using `CameraSource.Camera`, `CameraResultType.Uri`, `quality=100`, `saveToGallery=false`, `allowEditing=false`, and `correctOrientation=true`. Treat returned legacy `Photo.path` as transient native `content://`/`file://` acquisition authority; never use Base64 or `webPath` as the durable/native source.
+- **Restoration rule:** `appRestoredResult(pluginId="Camera", methodName="getPhoto")` maps the legacy `Photo.path` to a volatile pending Camera source. It still carries no owner information, performs no direct Evidence insert, and requires explicit adoption followed by the normal `EvidenceService → durable EvidenceStorage → SQLite` pipeline.
+- **Non-changes:** gallery remains `chooseFromGallery`; generic file picker, EvidenceStorage, SQLite schema, Evidence contract, SHA-256/storage_ref semantics, dependency versions, Android floor, backend/sync scope, and Gate 6D remain unchanged.
+- **Validation boundary:** host/CI/emulator success can qualify the correction candidate only for a new physical retest. Q01/Q07 must be rerun on the exact correction APK with real process death; synthetic `acceptRestoredEvent()` is not physical proof.
+- **References:** `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`; correction branch `correction/gate6c-d-camera-process-death-v1`; historical qualification SHA `d4f7f9f34a48202aea0639ab77b10b7f9262bd57`.
+
 ---
 
 ## 2) Current disposition

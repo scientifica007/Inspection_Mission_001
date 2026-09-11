@@ -5,7 +5,11 @@ import type {
   EvidenceSourceAcquisition,
   EvidenceSourceKind,
 } from "../application/evidence-contract.ts";
-import { cameraMediaToEvidenceSource, mapCameraError } from "./evidence-acquisition-mapping.ts";
+import {
+  cameraMediaToEvidenceSource,
+  legacyCameraPhotoToEvidenceSource,
+  mapCameraError,
+} from "./evidence-acquisition-mapping.ts";
 
 export interface RestoredListenerEventLike {
   pluginId: string;
@@ -22,9 +26,11 @@ interface AppRestoredEventSource {
   ): Promise<{ remove(): Promise<void> }>;
 }
 
+type RestoredCameraMethodName = "getPhoto" | "takePhoto" | "chooseFromGallery";
+
 export interface PendingRestoredEvidenceSource {
   pendingId: string;
-  methodName: "takePhoto" | "chooseFromGallery";
+  methodName: RestoredCameraMethodName;
   source: EvidenceSource;
 }
 
@@ -39,9 +45,12 @@ function nextPendingId(): string {
   return `restored-${bytes[0].toString(16).padStart(8, "0")}${bytes[1].toString(16).padStart(8, "0")}`;
 }
 
-function dataToOutcome(methodName: "takePhoto" | "chooseFromGallery", data: unknown): AcquisitionOutcome {
+function dataToOutcome(methodName: RestoredCameraMethodName, data: unknown): AcquisitionOutcome {
   if (typeof data !== "object" || data === null) {
     return { status: "SOURCE_UNAVAILABLE", detail: "Restored Camera result did not contain media metadata" };
+  }
+  if (methodName === "getPhoto") {
+    return legacyCameraPhotoToEvidenceSource(data);
   }
   if (methodName === "takePhoto") {
     return cameraMediaToEvidenceSource("CAMERA_PHOTO", data as { uri?: unknown; metadata?: { size?: unknown; format?: unknown; creationDate?: unknown } | null });
@@ -105,7 +114,7 @@ export class EvidenceRestoredResultCoordinator {
 
   acceptRestoredEvent(event: RestoredListenerEventLike): RestoredEventDisposition {
     if (event.pluginId !== "Camera") return { status: "IGNORED" };
-    if (event.methodName !== "takePhoto" && event.methodName !== "chooseFromGallery") return { status: "IGNORED" };
+    if (event.methodName !== "getPhoto" && event.methodName !== "takePhoto" && event.methodName !== "chooseFromGallery") return { status: "IGNORED" };
 
     if (!event.success) {
       const outcome = mapCameraError(event.error ?? { message: "Restored Camera call did not succeed" });

@@ -337,6 +337,25 @@ If a root cause was not established, record `UNKNOWN / UNESTABLISHED`. A later P
 - **Qualification consequence:** Q01 correction-candidate normal Camera Commit remains **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PRODUCED**. Q02/Q03/Q04/Q05/Q06, formal Q08, Q09/Q10/Q11/Q12 remain pending; literal ENOSPC remains a named gap; Gate 6C-D remains OPEN / IN_PROGRESS; Gate 6C remains IN_PROGRESS; Gate 6D remains NOT_STARTED; `field_usable_v1=false`.
 - **References:** `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`; correction branch `correction/gate6c-d-camera-process-death-v1`; tested correction SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
 
+## INC-017 — Q02 Gallery Commit crashes in IonCamera raw-path EXIF processing
+
+- **Date:** 2026-09-11
+- **Gate:** 6C-D / Q02 Gallery Commit
+- **Type:** INCIDENT + NARROW CORRECTION
+- **Status:** PHYSICAL FAIL REPRODUCED / CORRECTION REQUIRED / PHYSICAL RETEST REQUIRED
+- **Classification:** physical qualification evidence + PROJECT narrow engineering correction
+- **Historical tested provenance:** the failing Q02 attempts used the already-recorded physical correction APK built from `560e5cf9c7b84554e79bb434afb6a662ac7d9376`. Its APK/artifact provenance remains unchanged; this incident does not relabel that binary.
+- **Physical reproduction:** Attempt A used PID `4875` and crashed at `2026-09-11 15:15:04` after selecting a disposable JPEG under `/storage/emulated/0/DCIM/Screenshots/...jpg`; Attempt B used PID `6805` and crashed at `2026-09-11 15:16:13` after selecting a disposable JPEG under `/storage/emulated/0/WhatsApp/Media/WhatsApp Images/...jpg`. Both produced `java.io.FileNotFoundException ... (Permission denied)`. An older Dropbox occurrence at `09:18:11` showed the same pattern.
+- **Confirmed stack:** `android.media.ExifInterface.<init>` → `io.ionic.libs.ioncameralib.processor.IONCAMRMediaProcessor.createImageMediaResult` → `IONCAMRGalleryManager.createMediaResult` → `IONCAMRGalleryManager.onChooseFromGalleryResult` → `com.capacitorjs.plugins.camera.IonCameraFlow.processResultFromGallery`.
+- **Direct root cause:** **`Q02 FAIL — REPRODUCIBLE DEPENDENCY CRASH IN chooseFromGallery / IonCamera POST-SELECTION PROCESSING`**. Camera v8.2.4's tested Gallery path reached IonCamera post-selection processing that opened a raw filesystem `imagePath` through `ExifInterface`; on the physical device that path was not readable and an uncaught `FileNotFoundException (Permission denied)` terminated the application before a usable Gallery source reached EvidenceService.
+- **Failure boundary / non-attribution:** the crash occurs before EvidenceService receives a usable Gallery source. It is not attributed to EvidenceService, SQLite, EvidenceStorage, SHA-256/storage_ref processing, low memory, USB, or Camera process-death recovery.
+- **Crash evidence handling:** raw crash files remain external and are not committed to GitHub. `data_app_native_crash` contained no native crash entry for this application. Any unrelated `dumpsys` SIGSEGV observed during diagnostics is not attributed to the application.
+- **Narrow correction decision:** production Q02 Gallery/media acquisition is routed away from Camera/IonCamera Gallery APIs to the existing project-owned `Gate6CEvidence` native plugin using Android `ACTION_OPEN_DOCUMENT`, `CATEGORY_OPENABLE`, single-selection image/video MIME filtering, read-only URI grant, and `content://`/`file://` authority passed into the existing EvidenceSource/EvidenceService/storage pipeline. The picker does not resolve a raw external DATA path, does not use `ExifInterface` on external paths, does not Base64/whole-buffer the selected object, and does not create Evidence directly.
+- **Explicit non-changes:** no `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, or `MANAGE_EXTERNAL_STORAGE`; no Camera dependency upgrade/fork; no Filesystem plugin; Camera capture remains the authorized legacy `Camera.getPhoto(...Uri...)` correction; generic file semantics, Evidence contract/storage/hash/schema/reconciliation, Q07 explicit adoption semantics, and Gate 6D remain unchanged.
+- **Qualification consequence:** Q02 remains **FAIL / CORRECTION_REQUIRED** until a new physical APK built from the Gallery correction candidate passes `G6CD-Q02-GALLERY-COMMIT` through the normal EvidenceService pipeline. Automated host/emulator/CI PASS cannot convert this physical failure to PASS.
+- **Historical continuity:** INC-013 historical Q01 failure remains preserved; INC-016 interrupted Q01 attempt remains unresolved/no-pass; Q07 physical PASS remains unchanged; current Q13 durability PASS remains unchanged; INC-014 and INC-015 remain unchanged.
+- **References:** `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`; correction branch `correction/gate6c-d-gallery-native-picker-v1`; historical tested SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
+
 ---
 
 ## 2) Current disposition
@@ -345,7 +364,7 @@ At the creation of this index:
 
 - Gates 1→5L, 6A, 6B, 6C-A, 6C-B, 6C-C are closed/merged in their recorded scopes.
 - Gate 6C remains `IN_PROGRESS`.
-- Gate 6C-D is `OPEN / IN_PROGRESS`; Q01 correction-candidate normal Camera Commit is `INTERRUPTED_PROCESS_DEATH_NO_PASS`, Q07 correction path is physically PASS, and the current Q13 durability/retrieval run is PASS with its actual runtime-recreation mechanism recorded; the remaining qualification matrix is pending.
+- Gate 6C-D is `OPEN / IN_PROGRESS`; Q01 correction-candidate normal Camera Commit is `INTERRUPTED_PROCESS_DEATH_NO_PASS`, Q02 Gallery Commit is `FAIL / CORRECTION_REQUIRED` pending physical retest of the native-picker correction, Q07 correction path is physically PASS, and the current Q13 durability/retrieval run is PASS with its actual runtime-recreation mechanism recorded; the remaining qualification matrix is pending.
 - Gate 6D is `NOT_STARTED`.
 - `field_usable_v1=false`.
 

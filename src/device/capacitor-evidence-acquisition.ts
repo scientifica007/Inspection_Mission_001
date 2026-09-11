@@ -1,7 +1,13 @@
-import { Camera, MediaTypeSelection } from "@capacitor/camera";
+import {
+  Camera,
+  CameraResultType,
+  CameraSource,
+  MediaTypeSelection,
+} from "@capacitor/camera";
 import type { AcquisitionOutcome, EvidenceSourceAcquisition } from "../application/evidence-contract.ts";
 import {
   cameraMediaToEvidenceSource,
+  legacyCameraPhotoToEvidenceSource,
   mapCameraError,
   nativeGenericResultToOutcome,
 } from "./evidence-acquisition-mapping.ts";
@@ -16,13 +22,15 @@ export class CapacitorEvidenceSourceAcquisition implements EvidenceSourceAcquisi
 
   async takeCameraPhoto(): Promise<AcquisitionOutcome> {
     try {
-      const media = await Camera.takePhoto({
+      const photo = await Camera.getPhoto({
+        source: CameraSource.Camera,
+        resultType: CameraResultType.Uri,
         quality: 100,
         saveToGallery: false,
-        editable: "no",
-        includeMetadata: true,
+        allowEditing: false,
+        correctOrientation: true,
       });
-      return cameraMediaToEvidenceSource("CAMERA_PHOTO", media);
+      return legacyCameraPhotoToEvidenceSource(photo);
     } catch (error) {
       return mapCameraError(error);
     }

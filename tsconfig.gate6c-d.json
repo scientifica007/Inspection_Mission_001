@@ -23,6 +23,7 @@
     "src/gate6c/physical-qualification-model.ts",
     "src/gate6c/physical-qualification.ts",
     "src/ui/Gate6CDPhysicalEvidenceQualificationApp.tsx",
+    "src/ui/Gate6CDPhysicalQualificationAugment.tsx",
     "src/main.tsx"
   ],
   "include": []

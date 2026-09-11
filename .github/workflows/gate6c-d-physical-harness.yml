@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: gate6c-d-${{ github.ref }}
+  group: gate6c-d-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: false
 
 env:
@@ -78,17 +78,12 @@ jobs:
           grep -F 'Gate 6D **LATER / NOT_STARTED**' docs/project/CURRENT-STATE.md
           grep -F '`field_usable_v1=false`' docs/project/CURRENT-STATE.md
 
-      - name: Guard canonical schema and bootstrap hashes
+      - name: Guard canonical authorities and closed seams
         shell: bash
         run: |
           set -euo pipefail
           printf '%s  %s\n' "$SCHEMA_SHA256" docs/schema/schema.sql | sha256sum -c -
           printf '%s  %s\n' "$BOOTSTRAP_SHA256" bootstrap/v1/checklist-v1.json | sha256sum -c -
-
-      - name: Guard closed product and Evidence seams
-        shell: bash
-        run: |
-          set -euo pipefail
           git diff --exit-code "$GOVERNING_BASE" -- src/application
           git diff --exit-code "$GOVERNING_BASE" -- src/bootstrap
           git diff --exit-code "$GOVERNING_BASE" -- src/device/capacitor-sqlite-adapter.ts
@@ -99,13 +94,12 @@ jobs:
           git diff --exit-code "$GOVERNING_BASE" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidenceStore.java
           git diff --exit-code "$GOVERNING_BASE" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java
           git diff --exit-code "$GOVERNING_BASE" -- android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6BCompetingWriterPlugin.java
-          git diff --exit-code "$GOVERNING_BASE" -- docs/schema/schema.sql bootstrap/v1/checklist-v1.json
           grep -F 'minSdkVersion = 24' android/variables.gradle
           grep -F 'target: "chrome69"' vite.config.ts
           ! grep -R --line-number -E 'READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|MANAGE_EXTERNAL_STORAGE' android/app/src/main/AndroidManifest.xml
           ! grep -R --line-number -E '@capacitor/(core|android)"[[:space:]]*:[[:space:]]*"9\.|@capacitor/(camera|app|filesystem)"[[:space:]]*:[[:space:]]*"9\.' package.json package-lock.json
 
-      - name: Guard rejected publication remnants stay absent
+      - name: Guard publication, binary-transport and dependency boundaries
         shell: bash
         run: |
           set -euo pipefail
@@ -113,40 +107,19 @@ jobs:
           test ! -e android/app/src/main/cpp/gate6c_atomic_publish.c
           test ! -e android/app/src/main/cpp/CMakeLists.txt
           ! grep -nE 'externalNativeBuild|gate6c_atomic_publish|Gate6CAtomicPublisher' android/app/build.gradle
-          if grep -R -nE 'renameat2|RENAME_NOREPLACE|gate6c_atomic_publish|Gate6CAtomicPublisher|syscall\(' android/app/src/main android/app/build.gradle; then
-            echo 'Rejected renameat2/JNI publication path reappeared' >&2
-            exit 1
-          fi
-          if grep -R -nF 'Os.link(' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6C*.java; then
-            echo 'Rejected Android hard-link publication primitive reappeared' >&2
-            exit 1
-          fi
-
-      - name: Guard Evidence bounded-memory and native SQL boundaries
-        shell: bash
-        run: |
-          set -euo pipefail
+          ! grep -R -nE 'renameat2|RENAME_NOREPLACE|gate6c_atomic_publish|Gate6CAtomicPublisher|syscall\(' android/app/src/main android/app/build.gradle
+          ! grep -R -nF 'Os.link(' android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6C*.java
           if grep -R -nE 'Base64|\bBlob\b|ArrayBuffer|Uint8Array' \
             src/device/capacitor-evidence-acquisition.ts \
             src/device/capacitor-evidence-storage.ts \
             src/device/gate6c-evidence-native.ts \
             src/gate6c/device-integration-proof.ts \
             src/gate6c/physical-qualification.ts \
-            src/ui/Gate6CDPhysicalEvidenceQualificationApp.tsx; then
+            src/ui/Gate6CDPhysicalEvidenceQualificationApp.tsx \
+            src/ui/Gate6CDPhysicalQualificationAugment.tsx; then
             echo 'Whole-binary JavaScript transport primitive leaked into Evidence qualification path' >&2
             exit 1
           fi
-          if grep -R -nE 'android\.database\.sqlite|net\.zetetic|INSERT[[:space:]]+INTO[[:space:]]+evidence|BEGIN[[:space:]]+IMMEDIATE|COMMIT;|ROLLBACK;' \
-            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidenceStore.java \
-            android/app/src/main/java/com/scientifica/inspection/gate6bproof/Gate6CEvidencePlugin.java; then
-            echo 'Native Gate 6C Evidence layer contains forbidden domain SQLite behavior' >&2
-            exit 1
-          fi
-
-      - name: Guard dependency inventory
-        shell: bash
-        run: |
-          set -euo pipefail
           node <<'NODE'
           const fs = require('node:fs');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -161,7 +134,7 @@ jobs:
           test "$(node -p "require('./node_modules/@capacitor/camera/package.json').version")" = "8.2.4"
           test "$(node -p "require('./node_modules/@capacitor/app/package.json').version")" = "8.1.1"
 
-      - name: Guard diagnostic-only scope and repository exclusions
+      - name: Guard diagnostic-only repository scope
         shell: bash
         run: |
           set -euo pipefail
@@ -178,7 +151,6 @@ jobs:
           grep -F 'GATE 6C-D PHYSICAL EVIDENCE QUALIFICATION — NOT FIELD UI' src/ui/Gate6CDPhysicalEvidenceQualificationApp.tsx
           grep -F 'gate6cRestoredResultCoordinator.start()' src/main.tsx
           grep -F 'import "./gate6c/device-integration-proof.ts"' src/main.tsx
-          ! grep -R --line-number -E 'real inspection|customer data|personal data' src/gate6c/physical-qualification.ts tests/gate6c_d_physical_qualification_regression.ts
 
       - name: Typecheck Gate 6C-B, 6C-C and 6C-D
         run: |

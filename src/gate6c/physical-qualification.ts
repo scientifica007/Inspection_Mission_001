@@ -54,7 +54,7 @@ export interface Gate6CDHarnessSnapshot {
   pendingSource: { pendingId: string; sourceKind: EvidenceSourceKind } | null;
   restoredPending: {
     pendingId: string;
-    methodName: "takePhoto" | "chooseFromGallery";
+    methodName: "getPhoto" | "takePhoto" | "chooseFromGallery";
     sourceKind: EvidenceSourceKind;
   } | null;
 }

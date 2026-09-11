@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "files": [
+    "src/bootstrap/adapter.ts",
+    "src/bootstrap/loader.ts",
+    "src/application/errors.ts",
+    "src/application/evidence-contract.ts",
+    "src/application/evidence-create.ts",
+    "src/application/evidence-reconciliation.ts",
+    "src/application/evidence.ts",
+    "src/application/visit-scope.ts",
+    "src/gate6b/assets.ts",
+    "src/device/capacitor-sqlite-adapter.ts",
+    "src/device/gate6b-database.ts",
+    "src/device/evidence-acquisition-mapping.ts",
+    "src/device/gate6c-evidence-native.ts",
+    "src/device/capacitor-evidence-acquisition.ts",
+    "src/device/capacitor-evidence-storage.ts",
+    "src/device/evidence-restored-result.ts",
+    "src/gate6c/physical-qualification-model.ts",
+    "src/gate6c/physical-qualification.ts",
+    "src/ui/Gate6CDPhysicalEvidenceQualificationApp.tsx",
+    "src/main.tsx"
+  ],
+  "include": []
+}

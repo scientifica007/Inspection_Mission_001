@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
 import { gate6cRestoredResultCoordinator } from "./device/evidence-restored-result.ts";
 import "./gate6c/device-integration-proof.ts";
-import { Gate6BProofApp } from "./ui/Gate6BProofApp.tsx";
-import "./ui/gate6b.css";
+import { Gate6CDPhysicalEvidenceQualificationApp } from "./ui/Gate6CDPhysicalEvidenceQualificationApp.tsx";
+import "./ui/gate6cd-physical.css";
 
 if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
   void gate6cRestoredResultCoordinator.start().catch((error) => {
@@ -17,6 +17,6 @@ if (root === null) throw new Error("root element missing");
 
 createRoot(root).render(
   <StrictMode>
-    <Gate6BProofApp />
+    <Gate6CDPhysicalEvidenceQualificationApp />
   </StrictMode>,
 );

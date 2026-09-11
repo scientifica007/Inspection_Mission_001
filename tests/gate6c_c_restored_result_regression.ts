@@ -42,10 +42,19 @@ await test("G6C-C-R01 unrelated restored plugin event is ignored", () => {
   assert(coordinator.getPending() === null, "unrelated event cannot create pending source");
 });
 
-await test("G6C-C-R02 deprecated restored Camera method is ignored", () => {
+await test("G6C-C-R02 project-authorized legacy getPhoto restored result becomes pending", () => {
   const coordinator = new EvidenceRestoredResultCoordinator(new FakeApp());
-  const result = coordinator.acceptRestoredEvent({ pluginId: "Camera", methodName: "getPhoto", success: true, data: { uri: "content://legacy" } });
-  assert(result.status === "IGNORED", "deprecated getPhoto restoration is outside Gate 6C-C");
+  const result = coordinator.acceptRestoredEvent({
+    pluginId: "Camera",
+    methodName: "getPhoto",
+    success: true,
+    data: { path: "content://synthetic.camera/legacy-restored/1", format: "jpeg", webPath: "capacitor://ignored-web-path" },
+  });
+  assert(result.status === "PENDING", "legacy getPhoto restoration should become pending");
+  assert(result.pending.methodName === "getPhoto", "restored method identity");
+  assert(result.pending.source.kind === "CAMERA_PHOTO", "camera source kind");
+  assert(result.pending.source.sourceRef === "content://synthetic.camera/legacy-restored/1", "native path is sourceRef");
+  assert(!("ownerKind" in result.pending) && !("ownerRef" in result.pending), "pending source must carry no owner intent");
 });
 
 await test("G6C-C-R03 restored takePhoto becomes pending without owner information", () => {
@@ -133,8 +142,8 @@ await test("G6C-C-R10 listener starts early, captures relevant event, and can st
   const coordinator = new EvidenceRestoredResultCoordinator(app);
   await coordinator.start();
   assert(app.listener !== null, "listener registered");
-  app.listener!({ pluginId: "Camera", methodName: "takePhoto", success: true, data: { uri: "file:///synthetic/restored.jpg" } });
-  assert(coordinator.getPending() !== null, "listener populates only volatile pending state");
+  app.listener!({ pluginId: "Camera", methodName: "getPhoto", success: true, data: { path: "file:///synthetic/restored.jpg", format: "jpeg" } });
+  assert(coordinator.getPending()?.methodName === "getPhoto", "listener populates legacy getPhoto volatile pending state");
   await coordinator.stop();
   assert(app.removeCalls === 1 && app.listener === null, "listener removed cleanly");
 });

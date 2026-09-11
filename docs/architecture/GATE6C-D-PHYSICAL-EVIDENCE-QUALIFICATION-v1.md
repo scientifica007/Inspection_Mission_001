@@ -1,8 +1,21 @@
 # Gate 6C-D — Physical Android Evidence Qualification v1
 
-Status: **QUALIFICATION HARNESS / PHYSICAL EXECUTION PENDING**
+Status: **OPEN / IN_PROGRESS — CAMERA PROCESS-DEATH CORRECTION CANDIDATE REQUIRES PHYSICAL RETEST**
 
 This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. It does **not** close Gate 6C-D, does **not** close Gate 6C, and does **not** begin Gate 6D.
+
+The first physical Camera candidate is historical failure evidence and remains so even if a later correction passes:
+
+- tested SHA: `d4f7f9f34a48202aea0639ab77b10b7f9262bd57`;
+- verdict: **`FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY`**;
+- external Camera launched, the original application process died while Camera was foreground, and the application PID changed/recreated;
+- after Camera completion, logcat reported `Unable to find a Capacitor plugin to handle requestCode ...`;
+- `Restored Camera source = none`;
+- SQLite Evidence row count remained `0`; Q08 reopened an intact but Evidence-empty synthetic database;
+- cause of Android process death: **`UNKNOWN / UNESTABLISHED`**;
+- technical qualification diagnosis: the tested `Camera.takePhoto()` / Camera v8.2.4 IonCameraFlow path did not demonstrate the required restoration behavior in that physical sequence.
+
+The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. This candidate requires a new independent physical retest. Host tests, GitHub Actions, or emulator runs cannot erase or supersede the historical failure by themselves.
 
 The APK must visibly show:
 
@@ -49,7 +62,7 @@ Before physical execution, record:
 - GitHub artifact ZIP SHA-256 digest;
 - Android version/API level of the test device, without recording the device serial number.
 
-Install the exact APK under qualification. Do not substitute an older Gate-6C-C APK.
+Install the exact correction APK under qualification. Do not substitute the failed `d4f7...` APK or an older Gate-6C-C APK.
 
 For every scenario, copy the canonical JSON from the harness. The JSON intentionally omits raw acquisition URIs, raw resolve URIs, and device serials. Store physical evidence outside the repository until it has been reviewed for privacy. Never commit real source binaries or real inspection data.
 
@@ -73,7 +86,7 @@ Reset only when the scenario calls for a clean database. Do not reset between th
 | `G6CD-Q04-CANCEL` | Real cancellation | Start Camera then cancel | `USER_CANCELLED`; zero row delta |
 | `G6CD-Q05-PERMISSION-DENIED` | Real permission denial | Deny Camera permission | `PERMISSION_DENIED`; zero row delta |
 | `G6CD-Q06-SOURCE-LOSS` | Lost volatile source | Acquire-only then make source unavailable externally | safe source-unavailable failure; zero row delta |
-| `G6CD-Q07-RESTORED-CAMERA` | Genuine process death | Kill app process while external Camera is active, then return | real restored pending; no auto-row; explicit owner + Adopt; production commit |
+| `G6CD-Q07-RESTORED-CAMERA` | Genuine process death | Kill app process while external Camera is active, then return | real restored `getPhoto` pending; no auto-row; explicit owner + Adopt; production commit |
 | `G6CD-Q08-RESTART-RECONCILIATION` | Startup reconciliation | Force-stop/relaunch with committed Evidence | normal reconciliation, resolve/hash/metadata proof |
 | `G6CD-Q09-ORPHAN-CLEANUP` | Zero-row orphan cleanup | Diagnostic publish without row, then restart | normal reconciliation reports/removes orphan; zero row remains |
 | `G6CD-Q10-MISSING-FILE` | Missing historical file diagnosis | Delete app-private object externally with ADB after a valid commit | row retained; `BROKEN_STORAGE_REFERENCE`; no repair/replacement |
@@ -89,6 +102,8 @@ Reset only when the scenario calls for a clean database. Do not reset between th
 4. Require JSON status `PASS`.
 5. Require source kind `CAMERA_PHOTO`, a positive Evidence ID, canonical `evidence/v1/objects/...` ref, canonical SHA-256, file size > 0, hash verification `MATCH`, resolve `RESOLVED`, and one row for the committed Evidence proof.
 6. Record the Evidence ID for Q08/Q10/Q13 where useful.
+
+For the correction candidate, the production Camera acquisition path must be the project-authorized legacy `Camera.getPhoto()` URI path; Q01 semantics themselves are unchanged.
 
 The photo is qualification-only. Do not photograph people, records, identifiers, or real inspection material.
 
@@ -147,28 +162,31 @@ If the provider keeps the source readable and the commit succeeds, the source-lo
 
 ## 12. Q07 — Genuine Camera process death / appRestoredResult
 
-This scenario must exercise Android/Capacitor lifecycle restoration. Do **not** inject `acceptRestoredEvent()` from the UI.
+This scenario must exercise Android/Capacitor lifecycle restoration. Do **not** inject `acceptRestoredEvent()` from the UI. The failed `d4f7...` physical sequence must remain available as negative historical evidence; this section defines the independent retest of the correction candidate.
 
 1. Start from initialized synthetic state and note the current total Evidence row count.
 2. Press **Q07 Start Camera — Kill App While Camera Active**. The external Camera activity must be visible.
-3. While Camera is foreground and the app process is background, from ADB run:
+3. While Camera is foreground and the app process is background, record the current application PID for external evidence, then from ADB run:
 
 ```sh
 adb shell am kill com.scientifica.inspection.gate6bproof
 ```
 
-Use `am kill` for this protocol; do not substitute `am force-stop`, because force-stop changes package/activity lifecycle semantics and may suppress the result path being qualified.
+Use `am kill` for this protocol; do not substitute `am force-stop`, because force-stop changes package/activity lifecycle semantics and may suppress the result path being qualified. Do not commit the device serial number to GitHub.
 
 4. Complete/accept the Camera operation.
-5. Relaunch the qualification APK if the system does not automatically recreate it.
-6. Require the **Restored Camera source** field to show a pending ID, method `takePhoto`, and source kind `CAMERA_PHOTO`.
+5. Verify Android recreated the application process (new PID) and relaunch the qualification APK only if the system does not automatically recreate it.
+6. Require the **Restored Camera source** field to show a pending ID, method `getPhoto`, and source kind `CAMERA_PHOTO`.
 7. Confirm no Evidence row has been created automatically.
 8. Press **Q08 Reopen + Reconcile** to explicitly reconstruct/select the synthetic Visit owner and establish normal Evidence readiness. This must not consume the restored source.
-9. Require the restored pending source is still shown.
+9. Require the restored pending source is still shown and still reports method `getPhoto`.
 10. Press **Q07 Explicit Adopt to Synthetic Visit**.
 11. Require Q07 `PASS`, explicit owner reconstruction, exactly one new committed Evidence row, canonical ref/hash, resolve/hash proof.
+12. Force-stop/relaunch again and run Q13 against the new Evidence ID; require durable retrieval/hash/resolve `PASS`.
 
 Discard is also exposed and must remove the volatile restored source without attaching it anywhere.
+
+If restored source remains `none`, requestCode/plugin mapping fails again, or adoption cannot complete through the normal EvidenceService pipeline, Q07 remains `FAIL`; do not replace this with a synthetic restored event.
 
 ## 13. Q08 — Restart/reconciliation
 
@@ -300,13 +318,14 @@ The local UI may display an app-private resolve handle for manual qualification,
 
 ## 20. Gate acceptance boundary
 
-Harness implementation and green CI are preparation evidence only. After this implementation task:
+The first physical candidate failed and the correction candidate is not self-qualifying. Harness implementation and green CI are preparation evidence only. Until a new physical retest is independently reviewed:
 
+- historical `d4f7...` verdict remains **FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY**;
 - Gate 6C remains `IN_PROGRESS`;
-- Gate 6C-D remains started but not accepted/closed;
-- physical Q01→Q13 execution remains a Project Owner/review activity;
+- Gate 6C-D remains `OPEN / IN_PROGRESS`, not accepted/closed;
+- physical Q01/Q07/Q13 correction retest remains required;
 - any unproven literal ENOSPC case remains a named gap;
 - Gate 6D remains `NOT_STARTED`;
 - `field_usable_v1=false`.
 
-No PR or merge is implied by this document. Independent review must evaluate the exact branch/head, CI run, APK provenance, and later physical-device evidence before any Gate 6C-D closure decision.
+No PR or merge is implied by this document. Independent review must evaluate the exact correction branch/head, CI run, APK provenance, and new physical-device evidence before any Gate 6C-D closure decision.

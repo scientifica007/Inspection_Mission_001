@@ -1,6 +1,6 @@
 # Gate 6C-D — Physical Android Evidence Qualification v1
 
-Status: **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS; Q01 INTERRUPTED BY REAL PROCESS DEATH / NO PASS PRODUCED; Q07 CORRECTION PASS + CURRENT Q13 DURABILITY PASS; REMAINING MATRIX PENDING**
+Status: **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS; Q01 INTERRUPTED / NO PASS; Q02 FAIL / CORRECTION_REQUIRED / PHYSICAL RETEST REQUIRED; Q05 PROTOCOL_REVIEW_REQUIRED; Q07 PASS + CURRENT Q13 PASS**
 
 This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. It does **not** close Gate 6C-D, does **not** close Gate 6C, and does **not** begin Gate 6D.
 
@@ -15,7 +15,7 @@ The first physical Camera candidate is historical failure evidence and remains s
 - cause of Android process death: **`UNKNOWN / UNESTABLISHED`**;
 - technical qualification diagnosis: the tested `Camera.takePhoto()` / Camera v8.2.4 IonCameraFlow path did not demonstrate the required restoration behavior in that physical sequence.
 
-The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376` has produced a Q07 genuine process-death recovery PASS and current Q13 durability/retrieval PASS. A later Q01 normal Camera Commit attempt on the same physical-tested APK was interrupted by a real process death while Camera was active and therefore produced **no valid Q01 PASS**; that attempt is recorded below as `INTERRUPTED_PROCESS_DEATH_NO_PASS`, not as a new product defect. The remaining qualification matrix is still pending. Host tests, GitHub Actions, or emulator runs cannot erase or supersede the historical failure by themselves.
+The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376` has produced a Q07 genuine process-death recovery PASS and current Q13 durability/retrieval PASS. A later Q01 normal Camera Commit attempt on the same physical-tested APK was interrupted by a real process death while Camera was active and therefore produced **no valid Q01 PASS**; that attempt is recorded below as `INTERRUPTED_PROCESS_DEATH_NO_PASS`, not as a new product defect. Q02 on that same physical-tested APK reproducibly crashed in the dependency's Gallery post-selection path and remains `FAIL / CORRECTION_REQUIRED` pending physical retest of the project-owned native URI picker. Q05's previous permission-denial protocol is not executable under the current manifest and now requires separate protocol review. Host tests, GitHub Actions, or emulator runs cannot erase or supersede physical evidence by themselves.
 
 The APK must visibly show:
 
@@ -64,13 +64,15 @@ Before physical execution, record:
 
 Install the exact correction APK under qualification. Do not substitute the failed `d4f7...` APK or an older Gate-6C-C APK.
 
-Current correction APK provenance:
+Current physically tested correction APK provenance remains historical physical evidence:
 
 - tested SHA: `560e5cf9c7b84554e79bb434afb6a662ac7d9376`;
 - `app-debug.apk` SHA-256: `e855ff9d266dbfe22eca81fa2959939d71b62113640f1dd73c1332de6a22967d`;
 - artifact ID: `10191115023`;
 - artifact name: `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`;
 - artifact ZIP SHA-256: `920df2197ca1fe42b5b5183f17950ef48f34b283b3fa274d772e020da0d047be`.
+
+The Gallery correction branch produces a newer exact-SHA APK candidate through CI. That newer APK does not become physical PASS evidence until the Project Owner performs the required physical Q02 retest.
 
 For every scenario, copy the canonical JSON from the harness. The JSON intentionally omits raw acquisition URIs, raw resolve URIs, and device serials. Store physical evidence outside the repository until it has been reviewed for privacy. Never commit real source binaries or real inspection data.
 
@@ -86,13 +88,13 @@ Reset only when the scenario calls for a clean database. Do not reset between th
 
 ## 5. Stable physical scenario matrix
 
-| ID | Purpose | Physical action | Required result |
+| ID | Purpose | Physical action | Required result / current protocol status |
 |---|---|---|---|
 | `G6CD-Q01-CAMERA-COMMIT` | Real Camera commit | Take a real disposable test photo | Production commit; canonical ref/hash; bytes; resolve proof; one row |
-| `G6CD-Q02-GALLERY-COMMIT` | Gallery/media commit | Select exactly one disposable gallery item | Same production proof |
+| `G6CD-Q02-GALLERY-COMMIT` | Gallery/media commit | Select exactly one disposable image/video through the correction picker | Same production proof; current physical status remains `FAIL / CORRECTION_REQUIRED` until retest |
 | `G6CD-Q03-GENERIC-FILE-COMMIT` | SAF generic file | Select one disposable file through ACTION_OPEN_DOCUMENT | Same production proof |
 | `G6CD-Q04-CANCEL` | Real cancellation | Start Camera then cancel | `USER_CANCELLED`; zero row delta |
-| `G6CD-Q05-PERMISSION-DENIED` | Real permission denial | Deny Camera permission | `PERMISSION_DENIED`; zero row delta |
+| `G6CD-Q05-PERMISSION-DENIED` | Real permission denial | **Do not execute current invalid revoke/prompt protocol** | `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST` |
 | `G6CD-Q06-SOURCE-LOSS` | Lost volatile source | Acquire-only then make source unavailable externally | safe source-unavailable failure; zero row delta |
 | `G6CD-Q07-RESTORED-CAMERA` | Genuine process death | Kill app process while external Camera is active, then return | real restored `getPhoto` pending; no auto-row; explicit owner + Adopt; production commit |
 | `G6CD-Q08-RESTART-RECONCILIATION` | Startup reconciliation | Force-stop/relaunch with committed Evidence | normal reconciliation, resolve/hash/metadata proof |
@@ -171,9 +173,50 @@ Q01 therefore remains **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PROD
 
 ## 7. Q02 — Gallery/media commit
 
-1. Place one disposable non-sensitive test image/media item in the device gallery.
-2. Press **Q02 Gallery Commit** and select exactly one item.
-3. Require `PASS`, source kind `GALLERY_MEDIA`, canonical ref/hash, authoritative bytes, resolve proof, and committed SQLite row.
+The stable Q02 success contract remains unchanged: a successful physical retest must produce scenario ID `G6CD-Q02-GALLERY-COMMIT`, status `PASS`, source kind `GALLERY_MEDIA`, acquisition outcome `SUCCESS`, a positive Evidence ID, canonical storage ref/hash, file size > 0, hash verification `MATCH`, resolve status `RESOLVED`, and a committed SQLite row through the normal EvidenceService pipeline.
+
+### Recorded physical failure — `Q02 FAIL / CORRECTION_REQUIRED`
+
+The physical failure was reproduced at least twice on the already-recorded physical correction APK built from exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376`. That historical APK provenance must not be rewritten by the later Gallery correction candidate.
+
+- Attempt A: PID `4875`, crash timestamp `2026-09-11 15:15:04`, after selecting a disposable JPEG from `/storage/emulated/0/DCIM/Screenshots/...jpg`.
+- Attempt B: PID `6805`, crash timestamp `2026-09-11 15:16:13`, after selecting a disposable JPEG from `/storage/emulated/0/WhatsApp/Media/WhatsApp Images/...jpg`.
+- Both attempts produced `java.io.FileNotFoundException: ... (Permission denied)`.
+- An older Dropbox occurrence at `2026-09-11 09:18:11` showed the same failure pattern.
+
+The confirmed dependency stack includes:
+
+`android.media.ExifInterface`
+→ `io.ionic.libs.ioncameralib.processor.IONCAMRMediaProcessor.createImageMediaResult`
+→ `IONCAMRGalleryManager.onChooseFromGalleryResult`
+→ `com.capacitorjs.plugins.camera.IonCameraFlow.processResultFromGallery`.
+
+The direct qualification classification is:
+
+**`Q02 FAIL — REPRODUCIBLE DEPENDENCY CRASH IN chooseFromGallery / IonCamera POST-SELECTION PROCESSING`**
+
+The crash occurs before EvidenceService receives a usable Gallery source. It must not be attributed to EvidenceService, SQLite, EvidenceStorage/hash processing, low memory, USB behavior, or process-death recovery. The app's native-crash Dropbox / `data_app_native_crash` evidence contained no corresponding native crash entry for this application. Any unrelated `dumpsys` SIGSEGV observed during diagnostics must not be attributed to the application. Raw crash/log files remain external and are not committed to GitHub.
+
+### Q02 correction candidate
+
+Production Q02 no longer uses `Camera.chooseFromGallery()` and does not use `Camera.pickImages()`. Gallery/media acquisition is routed through the project-owned native `Gate6CEvidence` plugin using Android system document/media URI semantics:
+
+- `Intent.ACTION_OPEN_DOCUMENT`;
+- `Intent.CATEGORY_OPENABLE`;
+- image/video MIME filtering (`image/*`, `video/*`);
+- exactly one item;
+- read-only URI grant;
+- selected authority retained as `content://` or `file://`;
+- one `ContentResolver.openInputStream(uri)` readability probe that is closed immediately;
+- no raw filesystem DATA-path lookup;
+- no `ExifInterface` on external raw paths;
+- no Base64, `webPath`, or whole-object Java/JavaScript buffering;
+- no `READ_EXTERNAL_STORAGE` or `WRITE_EXTERNAL_STORAGE` permission;
+- no dependency upgrade/fork and no Filesystem plugin.
+
+After acquisition, the existing `EvidenceSource` → `EvidenceService` → `CapacitorEvidenceStorage` → app-private object → SQLite row path remains unchanged. The native picker itself does not create an Evidence row.
+
+Physical retest is mandatory. Q02 remains **`FAIL / CORRECTION_REQUIRED / PHYSICAL_RETEST_REQUIRED`** until a new exact-SHA Gallery correction APK passes the stable Q02 contract above on a real Android device. Automated CI/emulator PASS does not synthesize or substitute a physical PASS.
 
 ## 8. Q03 — Generic file commit
 
@@ -186,7 +229,7 @@ The external `content://` identifier is transient source authority only. The fin
 
 ## 9. Q04 — Real cancellation
 
-Ensure Camera permission is already granted so the scenario measures cancellation rather than permission denial.
+The current package does not declare application-level `android.permission.CAMERA`; Q04 should therefore exercise cancellation of the external Camera flow and must not depend on an application-level Camera permission prompt.
 
 1. Press **Q04 Camera → Cancel**.
 2. Cancel/back out of the real Camera operation without accepting an image.
@@ -194,21 +237,26 @@ Ensure Camera permission is already granted so the scenario measures cancellatio
 
 ## 10. Q05 — Real permission denial
 
-Use platform permission behavior rather than a synthetic event.
+Scenario identity remains **`G6CD-Q05-PERMISSION-DENIED`**, but its current execution protocol is:
 
-A safe way to return Camera permission to a requestable state on the debug package is:
+**`PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`**.
 
-```sh
-adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA
-```
+The current qualification package manifest does **not** declare `android.permission.CAMERA`. Therefore the previous instruction to execute:
 
-Then:
+`adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA`
 
-1. Press **Q05 Camera → Deny Permission**.
-2. Deny the real Android permission prompt when presented.
-3. Require `PASS`, acquisition outcome `PERMISSION_DENIED`, and zero Evidence-row delta.
+and then expect an application-level Camera permission prompt is not a valid guaranteed protocol for this package and must not be used.
 
-If the OS does not present a permission state that can exercise denial, record `BLOCKED`; do not fabricate the event.
+Under the current manifest, external Camera launch can occur without an application-level `CAMERA` permission prompt. Consequently:
+
+- do not synthesize a denial event and do not mark Q05 PASS from a mocked/synthetic error;
+- do not add `android.permission.CAMERA` merely to make Q05 exercisable as part of this Q02 Gallery correction;
+- do not change Camera acquisition routing in this task;
+- Q05 requires a separate narrow design/Project Owner decision defining a valid physical permission-denial protocol or a deliberately permission-enabled qualification build;
+- this Q05 protocol limitation does not block acceptance of the narrow Q02 executable correction candidate itself;
+- Gate 6C-D remains open and Q05 remains unresolved until that separate protocol decision and physical exercise occur.
+
+No Q05 physical PASS is claimed by this document.
 
 ## 11. Q06 — Source loss
 
@@ -442,9 +490,11 @@ The first physical candidate failed and remains historical failure evidence. The
 
 - historical `d4f7...` verdict remains **FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY** and its Android process-death cause remains `UNKNOWN / UNESTABLISHED`;
 - correction-candidate Q01 normal Camera Commit is **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PRODUCED** (`INTERRUPTED_PROCESS_DEATH_NO_PASS`); it is not a PASS and does not establish a new proven product defect by itself;
+- Q02 is **FAIL / CORRECTION_REQUIRED / PHYSICAL_RETEST_REQUIRED** until the project-owned native Gallery URI picker passes a new physical `G6CD-Q02-GALLERY-COMMIT` execution;
+- Q05 is **PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST**; no synthetic denial may substitute for a real protocol and no CAMERA permission is added by this Q02 correction;
 - Q07 correction path on `560e5cf9...` remains recorded as physical **PASS**;
 - current Q13 durability/retrieval evidence on `560e5cf9...` remains recorded as **PASS** with the actual runtime-recreation mechanism stated above;
-- Q02/Q03/Q04/Q05/Q06, formal committed-Evidence Q08 restart, Q09/Q10/Q11/Q12 remain pending;
+- Q03/Q04/Q06, formal committed-Evidence Q08 restart, Q09/Q10/Q11/Q12 remain pending;
 - literal ENOSPC remains a named qualification gap;
 - Gate 6C remains `IN_PROGRESS`;
 - Gate 6C-D remains `OPEN / IN_PROGRESS`, not accepted/closed;

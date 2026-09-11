@@ -356,6 +356,21 @@ If a root cause was not established, record `UNKNOWN / UNESTABLISHED`. A later P
 - **Historical continuity:** INC-013 historical Q01 failure remains preserved; INC-016 interrupted Q01 attempt remains unresolved/no-pass; Q07 physical PASS remains unchanged; current Q13 durability PASS remains unchanged; INC-014 and INC-015 remain unchanged.
 - **References:** `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`; correction branch `correction/gate6c-d-gallery-native-picker-v1`; historical tested SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
 
+## INC-018 — Q05 Camera-permission denial protocol incompatible with current manifest
+
+- **Date:** 2026-09-11
+- **Gate:** 6C-D / Q05 Permission Denied
+- **Type:** INCIDENT + QUALIFICATION-PROTOCOL CORRECTION
+- **Status:** OPEN / PROTOCOL CORRECTION REQUIRED
+- **Classification:** qualification protocol/governance finding; not a product permission change
+- **Problem:** the previous Q05 instructions required `adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA` and then expected an application-level Camera permission prompt. The current qualification package manifest does not declare `android.permission.CAMERA`, so that sequence is not a valid guaranteed protocol for this package.
+- **Current manifest fact:** the application declares `android.permission.INTERNET` but no application-level `CAMERA` permission. External Camera launch can therefore occur without an application-level Camera permission prompt.
+- **Protocol disposition:** preserve scenario identity `G6CD-Q05-PERMISSION-DENIED`, but classify current execution as **`PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`**. Do not run the invalid `pm revoke` sequence, do not substitute a synthetic/mock denial, and do not record a synthetic Q05 PASS.
+- **Scope boundary:** do not add `android.permission.CAMERA` merely to make Q05 executable as part of the Q02 Gallery correction. A permission-enabled qualification build or another valid denial mechanism requires a separate narrow design/Project Owner decision.
+- **Effect on Q02:** this protocol issue does not alter or invalidate the accepted Q02 executable correction candidate. It is a separate qualification-protocol gap.
+- **Gate consequence:** Gate 6C-D remains OPEN / IN_PROGRESS; Gate 6C remains IN_PROGRESS; Gate 6D remains NOT_STARTED; `field_usable_v1=false`.
+- **References:** `android/app/src/main/AndroidManifest.xml`; `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`; `docs/project/CURRENT-STATE.json`.
+
 ---
 
 ## 2) Current disposition
@@ -364,7 +379,7 @@ At the creation of this index:
 
 - Gates 1→5L, 6A, 6B, 6C-A, 6C-B, 6C-C are closed/merged in their recorded scopes.
 - Gate 6C remains `IN_PROGRESS`.
-- Gate 6C-D is `OPEN / IN_PROGRESS`; Q01 correction-candidate normal Camera Commit is `INTERRUPTED_PROCESS_DEATH_NO_PASS`, Q02 Gallery Commit is `FAIL / CORRECTION_REQUIRED` pending physical retest of the native-picker correction, Q07 correction path is physically PASS, and the current Q13 durability/retrieval run is PASS with its actual runtime-recreation mechanism recorded; the remaining qualification matrix is pending.
+- Gate 6C-D is `OPEN / IN_PROGRESS`; Q01 correction-candidate normal Camera Commit is `INTERRUPTED_PROCESS_DEATH_NO_PASS`, Q02 Gallery Commit is `FAIL / CORRECTION_REQUIRED` pending physical retest of the native-picker correction, Q05 is `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`, Q07 correction path is physically PASS, and the current Q13 durability/retrieval run is PASS with its actual runtime-recreation mechanism recorded; the remaining qualification matrix is incomplete.
 - Gate 6D is `NOT_STARTED`.
 - `field_usable_v1=false`.
 

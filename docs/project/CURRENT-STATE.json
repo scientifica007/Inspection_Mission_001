@@ -395,6 +395,17 @@
           "raw_crash_files_committed": false,
           "physical_retest_required": true
         },
+        "q05_permission_denied": {
+          "status": "PROTOCOL_REVIEW_REQUIRED",
+          "classification": "NOT_YET_PHYSICALLY_EXERCISABLE_UNDER_CURRENT_MANIFEST",
+          "camera_permission_declared": false,
+          "external_camera_launch_can_occur_without_application_permission_prompt": true,
+          "previous_pm_revoke_protocol_valid": false,
+          "synthetic_denial_allowed": false,
+          "permission_added_by_q02_correction": false,
+          "separate_narrow_design_owner_decision_required": true,
+          "physical_pass_claimed": false
+        },
         "q07_process_death_recovery": {
           "status": "PASS",
           "camera_method": "getPhoto",
@@ -454,9 +465,9 @@
         "coloros_trigger": "UNKNOWN / UNESTABLISHED",
         "not_conclusively_attributed_to": ["cable","low memory","USB hardware","application"]
       },
-      "physical_device_evidence_status": "Q02_FAIL_CORRECTION_REQUIRED_Q07_PASS_Q13_PASS_REMAINING_MATRIX_PENDING",
+      "physical_device_evidence_status": "Q02_FAIL_CORRECTION_REQUIRED_Q05_PROTOCOL_REVIEW_REQUIRED_Q07_PASS_Q13_PASS_REMAINING_MATRIX_PENDING",
       "physical_device_pass_claimed": false,
-      "pending_scenarios": ["Q01 correction-candidate normal Camera Commit","Q02 native Gallery correction physical retest","Q03","Q04","Q05","Q06","Q08 formal committed-Evidence restart","Q09","Q10","Q11","Q12"],
+      "pending_scenarios": ["Q01 correction-candidate normal Camera Commit","Q02 native Gallery correction physical retest","Q03","Q04","Q05 protocol review / separate owner decision","Q06","Q08 formal committed-Evidence restart","Q09","Q10","Q11","Q12"],
       "literal_enospc_gap": true,
       "gate_closure_status": "NOT_CLOSED",
       "gate6d_started": false,

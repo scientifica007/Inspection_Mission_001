@@ -35,7 +35,8 @@
     "gate6c_d_correction_branch": "correction/gate6c-d-camera-process-death-v1",
     "gate6c_d_gallery_correction_branch": "correction/gate6c-d-gallery-native-picker-v1",
     "gate6c_d_historical_camera_correction_sha": "560e5cf9c7b84554e79bb434afb6a662ac7d9376",
-    "gate6c_d_physically_tested_correction_sha": "4ac992eb3fb4062ffbd3040db5ef967e3e126fd3",
+    "gate6c_d_q02_q03_physical_sha": "4ac992eb3fb4062ffbd3040db5ef967e3e126fd3",
+    "gate6c_d_physically_tested_correction_sha": "44a231a8281d1031a40e7105160c919633d32531",
     "gate6c_d_documentation_checkpoint_live_main_sha": "20d194959afa50ce705198ba993554c7f9cc210d",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
@@ -452,7 +453,7 @@
           "external_evidence": "https://drive.google.com/drive/folders/1_5aypRPoBtZbooKvQdp-PncIuV4VfeFi?usp=drive_link"
         }
       },
-      "latest_physical_candidate": {
+      "q02_q03_and_historical_q04_candidate": {
         "tested_sha": "4ac992eb3fb4062ffbd3040db5ef967e3e126fd3",
         "artifact_id": 10273428748,
         "artifact_name": "gate6c-d-gallery-correction-apk-4ac992eb3fb4062ffbd3040db5ef967e3e126fd3",
@@ -460,6 +461,7 @@
         "apk_sha256": "e67b64eec70b0e9610bb5ac744cb57cb2debd5e0eee13ac3609843163a815445",
         "local_zip_and_apk_hashes_verified_before_install": true,
         "q02_gallery_commit": {
+          "tested_sha": "4ac992eb3fb4062ffbd3040db5ef967e3e126fd3",
           "verdict": "ACCEPT — Q02 GALLERY COMMIT PHYSICAL RETEST PASSED",
           "scenario_id": "G6CD-Q02-GALLERY-COMMIT",
           "status": "PASS",
@@ -488,6 +490,7 @@
           "current_blocker": false
         },
         "q03_generic_file_commit": {
+          "tested_sha": "4ac992eb3fb4062ffbd3040db5ef967e3e126fd3",
           "verdict": "ACCEPT — Q03 GENERIC FILE COMMIT PHYSICAL PASS",
           "status": "PASS",
           "database_reset_after_q02": false,
@@ -515,6 +518,7 @@
           "formal_q08_physical_pass_claimed": false
         },
         "q04_cancel": {
+          "tested_sha": "4ac992eb3fb4062ffbd3040db5ef967e3e126fd3",
           "verdict": "Q04 BLOCKED — REAL CANCELLATION SAFE, LEGACY getPhoto CANCELLATION MISCLASSIFIED",
           "scenario_id": "G6CD-Q04-CANCEL",
           "status": "BLOCKED",
@@ -531,7 +535,63 @@
           "diagnostic_success": false,
           "legacy_error_message": "User cancelled photos app",
           "structured_error_code_present": false,
-          "physical_retest_required_after_correction": true
+          "physical_retest_required_after_correction_at_that_time": true,
+          "historical_blocked_evidence_preserved": true
+        }
+      },
+      "latest_physical_candidate": {
+        "tested_sha": "44a231a8281d1031a40e7105160c919633d32531",
+        "artifact_id": 10280027500,
+        "artifact_name": "gate6c-d-gallery-correction-apk-44a231a8281d1031a40e7105160c919633d32531",
+        "artifact_zip_sha256": "0d2dd011583c9bb188fe807477bca1137dfb453fd0928c5ea17b09c46205b50b",
+        "apk_sha256": "d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2",
+        "local_zip_and_apk_hashes_verified_before_install": true,
+        "q04_cancel": {
+          "verdict": "ACCEPT — Q04 REAL CAMERA CANCELLATION PHYSICAL RETEST PASSED",
+          "scenario_id": "G6CD-Q04-CANCEL",
+          "status": "PASS",
+          "acquisition_outcome": "USER_CANCELLED",
+          "expected_outcome": "USER_CANCELLED",
+          "rows_before": 0,
+          "rows_after": 0,
+          "pending_source_created": false,
+          "precondition": {
+            "synthetic_visit_owner_ref": 1,
+            "evidence_readiness": "READY",
+            "fresh_reset_synthetic_database": true,
+            "committed_evidence_rows": 0,
+            "setup_status": "PASS"
+          },
+          "physical_sequence": {
+            "action": "Q04 Camera → Cancel",
+            "real_external_camera_opened": true,
+            "external_camera_package_activity": "com.oppo.camera/.Camera",
+            "android_action": "android.media.action.IMAGE_CAPTURE",
+            "photo_captured_or_accepted": false,
+            "control_returned_to_qualification_app": true,
+            "evidence_row_inserted": false,
+            "pending_source_created": false
+          },
+          "log_evidence": {
+            "focus_moved_to_external_oppo_camera_and_returned": true,
+            "later_com_oppo_camera_process_death_is_external_camera_process": true,
+            "qualification_app_process_death_claimed": false,
+            "exact_capacitor_user_cancelled_photos_app_text_preserved_in_retest_logcat": false,
+            "pass_basis_without_exact_capacitor_text": "HARNESS_USER_CANCELLED_ZERO_ROW_DELTA_NO_PENDING_SOURCE"
+          },
+          "external_evidence_folder": "https://drive.google.com/drive/folders/1oQ1iEhkDu25q-E9Fujat-MLHf1uiMJm9?usp=drive_link",
+          "external_files": {
+            "q04_physical_pass_png": {
+              "name": "Q04-physical-pass-44a231.png",
+              "sha256": "41a9444dfb53162c5b1dc70843a7725a8685c93c81f5783f9bf0972860604d9a"
+            },
+            "q04_logcat_txt": {
+              "name": "Q04-logcat-44a231.txt",
+              "sha256": "329d927b25ea425d2d684525bff98ef0a387083c4cb2e14de5527a1f6fd7a2ea"
+            }
+          },
+          "raw_physical_evidence_committed_to_github": false,
+          "physical_retest_required": false
         }
       },
       "q07_protocol_fallback": {
@@ -548,13 +608,17 @@
         "durable_evidence_survived": true,
         "q02_4ac992_process_recreation_observed": false,
         "q02_4ac992_pid_before_after": 16121,
+        "q04_44a231_external_camera_activity": "com.oppo.camera/.Camera",
+        "q04_44a231_android_action": "android.media.action.IMAGE_CAPTURE",
+        "q04_44a231_external_camera_process_death_not_qualification_app": true,
+        "q04_44a231_exact_capacitor_cancel_text_preserved_in_logcat": false,
         "coloros_log_sequence": ["isUsbActive=false","try set disable adb","Setting USB config to midi","ADB disconnected / log ended"],
         "coloros_trigger": "UNKNOWN / UNESTABLISHED",
         "not_conclusively_attributed_to": ["cable","low memory","USB hardware","application"]
       },
-      "physical_device_evidence_status": "Q02_PASS_Q03_PASS_Q04_BLOCKED_CLASSIFICATION_PHYSICAL_RETEST_REQUIRED_Q05_PROTOCOL_REVIEW_REQUIRED_Q07_PASS_Q13_PASS_REMAINING_MATRIX_PENDING",
+      "physical_device_evidence_status": "Q02_PASS_ON_4AC992_Q03_PASS_ON_4AC992_Q04_PASS_ON_44A231_Q05_PROTOCOL_REVIEW_REQUIRED_Q07_PASS_Q13_PASS_REMAINING_MATRIX_PENDING",
       "physical_device_pass_claimed": false,
-      "pending_scenarios": ["Q01 correction-candidate normal Camera Commit","Q04 classification correction physical retest","Q05 protocol review / separate owner decision","Q06","Q08 formal committed-Evidence restart","Q09","Q10","Q11","Q12"],
+      "pending_scenarios": ["Q01 correction-candidate normal Camera Commit","Q05 protocol review / separate owner decision","Q06","Q08 formal committed-Evidence restart","Q09","Q10","Q11","Q12"],
       "literal_enospc_gap": true,
       "gate_closure_status": "NOT_CLOSED",
       "gate6d_started": false,

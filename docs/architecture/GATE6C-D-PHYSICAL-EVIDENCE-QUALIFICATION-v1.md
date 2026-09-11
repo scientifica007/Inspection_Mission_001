@@ -1,6 +1,6 @@
 # Gate 6C-D — Physical Android Evidence Qualification v1
 
-Status: **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS; Q01 INTERRUPTED / NO PASS; Q02 PHYSICAL PASS ON 4ac992; Q03 PHYSICAL PASS; Q04 BLOCKED — SAFE CANCELLATION MISCLASSIFIED / PHYSICAL_RETEST_REQUIRED; Q05 PROTOCOL_REVIEW_REQUIRED; Q07 PASS + CURRENT Q13 PASS**
+Status: **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS; Q01 INTERRUPTED / NO PASS; Q02 PHYSICAL PASS ON 4ac992; Q03 PHYSICAL PASS ON 4ac992; Q04 PHYSICAL PASS ON 44a231; Q05 PROTOCOL_REVIEW_REQUIRED; Q07 PASS + CURRENT Q13 PASS**
 
 This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. It does **not** close Gate 6C-D, does **not** close Gate 6C, and does **not** begin Gate 6D.
 
@@ -15,7 +15,7 @@ The first physical Camera candidate is historical failure evidence and remains s
 - cause of Android process death: **`UNKNOWN / UNESTABLISHED`**;
 - technical qualification diagnosis: the tested `Camera.takePhoto()` / Camera v8.2.4 IonCameraFlow path did not demonstrate the required restoration behavior in that physical sequence.
 
-The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376` produced a Q07 genuine process-death recovery PASS and current Q13 durability/retrieval PASS. A later Q01 normal Camera Commit attempt on that physical-tested APK was interrupted by a real process death while Camera was active and therefore produced **no valid Q01 PASS**; that attempt remains `INTERRUPTED_PROCESS_DEATH_NO_PASS`, not a new proven product defect. Q02 on `560e5...` remains preserved as historical reproducible IonCamera Gallery failure evidence, but the project-owned native URI picker was subsequently physically retested on exact SHA `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3` and **passed Q02**. Q03 then physically passed on the same runtime/database without reset. Q04 physically demonstrated safe cancellation with zero row delta and no pending source, but the legacy `Camera.getPhoto()` cancellation message was misclassified as `SOURCE_UNAVAILABLE`; Q04 therefore remains blocked pending the narrow classification correction and physical retest. Q05's previous permission-denial protocol is not executable under the current manifest and still requires separate protocol review. Host tests, GitHub Actions, or emulator runs cannot erase or supersede physical evidence by themselves.
+The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376` produced a Q07 genuine process-death recovery PASS and current Q13 durability/retrieval PASS. A later Q01 normal Camera Commit attempt on that physical-tested APK was interrupted by a real process death while Camera was active and therefore produced **no valid Q01 PASS**; that attempt remains `INTERRUPTED_PROCESS_DEATH_NO_PASS`, not a new proven product defect. Q02 on `560e5...` remains preserved as historical reproducible IonCamera Gallery failure evidence, but the project-owned native URI picker was subsequently physically retested on exact SHA `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3` and **passed Q02**. Q03 then physically passed on the same `4ac992...` runtime/database without reset. Q04 on `4ac992...` physically demonstrated safe cancellation with zero row delta and no pending source, but the legacy `Camera.getPhoto()` cancellation was misclassified as `SOURCE_UNAVAILABLE`; that attempt remains historical **BLOCKED** evidence. The narrow classification correction on exact SHA `44a231a8281d1031a40e7105160c919633d32531` was then physically retested and **Q04 passed** with `USER_CANCELLED`, rows `0 → 0`, and no pending source. Q05's previous permission-denial protocol is not executable under the current manifest and still requires separate protocol review. Host tests, GitHub Actions, or emulator runs cannot erase or supersede physical evidence by themselves.
 
 The APK must visibly show:
 
@@ -72,7 +72,7 @@ Historical Camera-correction physical APK provenance:
 - artifact name: `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`;
 - artifact ZIP SHA-256: `920df2197ca1fe42b5b5183f17950ef48f34b283b3fa274d772e020da0d047be`.
 
-Physically tested Gallery-correction APK provenance for the Q02/Q03/Q04 sequence:
+Physically tested Gallery-correction APK provenance for Q02/Q03 and the historical blocked Q04 attempt:
 
 - tested SHA: `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3`;
 - artifact ID: `10273428748`;
@@ -80,6 +80,15 @@ Physically tested Gallery-correction APK provenance for the Q02/Q03/Q04 sequence
 - GitHub artifact ZIP SHA-256: `559d12d334890048404f57108ccd7cd5213baf8983c5c8a80cd20e3f6741f80a`;
 - `app-debug.apk` SHA-256: `e67b64eec70b0e9610bb5ac744cb57cb2debd5e0eee13ac3609843163a815445`;
 - local ZIP and APK hashes were verified before installation.
+
+Latest physically tested Q04 correction/retest APK provenance:
+
+- tested SHA: `44a231a8281d1031a40e7105160c919633d32531`;
+- artifact ID: `10280027500`;
+- artifact name: `gate6c-d-gallery-correction-apk-44a231a8281d1031a40e7105160c919633d32531`;
+- GitHub artifact ZIP SHA-256: `0d2dd011583c9bb188fe807477bca1137dfb453fd0928c5ea17b09c46205b50b`;
+- `app-debug.apk` SHA-256: `d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2`;
+- both hashes were independently verified locally before installation.
 
 For every scenario, copy the canonical JSON from the harness when it was actually preserved. The JSON intentionally omits raw acquisition URIs, raw resolve URIs, and device serials. Store physical evidence outside the repository until it has been reviewed for privacy. Never commit real source binaries or real inspection data.
 
@@ -99,8 +108,8 @@ Reset only when the scenario calls for a clean database. Do not reset between th
 |---|---|---|---|
 | `G6CD-Q01-CAMERA-COMMIT` | Real Camera commit | Take a real disposable test photo | Production commit; canonical ref/hash; bytes; resolve proof; one row |
 | `G6CD-Q02-GALLERY-COMMIT` | Gallery/media commit | Select exactly one disposable image/video through the correction picker | **PHYSICAL PASS on `4ac992...`; no longer a blocker** |
-| `G6CD-Q03-GENERIC-FILE-COMMIT` | SAF generic file | Select one disposable file through ACTION_OPEN_DOCUMENT | **PHYSICAL PASS after Q02 without DB reset** |
-| `G6CD-Q04-CANCEL` | Real cancellation | Start Camera then cancel | **BLOCKED: safe zero-row cancellation observed, classification wrong; physical retest required after correction** |
+| `G6CD-Q03-GENERIC-FILE-COMMIT` | SAF generic file | Select one disposable file through ACTION_OPEN_DOCUMENT | **PHYSICAL PASS on `4ac992...` after Q02 without DB reset** |
+| `G6CD-Q04-CANCEL` | Real cancellation | Start Camera then cancel | **PHYSICAL PASS on `44a231...`; `USER_CANCELLED`; rows `0 → 0`; no pending source** |
 | `G6CD-Q05-PERMISSION-DENIED` | Real permission denial | **Do not execute current invalid revoke/prompt protocol** | `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY_EXERCISABLE UNDER CURRENT MANIFEST` |
 | `G6CD-Q06-SOURCE-LOSS` | Lost volatile source | Acquire-only then make source unavailable externally | safe source-unavailable failure; zero row delta |
 | `G6CD-Q07-RESTORED-CAMERA` | Genuine process death | Kill app process while external Camera is active, then return | real restored `getPhoto` pending; no auto-row; explicit owner + Adopt; production commit |
@@ -260,7 +269,7 @@ The external `content://` identifier is transient source authority only. The fin
 
 ### Recorded physical result — `ACCEPT — Q03 GENERIC FILE COMMIT PHYSICAL PASS`
 
-Q03 was executed after the Q02 PASS **without resetting the database**. A non-sensitive PDF was selected through the Android document picker. Confirmed physical facts:
+Q03 was executed after the Q02 PASS **without resetting the database** on the exact `4ac992...` runtime. A non-sensitive PDF was selected through the Android document picker. Confirmed physical facts:
 
 - `status = PASS`;
 - Evidence row count `1 → 2`;
@@ -280,7 +289,7 @@ The current package does not declare application-level `android.permission.CAMER
 2. Cancel/back out of the real Camera operation without accepting an image.
 3. Require `PASS`, acquisition outcome `USER_CANCELLED`, and identical rows-before/rows-after values.
 
-### Recorded physical result — `Q04 BLOCKED — REAL CANCELLATION SAFE, LEGACY getPhoto CANCELLATION MISCLASSIFIED`
+### Historical recorded physical result on `4ac992...` — `Q04 BLOCKED — REAL CANCELLATION SAFE, LEGACY getPhoto CANCELLATION MISCLASSIFIED`
 
 On the exact `4ac992...` physical APK, real Camera opened and the user returned/cancelled without capturing or accepting a photo. The harness reported:
 
@@ -292,17 +301,55 @@ On the exact `4ac992...` physical APK, real Camera opened and the user returned/
 - `pendingSourceCreated = false`;
 - `failureCode = null`.
 
-Therefore the **safe behavior is correct**: no Evidence row was created, no row delta occurred, and no pending source was created. The classification is incorrect.
+Therefore the **safe behavior is correct**: no Evidence row was created, no row delta occurred, and no pending source was created. The classification was incorrect.
 
 A diagnostic physical attempt after `adb logcat -c` established the observed legacy Camera error for this tested device/run:
 
 `pluginId = Camera`, `methodName = getPhoto`, `success = false`, error message **`User cancelled photos app`**, with **no `error.code`**.
 
-The decisive log line was of the form:
+The decisive historical diagnostic log line was of the form:
 
 `Sending plugin error: {"save":false,"callbackId":"...","pluginId":"Camera","methodName":"getPhoto","success":false,"error":{"message":"User cancelled photos app"}}`
 
-This observation is specific to the physically tested legacy `getPhoto` behavior and must not be generalized to all devices or Camera errors. The current `mapCameraError()` structured-code mapping therefore falls through to `SOURCE_UNAVAILABLE`. A narrow conservative exact normalized-message correction is required, followed by a new physical Q04 retest. Q04 remains **`PHYSICAL_RETEST_REQUIRED`** after the code correction until the Project Owner tests the new APK.
+This observation is specific to the physically tested legacy `getPhoto` behavior and must not be generalized to all devices or Camera errors. The `4ac992...` result remains historical **BLOCKED** evidence and is not rewritten by the later correction/retest.
+
+### Recorded physical retest — `ACCEPT — Q04 REAL CAMERA CANCELLATION PHYSICAL RETEST PASSED`
+
+The Project Owner physically retested `G6CD-Q04-CANCEL` on the exact APK built from `44a231a8281d1031a40e7105160c919633d32531` after the narrow cancellation-classification correction.
+
+Precondition/setup was physical and clean:
+
+- synthetic Visit owner = `1`;
+- Evidence readiness = `READY`;
+- fresh/reset synthetic database;
+- committed Evidence rows = `0`;
+- setup = `PASS`.
+
+Physical sequence and canonical result:
+
+- Project Owner pressed **Q04 Camera → Cancel**;
+- real external OPPO Camera opened;
+- no photo was captured or accepted;
+- the Camera operation was cancelled and control returned to the qualification app;
+- `status = PASS`;
+- `acquisitionOutcome = USER_CANCELLED`;
+- `expectedOutcome = USER_CANCELLED`;
+- `rowsBefore = 0`; `rowsAfter = 0`;
+- `pendingSourceCreated = false`;
+- no Evidence row was inserted and no pending source was created.
+
+Physical log evidence establishes that Android `android.media.action.IMAGE_CAPTURE` launched `com.oppo.camera/.Camera`, focus moved from the qualification app to OPPO Camera, and focus then returned to the qualification app. A later logged death of process `com.oppo.camera` concerns the **external OPPO Camera process**, not `com.scientifica.inspection.gate6bproof`; this retest must not be described as process death of the qualification application.
+
+The preserved Q04 retest logcat did **not** preserve the exact Capacitor text `User cancelled photos app`. No claim is made that it did. That absence does not change the physical PASS because the harness itself returned `USER_CANCELLED`, zero row delta, and no pending source.
+
+External reviewed physical evidence folder: `https://drive.google.com/drive/folders/1oQ1iEhkDu25q-E9Fujat-MLHf1uiMJm9?usp=drive_link`.
+
+Verified external files include `Q04-physical-pass-44a231.png`, `Q04-logcat-44a231.txt`, the exact artifact ZIP, and `app-debug.apk`. GitHub stores only reviewed metadata/hashes and this external folder link; raw physical evidence binaries are not committed.
+
+- `Q04-physical-pass-44a231.png` SHA-256: `41a9444dfb53162c5b1dc70843a7725a8685c93c81f5783f9bf0972860604d9a`;
+- `Q04-logcat-44a231.txt` SHA-256: `329d927b25ea425d2d684525bff98ef0a387083c4cb2e14de5527a1f6fd7a2ea`.
+
+Q04 is now **PHYSICAL PASS on `44a231...`** and no longer awaits physical retest. This does not alter Q01, Q02, Q03, Q05, Q07, Q08, Q13, or overall Gate 6C-D closure status.
 
 ## 10. Q05 — Real permission denial
 
@@ -553,6 +600,9 @@ Record these separately from product verdicts:
 - repeated switching from the qualification app to Google Drive was followed by the qualification UI returning to `owner=not reconstructed`, `readiness=NOT_OPEN`, `volatile source=none`, `restored source=none`; this is consistent with runtime/process recreation, but every occurrence was not independently PID-proven;
 - durable committed Evidence survived, as the Q13 result demonstrates;
 - Q02 physical PASS on `4ac992...` retained PID `16121` before and after the attempt, so no process recreation occurred in that Q02 run;
+- the Q04 physical PASS on `44a231...` launched Android `android.media.action.IMAGE_CAPTURE` into `com.oppo.camera/.Camera`, moved focus from the qualification app to the external OPPO Camera, then returned focus to the qualification app after cancellation;
+- the later logged death of `com.oppo.camera` in the Q04 evidence concerns the external Camera process and is **not** qualification-app process death evidence;
+- the preserved Q04 retest logcat did not retain the exact Capacitor text `User cancelled photos app`; the Q04 PASS rests on the harness result `USER_CANCELLED`, rows `0 → 0`, and no pending source;
 - a later normal Q01 Camera Commit attempt physically proved a spontaneous application process transition `PID 27313 → process died → PID 28843` while external Camera was active; the process-death cause remains **`UNKNOWN / UNESTABLISHED`** and this observation is not by itself a product-defect verdict;
 - during one ADB/logcat sequence ColorOS logged `isUsbActive=false`, then `try set disable adb`, then `Setting USB config to midi`, after which the log ended / ADB disconnected;
 - the trigger for `isUsbActive=false` remains **`UNKNOWN / UNESTABLISHED`**;
@@ -568,8 +618,9 @@ The first physical candidate failed and remains historical failure evidence. The
 - correction-candidate Q01 normal Camera Commit is **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PRODUCED** (`INTERRUPTED_PROCESS_DEATH_NO_PASS`); it is not a PASS and does not establish a new proven product defect by itself;
 - historical Q02 failure on `560e5...` remains preserved as **FAIL / CORRECTION_REQUIRED** evidence for the old IonCamera Gallery path;
 - the native Gallery correction on exact SHA `4ac992...` is **ACCEPT — Q02 GALLERY COMMIT PHYSICAL RETEST PASSED** and Q02 is no longer a blocker;
-- Q03 is **ACCEPT — GENERIC FILE COMMIT PHYSICAL PASS** on the observed `4ac992...` sequence, with only actually preserved values recorded;
-- Q04 is **BLOCKED — REAL CANCELLATION SAFE, LEGACY getPhoto CANCELLATION MISCLASSIFIED**; rows stayed `2 → 2`, no pending source was created, and a new exact-SHA physical retest is required after the narrow classification correction;
+- Q03 is **ACCEPT — Q03 GENERIC FILE COMMIT PHYSICAL PASS** on the observed `4ac992...` sequence, with only actually preserved values recorded;
+- historical Q04 on `4ac992...` remains **BLOCKED — REAL CANCELLATION SAFE, LEGACY getPhoto CANCELLATION MISCLASSIFIED** with rows `2 → 2` and no pending source; it is not rewritten;
+- later Q04 correction/retest on exact SHA `44a231...` is **ACCEPT — Q04 REAL CAMERA CANCELLATION PHYSICAL RETEST PASSED** with `USER_CANCELLED`, rows `0 → 0`, and no pending source; Q04 is no longer a blocker and no longer awaits physical retest;
 - Q05 is **PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST**; no synthetic denial may substitute for a real protocol and no CAMERA permission is added by this correction;
 - Q07 correction path on `560e5cf9...` remains recorded as physical **PASS**;
 - current Q13 durability/retrieval evidence on `560e5cf9...` remains recorded as **PASS** with the actual runtime-recreation mechanism stated above;

@@ -1,6 +1,6 @@
 # Gate 6C-D — Physical Android Evidence Qualification v1
 
-Status: **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS; Q07 CORRECTION PASS + CURRENT Q13 DURABILITY PASS; REMAINING MATRIX PENDING**
+Status: **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS; Q01 INTERRUPTED BY REAL PROCESS DEATH / NO PASS PRODUCED; Q07 CORRECTION PASS + CURRENT Q13 DURABILITY PASS; REMAINING MATRIX PENDING**
 
 This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. It does **not** close Gate 6C-D, does **not** close Gate 6C, and does **not** begin Gate 6D.
 
@@ -15,7 +15,7 @@ The first physical Camera candidate is historical failure evidence and remains s
 - cause of Android process death: **`UNKNOWN / UNESTABLISHED`**;
 - technical qualification diagnosis: the tested `Camera.takePhoto()` / Camera v8.2.4 IonCameraFlow path did not demonstrate the required restoration behavior in that physical sequence.
 
-The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest has now begun on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376`: Q07 genuine process-death recovery has physically passed and current Q13 durability/retrieval evidence has passed with the actual runtime-recreation mechanism recorded below. Q01 normal Camera Commit and the remaining qualification matrix are still pending. Host tests, GitHub Actions, or emulator runs cannot erase or supersede the historical failure by themselves.
+The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376` has produced a Q07 genuine process-death recovery PASS and current Q13 durability/retrieval PASS. A later Q01 normal Camera Commit attempt on the same physical-tested APK was interrupted by a real process death while Camera was active and therefore produced **no valid Q01 PASS**; that attempt is recorded below as `INTERRUPTED_PROCESS_DEATH_NO_PASS`, not as a new product defect. The remaining qualification matrix is still pending. Host tests, GitHub Actions, or emulator runs cannot erase or supersede the historical failure by themselves.
 
 The APK must visibly show:
 
@@ -114,6 +114,60 @@ Reset only when the scenario calls for a clean database. Do not reset between th
 For the correction candidate, the production Camera acquisition path must be the project-authorized legacy `Camera.getPhoto()` URI path; Q01 semantics themselves are unchanged.
 
 The photo is qualification-only. Do not photograph people, records, identifiers, or real inspection material.
+
+### Recorded correction-candidate Q01 attempt — `INTERRUPTED_PROCESS_DEATH_NO_PASS`
+
+This physical attempt used the same qualification APK provenance above, built from `560e5cf9c7b84554e79bb434afb6a662ac7d9376`. It is **not** a Q01 PASS and is **not** classified by itself as a new proven product defect.
+
+Pre-attempt runtime after Q08 was valid:
+
+- Synthetic Visit owner = `1`;
+- Evidence readiness = `READY`;
+- committed Evidence count = `1`;
+- existing committed Evidence remained Evidence ID `1`.
+
+Observed sequence after pressing **Q01 Camera Commit**:
+
+- production Camera acquisition used `Camera.getPhoto`;
+- external Camera activity opened normally;
+- a disposable non-sensitive qualification photo was captured and accepted;
+- application PID executing Q01 was `27313`;
+- while external Camera was active, PID `27313` died;
+- Android later recreated the application as PID `28843`;
+- exact OS/root cause for killing PID `27313` remains **`UNKNOWN / UNESTABLISHED`**.
+
+After recreation, the qualification UI showed:
+
+- Synthetic Visit owner = `not reconstructed`;
+- Evidence readiness = `NOT_OPEN`;
+- Volatile source = `none`;
+- Restored Camera source = real `restored-... / getPhoto / CAMERA_PHOTO`;
+- Q01 result fields were empty;
+- canonical JSON was `{}` / no Q01 result was produced;
+- no new Evidence row was committed; committed Evidence count remained `1`.
+
+The captured physical log was preserved externally as `gate6cd-q01-normal-camera-failure-logcat.txt`. The raw log is **not** committed to GitHub pending explicit privacy review. The log establishes only the process transition `PID 27313 → process died → PID 28843`; it does not establish a more specific Android kill reason.
+
+Without closing or resetting the app, **Q08 Reopen + Reconcile** was then executed. It reconstructed owner `1` and readiness `READY`; the same restored Camera source remained pending; no automatic Evidence row was created. The restored source was deliberately **not** adopted through Q07, because doing so would convert the interrupted Q01 attempt into a Q07 recovery/adoption scenario. The Project Owner pressed **Discard Restored Source** instead.
+
+Final state after discard:
+
+- owner = `1`;
+- readiness = `READY`;
+- volatile source = `none`;
+- restored Camera source = `none`;
+- committed Evidence count = `1`.
+
+Qualification interpretation:
+
+- Q01 still requires a normal direct Camera commit that produces an actual Q01 `PASS` result;
+- this attempt is classified **`Q01 NORMAL CAMERA COMMIT — INTERRUPTED BY REAL PROCESS DEATH; NO Q01 PASS PRODUCED`** / `INTERRUPTED_PROCESS_DEATH_NO_PASS`;
+- Q07 genuine process-death recovery remains a separately qualified path and its existing PASS is unchanged; Q07 PASS does not substitute for Q01 PASS;
+- the observed restored-source behavior is consistent with the existing recovery contract: it remains uncommitted until owner reconstruction plus explicit adoption, or explicit discard;
+- this observation alone does not establish a new defect in EvidenceService or the restored-result coordinator;
+- do not auto-attach restored Camera sources and do not bypass explicit owner reconstruction/adoption semantics.
+
+Q01 therefore remains **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PRODUCED**. Do not infer that Q01 is impossible on this device; this physical attempt simply did not produce a valid Q01 PASS.
 
 ## 7. Q02 — Gallery/media commit
 
@@ -231,7 +285,7 @@ The controlled genuine process-death run produced:
 
 External physical evidence: `https://drive.google.com/drive/folders/1rsZkAJZkK1UyjrZETdgUyB9B_-lpRdiS?usp=drive_link`.
 
-This PASS validates the Q07 correction path only. It does not convert the historical `d4f7...` Q01 failure to PASS and does not prove the still-pending normal Q01 Camera Commit scenario.
+This PASS validates the Q07 correction path only. It does not convert the historical `d4f7...` Q01 failure to PASS and does not substitute for the still-unresolved normal Q01 Camera Commit requirement.
 
 ## 13. Q08 — Restart/reconciliation
 
@@ -375,9 +429,10 @@ Record these separately from product verdicts:
 
 - repeated switching from the qualification app to Google Drive was followed by the qualification UI returning to `owner=not reconstructed`, `readiness=NOT_OPEN`, `volatile source=none`, `restored source=none`; this is consistent with runtime/process recreation, but every occurrence was not independently PID-proven;
 - durable committed Evidence survived, as the Q13 result demonstrates;
+- a later normal Q01 Camera Commit attempt physically proved a spontaneous application process transition `PID 27313 → process died → PID 28843` while external Camera was active; the process-death cause remains **`UNKNOWN / UNESTABLISHED`** and this observation is not by itself a product-defect verdict;
 - during one ADB/logcat sequence ColorOS logged `isUsbActive=false`, then `try set disable adb`, then `Setting USB config to midi`, after which the log ended / ADB disconnected;
 - the trigger for `isUsbActive=false` remains **`UNKNOWN / UNESTABLISHED`**;
-- do not attribute these observations conclusively to cable quality, low memory, USB hardware, or the application without evidence.
+- do not attribute these observations conclusively to cable quality, low memory, ColorOS task management, USB hardware, the application, Camera app, or any other cause without evidence.
 
 These are qualification-environment observations, not established product defects.
 
@@ -386,9 +441,9 @@ These are qualification-environment observations, not established product defect
 The first physical candidate failed and remains historical failure evidence. The correction candidate now has partial physical qualification evidence, but Gate 6C-D is not self-closing:
 
 - historical `d4f7...` verdict remains **FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY** and its Android process-death cause remains `UNKNOWN / UNESTABLISHED`;
-- Q07 correction path on `560e5cf9...` is recorded as physical **PASS**;
-- current Q13 durability/retrieval evidence on `560e5cf9...` is recorded as **PASS** with the actual runtime-recreation mechanism stated above;
-- Q01 correction-candidate normal Camera Commit remains not yet physically PASS;
+- correction-candidate Q01 normal Camera Commit is **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PRODUCED** (`INTERRUPTED_PROCESS_DEATH_NO_PASS`); it is not a PASS and does not establish a new proven product defect by itself;
+- Q07 correction path on `560e5cf9...` remains recorded as physical **PASS**;
+- current Q13 durability/retrieval evidence on `560e5cf9...` remains recorded as **PASS** with the actual runtime-recreation mechanism stated above;
 - Q02/Q03/Q04/Q05/Q06, formal committed-Evidence Q08 restart, Q09/Q10/Q11/Q12 remain pending;
 - literal ENOSPC remains a named qualification gap;
 - Gate 6C remains `IN_PROGRESS`;
@@ -396,4 +451,4 @@ The first physical candidate failed and remains historical failure evidence. The
 - Gate 6D remains `NOT_STARTED`;
 - `field_usable_v1=false`.
 
-No PR or merge is implied by this document. Independent review must evaluate the exact correction branch/head, CI run, APK provenance, and new physical-device evidence before any Gate 6C-D closure decision.
+No PR or merge is implied by this document. Independent review must evaluate the exact correction branch/head, APK provenance, and physical-device evidence before any Gate 6C-D closure decision.

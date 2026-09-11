@@ -317,6 +317,26 @@ If a root cause was not established, record `UNKNOWN / UNESTABLISHED`. A later P
 - **Consequence:** preserve environment observations separately from product verdicts; use scenario-specific evidence and PID/ADB proof where the protocol requires it.
 - **References:** Gate 6C-D physical evidence folders for Q07 and Q13; `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`.
 
+## INC-016 — Q01 normal Camera Commit interrupted by spontaneous process death on correction candidate
+
+- **Date:** 2026-09-11
+- **Gate:** 6C-D / Q01 normal Camera Commit
+- **Type:** INCIDENT / PHYSICAL-QUALIFICATION OBSERVATION
+- **Status:** OPEN QUALIFICATION OBSERVATION / Q01 UNRESOLVED; NO PASS PRODUCED
+- **Classification:** physical qualification observation; not established as a new product defect
+- **Tested provenance:** same physical-tested correction APK built from `560e5cf9c7b84554e79bb434afb6a662ac7d9376`; APK/artifact provenance is unchanged from INC-013. This documentation checkpoint does not create a new tested APK provenance.
+- **Pre-attempt state:** after Q08, synthetic Visit owner `1`, Evidence readiness `READY`, committed Evidence count `1`, existing committed Evidence ID `1` intact.
+- **Physical sequence:** the Project Owner pressed **Q01 Camera Commit**; production acquisition used `Camera.getPhoto`; external Camera opened normally; a disposable non-sensitive photo was captured and accepted. The application process executing Q01 was PID `27313`. While external Camera was active, PID `27313` died. Android later recreated the application as PID `28843`.
+- **Root cause:** **`UNKNOWN / UNESTABLISHED`**. The physical evidence proves the process transition but does not establish why Android killed PID `27313`. Do not attribute it conclusively to low memory, ColorOS task management, cable/USB, application code, Camera app, or any other cause without evidence.
+- **Post-recreation UI:** owner `not reconstructed`; readiness `NOT_OPEN`; volatile source `none`; a real restored Camera source appeared as `restored-... / getPhoto / CAMERA_PHOTO`; Q01 result fields were empty; canonical JSON was `{}` / no Q01 result was produced; no new Evidence row was committed and committed Evidence count remained `1`.
+- **External log evidence:** preserved outside GitHub as `gate6cd-q01-normal-camera-failure-logcat.txt`. The raw log must not be committed without explicit privacy review. It establishes `PID 27313 → process died → PID 28843`, not a more specific kill cause.
+- **Post-recreation handling:** without closing/resetting the app, **Q08 Reopen + Reconcile** reconstructed owner `1` and readiness `READY`; the same restored Camera source remained pending and no automatic Evidence row was created. The restored source was deliberately not adopted via Q07. The Project Owner pressed **Discard Restored Source**, after which owner remained `1`, readiness `READY`, volatile source `none`, restored Camera source `none`, committed Evidence count `1`.
+- **Qualification classification:** **`Q01 NORMAL CAMERA COMMIT — INTERRUPTED BY REAL PROCESS DEATH; NO Q01 PASS PRODUCED`** / `INTERRUPTED_PROCESS_DEATH_NO_PASS`.
+- **Interpretation:** Q01 requires a normal direct Camera commit that actually produces Q01 PASS. Q07 genuine process-death recovery is a distinct path and its existing physical PASS remains unchanged; Q07 PASS does not substitute for Q01 PASS. The restored-source behavior observed here is consistent with the existing recovery contract: no automatic attachment, explicit owner reconstruction before adoption, and explicit discard as an alternative. This observation alone does not establish a new defect in EvidenceService or the restored-result coordinator and does not authorize auto-attachment.
+- **Historical continuity:** INC-013 historical `d4f7...` Q01 failure remains preserved; INC-013 Q07 correction PASS remains unchanged; current Q13 PASS remains unchanged; INC-014 run-as SIGKILL fallback remains unchanged; INC-015 environment observations remain preserved. Spontaneous process death has now also been PID-proven during a normal Q01 attempt, while the cause remains `UNKNOWN / UNESTABLISHED`.
+- **Qualification consequence:** Q01 correction-candidate normal Camera Commit remains **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PRODUCED**. Q02/Q03/Q04/Q05/Q06, formal Q08, Q09/Q10/Q11/Q12 remain pending; literal ENOSPC remains a named gap; Gate 6C-D remains OPEN / IN_PROGRESS; Gate 6C remains IN_PROGRESS; Gate 6D remains NOT_STARTED; `field_usable_v1=false`.
+- **References:** `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`; correction branch `correction/gate6c-d-camera-process-death-v1`; tested correction SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376`.
+
 ---
 
 ## 2) Current disposition
@@ -325,7 +345,7 @@ At the creation of this index:
 
 - Gates 1→5L, 6A, 6B, 6C-A, 6C-B, 6C-C are closed/merged in their recorded scopes.
 - Gate 6C remains `IN_PROGRESS`.
-- Gate 6C-D is `OPEN / IN_PROGRESS`; Q07 correction path is physically PASS and the current Q13 durability/retrieval run is PASS with its actual runtime-recreation mechanism recorded; the remaining qualification matrix is pending.
+- Gate 6C-D is `OPEN / IN_PROGRESS`; Q01 correction-candidate normal Camera Commit is `INTERRUPTED_PROCESS_DEATH_NO_PASS`, Q07 correction path is physically PASS, and the current Q13 durability/retrieval run is PASS with its actual runtime-recreation mechanism recorded; the remaining qualification matrix is pending.
 - Gate 6D is `NOT_STARTED`.
 - `field_usable_v1=false`.
 

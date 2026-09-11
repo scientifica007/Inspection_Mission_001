@@ -18,6 +18,12 @@ export interface CameraMediaLike {
   } | null;
 }
 
+export interface LegacyCameraPhotoLike {
+  path?: unknown;
+  format?: unknown;
+  webPath?: unknown;
+}
+
 const CAMERA_PERMISSION_CODES = new Set(["OS-PLUG-CAMR-0003", "OS-PLUG-CAMR-0005"]);
 const CAMERA_CANCEL_CODES = new Set(["OS-PLUG-CAMR-0006", "OS-PLUG-CAMR-0020"]);
 const CAMERA_UNAVAILABLE_CODES = new Set([
@@ -107,6 +113,26 @@ export function cameraMediaToEvidenceSource(kind: Exclude<EvidenceSourceKind, "G
   if (size !== undefined) source.sizeHint = size;
   const capturedAt = utcTimestamp(media.metadata?.creationDate);
   if (capturedAt !== undefined) source.capturedAt = capturedAt;
+  return { status: "SUCCESS", source };
+}
+
+export function legacyCameraPhotoToEvidenceSource(photo: unknown): AcquisitionOutcome {
+  const record = typeof photo === "object" && photo !== null ? photo as LegacyCameraPhotoLike : null;
+  if (record === null || typeof record.path !== "string" || record.path.trim().length === 0) {
+    return { status: "SOURCE_UNAVAILABLE", detail: "Legacy Camera result did not contain a native photo path" };
+  }
+  const sourceRef = record.path.trim();
+  if (!/^(content|file):\/\//i.test(sourceRef)) {
+    return { status: "UNSUPPORTED_SOURCE", detail: "Legacy Camera photo path uses an unsupported scheme" };
+  }
+  const format = normalizedFormat(record.format);
+  const source: EvidenceSource = {
+    kind: "CAMERA_PHOTO",
+    sourceRef,
+    displayName: `camera-evidence.${format ?? "bin"}`,
+  };
+  const declaredMimeType = mimeFromFormat(format);
+  if (declaredMimeType !== undefined) source.declaredMimeType = declaredMimeType;
   return { status: "SUCCESS", source };
 }
 

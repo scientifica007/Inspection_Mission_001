@@ -37,6 +37,7 @@ const CAMERA_UNAVAILABLE_CODES = new Set([
   "OS-PLUG-CAMR-0033",
 ]);
 const CAMERA_UNSUPPORTED_CODES = new Set(["OS-PLUG-CAMR-0031"]);
+const LEGACY_CAMERA_CANCEL_MESSAGE = "User cancelled photos app";
 
 function detail(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null) return undefined;
@@ -53,6 +54,7 @@ export function mapCameraError(error: unknown): AcquisitionOutcome {
   const d = detail(error);
   if (CAMERA_PERMISSION_CODES.has(code)) return d ? { status: "PERMISSION_DENIED", detail: d } : { status: "PERMISSION_DENIED" };
   if (CAMERA_CANCEL_CODES.has(code)) return { status: "USER_CANCELLED" };
+  if (code.length === 0 && d === LEGACY_CAMERA_CANCEL_MESSAGE) return { status: "USER_CANCELLED" };
   if (CAMERA_UNSUPPORTED_CODES.has(code)) return d ? { status: "UNSUPPORTED_SOURCE", detail: d } : { status: "UNSUPPORTED_SOURCE" };
   if (CAMERA_UNAVAILABLE_CODES.has(code)) return d ? { status: "SOURCE_UNAVAILABLE", detail: d } : { status: "SOURCE_UNAVAILABLE" };
   return d ? { status: "SOURCE_UNAVAILABLE", detail: d } : { status: "SOURCE_UNAVAILABLE" };

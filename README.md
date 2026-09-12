@@ -54,7 +54,7 @@
 - Gate 6C-A — Evidence Storage Contract — **CLOSED / MERGED**.
 - Gate 6C-B — Runtime-neutral Evidence orchestration — **CLOSED / MERGED**.
 - Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters — **CLOSED / MERGED**.
-- Gate 6C-D — Physical Android Evidence Qualification — **CLOSED by Project Owner decision dated 2026-09-12**, with Q01 retained as `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT` under an explicit documented non-blocking residual-risk owner waiver.
+- Gate 6C-D — Physical Android Evidence Qualification — **CLOSED**. Q01 now has a reviewed **PHYSICAL PASS on a second real Android device** using the exact same qualification APK; the earlier Q01 owner waiver remains historical but is superseded as the current closure basis.
 - Gate 6C — Evidence Storage + Camera/File Pipeline — **CLOSED** after all 6C-A→6C-D substages reached closure disposition.
 
 Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، وقد أصبحت **MERGED / RESOLVED** دون تغيير عقد `SqlAdapter`.
@@ -85,7 +85,8 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
 **Gate 6D — NEXT / NOT_STARTED.**
 
 - Gate 6C-A و6C-B و6C-C و6C-D مغلقة، ولذلك Gate 6C ككل **CLOSED**.
-- Q01 لم يتحول إلى PASS: يبقى `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`، و`physical_pass_claimed=false`، مع `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`.
+- Q01 current disposition: **PHYSICAL PASS on a second physical Android device** using tested SHA `44a231a8281d1031a40e7105160c919633d32531` and the independently matched installed APK SHA-256 `d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2`. Earlier first-device Q01 failures/blocked attempts remain historical.
+- The former Q01 closure waiver remains durable engineering history but is `SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS`.
 - Q05 يبقى `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST` وليس PASS.
 - Q12 يثبت `REAL_DEVICE_WRITE_FAILURE` فقط مع `enospcProven=false`; literal `REAL_DEVICE_ENOSPC` يبقى `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER` وليس ENOSPC PASS.
 - Gate 6D هي **NEXT / NOT_STARTED**؛ `gate6d_started=false`، ولا يوجد implementation بدأ لهذه المرحلة.

@@ -253,10 +253,12 @@ GitHub ليس storage للتشغيل الميداني الحقيقي.
 - Gate 6C-A **CLOSED / MERGED**.
 - Gate 6C-B **CLOSED / MERGED** عبر PR #21؛ adopted host baseline **85 / 0**.
 - Gate 6C-C **CLOSED / MERGED**: final reviewed head `9de6c69eef90c490319c02eac48d236482597210`؛ exact-final-SHA qualification run `34531511138` SUCCESS؛ implementation merge عبر PR #23 عند `f221b215358f83dce381ac5261a856a7de4e5c98`؛ post-merge closure reconciliation عبر PR #24.
-- Gate 6C-D **CLOSED by Project Owner decision dated 2026-09-12**؛ Q01 يبقى `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT` مع `physical_pass_claimed=false` تحت `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`؛ هذا لا يحوّل Q01 إلى PASS ولا يثبت correctness لمسار normal-Camera-return غير المنقطع.
+- Gate 6C-D **CLOSED**. Current Q01 is **PHYSICAL PASS on a second real Android device** (`Samsung SM-M356B`, Android 16, API 36) using the exact same qualification APK `44a231a8281d1031a40e7105160c919633d32531`; the installed APK hash independently matched `d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2`. Earlier first-device Q01 failures/blocked attempts remain historical with no proven OPPO/ColorOS/OOM/LMK/Camera-plugin/USB cause.
+- The previous Q01 closure waiver remains durable engineering history but is **`SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS`**.
 - Gate 6C ككل **CLOSED** بعد إغلاق 6C-A→6C-D.
 - Q05 يبقى `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST` وليس physical PASS.
 - Q12 يثبت `REAL_DEVICE_WRITE_FAILURE` فقط مع `enospcProven=false`; literal ENOSPC يبقى `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER` وليس ENOSPC PASS.
+- Gate-level `physical_device_pass_claimed=false` يبقى صحيحًا بسبب Q05 N/A وliteral ENOSPC غير المثبت، وليس بسبب Q01.
 - Gate 6D = **NEXT / NOT_STARTED**؛ `gate6d_started=false`، ولا executable implementation بدأ.
 - `field_usable_v1=false`.
 - HNT-001/HNT-002 tooling experiment: `CLOSED`.

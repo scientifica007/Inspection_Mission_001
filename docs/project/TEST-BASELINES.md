@@ -179,7 +179,7 @@ Gate 6C-B provenance:
 
 ## 10) Gate 6C-C adopted closure evidence
 
-Gate 6C is **`IN_PROGRESS`**. Gate 6C-A, Gate 6C-B and Gate 6C-C are **`CLOSED / MERGED`**. Gate 6C-D is **`NEXT / NOT_STARTED`**.
+Gate 6C is **`IN_PROGRESS`**. Gate 6C-A, Gate 6C-B and Gate 6C-C are **`CLOSED / MERGED`**. Gate 6C-D is **`OPEN / IN_PROGRESS`** and remains unclosed pending separate reviewer/owner closure disposition.
 
 Gate 6C-C provenance:
 
@@ -234,8 +234,29 @@ Gate 6C-B: **`CLOSED / MERGED`** عبر PR #21 / merge `7418df4fc03b9b6017cbeb58
 
 Gate 6C-C: **`CLOSED / MERGED`** عبر PR #23 / merge `f221b215358f83dce381ac5261a856a7de4e5c98`.
 
-Gate 6C-D: **`NEXT / NOT_STARTED`**.
+Gate 6C-D: **`OPEN / IN_PROGRESS`**. Current physical qualification disposition is recorded in `CURRENT-STATE` and `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`; this document does not convert physical qualification evidence into ordinary host baselines.
 
 Gate 6D: **`NOT_STARTED`**.
 
 `field_usable_v1=false`.
+
+## 12) Gate 6C-D current physical qualification evidence — not host baselines
+
+These are physical qualification outcomes, not repeatable host regression baseline counts. Historical FAIL/BLOCKED attempts remain historical.
+
+- Q01: `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`; no Q01 PASS and no established product defect; current physical-event root cause remains `UNKNOWN / UNESTABLISHED`.
+- Q02: PHYSICAL PASS.
+- Q03: PHYSICAL PASS.
+- Q04: PHYSICAL PASS.
+- Q05: `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST` by Project Owner disposition; not a physical PASS.
+- Q06: PHYSICAL PASS — `E_EVIDENCE_SOURCE_UNAVAILABLE`, rows `1 → 1`, zero Evidence-row delta.
+- Q07: PHYSICAL PASS.
+- Q08: STRICT PHYSICAL PASS after explicit force-stop/relaunch and reconciliation.
+- Q09: PHYSICAL PASS — orphan removal behavior accepted.
+- Q10: PHYSICAL PASS — broken storage reference retained/fails closed.
+- Q11: PHYSICAL PASS — 40 MiB / `41943040` bytes, hash `MATCH`, resolve `RESOLVED`.
+- Q12: PHYSICAL PASS for `REAL_DEVICE_WRITE_FAILURE` only; `enospcProven=false`, rows `1 → 1`, zero Evidence-row delta.
+- Q13: STRICT PHYSICAL PASS after an independent explicit force-stop/relaunch.
+- Literal `REAL_DEVICE_ENOSPC`: `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`; it is not an ENOSPC PASS.
+
+Gate 6C-D remains `OPEN / IN_PROGRESS`; Gate 6C remains `IN_PROGRESS`; Gate 6D remains `NOT_STARTED`; `field_usable_v1=false`.

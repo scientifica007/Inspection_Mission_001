@@ -1,10 +1,10 @@
 # Gate 6C-D — Physical Android Evidence Qualification v1
 
-Status: **OPEN / IN_PROGRESS — PHYSICAL QUALIFICATION IN PROGRESS; Q01 INTERRUPTED / NO PASS; Q02 PHYSICAL PASS ON 4ac992; Q03 PHYSICAL PASS ON 4ac992; Q04 PHYSICAL PASS ON 44a231; Q05 PROTOCOL_REVIEW_REQUIRED; Q07 PASS + CURRENT Q13 PASS**
+Status: **OPEN / IN_PROGRESS — OWNER DISPOSITION RECONCILED; Q01 NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT; Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 CURRENT PHYSICAL PASS WITH Q08/Q13 STRICT AND Q12 LIMITED TO REAL_DEVICE_WRITE_FAILURE; Q05 NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST; LITERAL ENOSPC RESIDUAL GAP / NON-BLOCKING OWNER WAIVER; GATE NOT CLOSED**
 
 This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. It does **not** close Gate 6C-D, does **not** close Gate 6C, and does **not** begin Gate 6D.
 
-The first physical Camera candidate is historical failure evidence and remains so even if a later correction passes:
+The first physical Camera candidate is historical failure evidence and remains so even if a later correction or later scenario passes:
 
 - tested SHA: `d4f7f9f34a48202aea0639ab77b10b7f9262bd57`;
 - verdict: **`FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY`**;
@@ -15,7 +15,9 @@ The first physical Camera candidate is historical failure evidence and remains s
 - cause of Android process death: **`UNKNOWN / UNESTABLISHED`**;
 - technical qualification diagnosis: the tested `Camera.takePhoto()` / Camera v8.2.4 IonCameraFlow path did not demonstrate the required restoration behavior in that physical sequence.
 
-The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376` produced a Q07 genuine process-death recovery PASS and current Q13 durability/retrieval PASS. A later Q01 normal Camera Commit attempt on that physical-tested APK was interrupted by a real process death while Camera was active and therefore produced **no valid Q01 PASS**; that attempt remains `INTERRUPTED_PROCESS_DEATH_NO_PASS`, not a new proven product defect. Q02 on `560e5...` remains preserved as historical reproducible IonCamera Gallery failure evidence, but the project-owned native URI picker was subsequently physically retested on exact SHA `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3` and **passed Q02**. Q03 then physically passed on the same `4ac992...` runtime/database without reset. Q04 on `4ac992...` physically demonstrated safe cancellation with zero row delta and no pending source, but the legacy `Camera.getPhoto()` cancellation was misclassified as `SOURCE_UNAVAILABLE`; that attempt remains historical **BLOCKED** evidence. The narrow classification correction on exact SHA `44a231a8281d1031a40e7105160c919633d32531` was then physically retested and **Q04 passed** with `USER_CANCELLED`, rows `0 → 0`, and no pending source. Q05's previous permission-denial protocol is not executable under the current manifest and still requires separate protocol review. Host tests, GitHub Actions, or emulator runs cannot erase or supersede physical evidence by themselves.
+The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376` produced a Q07 genuine process-death recovery PASS and an earlier Q13 durability/retrieval PASS. A later Q01 normal Camera Commit attempt on that physical-tested APK was interrupted by a real process death while Camera was active and therefore produced **no valid Q01 PASS**; that attempt remains historical `INTERRUPTED_PROCESS_DEATH_NO_PASS`, not a new proven product defect. Q02 on `560e5...` remains preserved as historical reproducible IonCamera Gallery failure evidence, but the project-owned native URI picker was subsequently physically retested on exact SHA `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3` and **passed Q02**. Q03 then physically passed on the same `4ac992...` runtime/database without reset. Q04 on `4ac992...` physically demonstrated safe cancellation with zero row delta and no pending source, but the legacy `Camera.getPhoto()` cancellation was misclassified as `SOURCE_UNAVAILABLE`; that attempt remains historical **BLOCKED** evidence. The narrow classification correction on exact SHA `44a231a8281d1031a40e7105160c919633d32531` was then physically retested and **Q04 passed** with `USER_CANCELLED`, rows `0 → 0`, and no pending source.
+
+Further physical qualification on the current later-phase APK `44a231a8281d1031a40e7105160c919633d32531` established current PASS results for Q06, strict Q08, Q09, Q10, Q11, Q12 as `REAL_DEVICE_WRITE_FAILURE` only, and strict Q13. The latest normal-Q01 retest on the same qualification APK again did not produce a Q01 PASS because the app process died within a broad Android process-death wave while external Camera was foreground; the root cause remains `UNKNOWN / UNESTABLISHED`. On 2026-09-12 the Project Owner adopted Q01=`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`, Q05=`NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`, and literal `REAL_DEVICE_ENOSPC`=`DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`. These dispositions do not close Gate 6C-D. Host tests, GitHub Actions, or emulator runs cannot erase or supersede physical evidence by themselves.
 
 The APK must visibly show:
 
@@ -81,7 +83,7 @@ Physically tested Gallery-correction APK provenance for Q02/Q03 and the historic
 - `app-debug.apk` SHA-256: `e67b64eec70b0e9610bb5ac744cb57cb2debd5e0eee13ac3609843163a815445`;
 - local ZIP and APK hashes were verified before installation.
 
-Latest physically tested Q04 correction/retest APK provenance:
+Current later-phase physically tested qualification APK provenance:
 
 - tested SHA: `44a231a8281d1031a40e7105160c919633d32531`;
 - artifact ID: `10280027500`;
@@ -90,7 +92,11 @@ Latest physically tested Q04 correction/retest APK provenance:
 - `app-debug.apk` SHA-256: `d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2`;
 - both hashes were independently verified locally before installation.
 
-For every scenario, copy the canonical JSON from the harness when it was actually preserved. The JSON intentionally omits raw acquisition URIs, raw resolve URIs, and device serials. Store physical evidence outside the repository until it has been reviewed for privacy. Never commit real source binaries or real inspection data.
+Current external physical evidence folder for the later qualification phase:
+
+`https://drive.google.com/drive/folders/1nrBWWWwLHHjYO87CyGeYrvbzttMBZdv9?usp=drive_link`
+
+For every scenario, copy the canonical JSON from the harness when it was actually preserved. The JSON intentionally omits raw acquisition URIs, raw resolve URIs, and device serials. Store physical evidence outside the repository until it has been reviewed for privacy. Never commit real source binaries or real inspection data. Do not invent hashes that were not independently recorded.
 
 ## 4. Common setup
 
@@ -104,36 +110,36 @@ Reset only when the scenario calls for a clean database. Do not reset between th
 
 ## 5. Stable physical scenario matrix
 
-| ID | Purpose | Physical action | Required result / current protocol status |
+| ID | Purpose | Physical action | Required result / current disposition |
 |---|---|---|---|
-| `G6CD-Q01-CAMERA-COMMIT` | Real Camera commit | Take a real disposable test photo | Production commit; canonical ref/hash; bytes; resolve proof; one row |
+| `G6CD-Q01-CAMERA-COMMIT` | Real Camera commit | Take a real disposable test photo | **`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**; no Q01 PASS; root cause `UNKNOWN / UNESTABLISHED`; not a proven product defect or impossibility |
 | `G6CD-Q02-GALLERY-COMMIT` | Gallery/media commit | Select exactly one disposable image/video through the correction picker | **PHYSICAL PASS on `4ac992...`; no longer a blocker** |
 | `G6CD-Q03-GENERIC-FILE-COMMIT` | SAF generic file | Select one disposable file through ACTION_OPEN_DOCUMENT | **PHYSICAL PASS on `4ac992...` after Q02 without DB reset** |
 | `G6CD-Q04-CANCEL` | Real cancellation | Start Camera then cancel | **PHYSICAL PASS on `44a231...`; `USER_CANCELLED`; rows `0 → 0`; no pending source** |
-| `G6CD-Q05-PERMISSION-DENIED` | Real permission denial | **Do not execute current invalid revoke/prompt protocol** | `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY_EXERCISABLE UNDER CURRENT MANIFEST` |
-| `G6CD-Q06-SOURCE-LOSS` | Lost volatile source | Acquire-only then make source unavailable externally | safe source-unavailable failure; zero row delta |
-| `G6CD-Q07-RESTORED-CAMERA` | Genuine process death | Kill app process while external Camera is active, then return | real restored `getPhoto` pending; no auto-row; explicit owner + Adopt; production commit |
-| `G6CD-Q08-RESTART-RECONCILIATION` | Startup reconciliation | Force-stop/relaunch with committed Evidence | normal reconciliation, resolve/hash/metadata proof |
-| `G6CD-Q09-ORPHAN-CLEANUP` | Zero-row orphan cleanup | Diagnostic publish without row, then restart | normal reconciliation reports/removes orphan; zero row remains |
-| `G6CD-Q10-MISSING-FILE` | Missing historical file diagnosis | Delete app-private object externally with ADB after a valid commit | row retained; `BROKEN_STORAGE_REFERENCE`; no repair/replacement |
-| `G6CD-Q11-LARGE-FILE` | Large-file streaming | Select a large generic file | no whole-binary JS path; byte size/hash correct; commit succeeds |
-| `G6CD-Q12-WRITE-FAILURE` | Controlled real write failure | Make incoming directory temporarily non-writable | `STORAGE_WRITE_FAILED`; zero row delta; classify as write failure, not ENOSPC |
-| `G6CD-Q13-RETRIEVAL-AFTER-RESTART` | Durable retrieval | Restart after valid commit and retrieve by Evidence ID | row/ref/bytes/hash/resolve survive restart |
+| `G6CD-Q05-PERMISSION-DENIED` | Historical/conceptual permission-denial identity | No invalid revoke/prompt execution under current manifest | **`NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST` by Project Owner decision; not a physical PASS** |
+| `G6CD-Q06-SOURCE-LOSS` | Lost volatile source | Acquire-only then make source unavailable externally | **PHYSICAL PASS; `E_EVIDENCE_SOURCE_UNAVAILABLE`; rows `1 → 1`; zero row delta** |
+| `G6CD-Q07-RESTORED-CAMERA` | Genuine process death | Kill app process while external Camera is active, then return | **PHYSICAL PASS on `560e5...`; distinct from Q01** |
+| `G6CD-Q08-RESTART-RECONCILIATION` | Startup reconciliation | Force-stop/relaunch with committed Evidence | **STRICT PHYSICAL PASS; explicit force-stop/relaunch; `MATCH`; `RESOLVED`** |
+| `G6CD-Q09-ORPHAN-CLEANUP` | Zero-row orphan cleanup | Diagnostic publish without row, then restart | **PHYSICAL PASS; `orphanRemovedCount=1`; `ORPHAN_REMOVED`; zero orphan rows** |
+| `G6CD-Q10-MISSING-FILE` | Missing historical file diagnosis | Delete app-private object externally with ADB after a valid commit | **PHYSICAL PASS; row retained; `BROKEN_STORAGE_REFERENCE`; fail closed** |
+| `G6CD-Q11-LARGE-FILE` | Large-file streaming | Select a large generic file | **PHYSICAL PASS; exact `41943040` bytes; `MATCH`; `RESOLVED`** |
+| `G6CD-Q12-WRITE-FAILURE` | Controlled real write failure | Make incoming directory temporarily non-writable | **PHYSICAL PASS for `REAL_DEVICE_WRITE_FAILURE` only; `enospcProven=false`; not ENOSPC PASS** |
+| `G6CD-Q13-RETRIEVAL-AFTER-RESTART` | Durable retrieval | Restart after valid commit and retrieve by Evidence ID | **STRICT PHYSICAL PASS after independent explicit force-stop/relaunch** |
 
 ## 6. Q01 — Camera commit
 
 1. Start from READY synthetic runtime.
 2. Press **Q01 Camera Commit**.
 3. Capture a disposable qualification photo and accept it.
-4. Require JSON status `PASS`.
-5. Require source kind `CAMERA_PHOTO`, a positive Evidence ID, canonical `evidence/v1/objects/...` ref, canonical SHA-256, file size > 0, hash verification `MATCH`, resolve `RESOLVED`, and one row for the committed Evidence proof.
-6. Record the Evidence ID for Q08/Q10/Q13 where useful.
+4. A successful protocol execution would require JSON status `PASS`.
+5. A successful protocol execution would require source kind `CAMERA_PHOTO`, a positive Evidence ID, canonical `evidence/v1/objects/...` ref, canonical SHA-256, file size > 0, hash verification `MATCH`, resolve `RESOLVED`, and one row for the committed Evidence proof.
+6. Record the Evidence ID for Q08/Q10/Q13 where useful when a valid Q01 commit exists.
 
 For the correction candidate, the production Camera acquisition path must be the project-authorized legacy `Camera.getPhoto()` URI path; Q01 semantics themselves are unchanged.
 
 The photo is qualification-only. Do not photograph people, records, identifiers, or real inspection material.
 
-### Recorded correction-candidate Q01 attempt — `INTERRUPTED_PROCESS_DEATH_NO_PASS`
+### Historical correction-candidate Q01 attempt on `560e5...` — `INTERRUPTED_PROCESS_DEATH_NO_PASS`
 
 This physical attempt used the qualification APK built from `560e5cf9c7b84554e79bb434afb6a662ac7d9376`. It is **not** a Q01 PASS and is **not** classified by itself as a new proven product defect.
 
@@ -176,16 +182,53 @@ Final state after discard:
 - restored Camera source = `none`;
 - committed Evidence count = `1`.
 
-Qualification interpretation:
+This historical attempt remains `INTERRUPTED_PROCESS_DEATH_NO_PASS`; Q07 PASS remains separate and does not substitute for Q01.
 
-- Q01 still requires a normal direct Camera commit that produces an actual Q01 `PASS` result;
-- this attempt is classified **`Q01 NORMAL CAMERA COMMIT — INTERRUPTED BY REAL PROCESS DEATH; NO Q01 PASS PRODUCED`** / `INTERRUPTED_PROCESS_DEATH_NO_PASS`;
-- Q07 genuine process-death recovery remains a separately qualified path and its existing PASS is unchanged; Q07 PASS does not substitute for Q01 PASS;
-- the observed restored-source behavior is consistent with the existing recovery contract: it remains uncommitted until owner reconstruction plus explicit adoption, or explicit discard;
-- this observation alone does not establish a new defect in EvidenceService or the restored-result coordinator;
-- do not auto-attach restored Camera sources and do not bypass explicit owner reconstruction/adoption semantics.
+### Latest Q01 retest on `44a231...` — current disposition `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`
 
-Q01 therefore remains **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PRODUCED**. Do not infer that Q01 is impossible on this device; this physical attempt simply did not produce a valid Q01 PASS.
+The latest physical Q01 retest used qualification APK `44a231a8281d1031a40e7105160c919633d32531` from a clean synthetic DB:
+
+- valid synthetic Visit owner before Camera;
+- Evidence readiness `READY`;
+- Evidence rows `0`.
+
+After pressing **Q01 Camera Commit**, capturing a disposable photo and accepting it, the application later returned with:
+
+- `Synthetic Visit owner = not reconstructed`;
+- Evidence readiness `NOT_OPEN`;
+- Volatile source `none`;
+- a real restored Camera source from `getPhoto / CAMERA_PHOTO`;
+- no canonical Q01 PASS result;
+- no new Evidence row.
+
+Logcat establishes:
+
+- Q01 launched the external Camera from application PID `18964`;
+- while Camera remained foreground, a broad wave of Android processes died;
+- `com.scientifica.inspection.gate6bproof` PID `18964` died within that wave;
+- Android later created a new application process PID `21912`;
+- `system_server` remained alive, so the evidence does not show a full-device reboot;
+- root cause of the process-death wave remains **`UNKNOWN / UNESTABLISHED`**.
+
+Do not attribute this event conclusively to the application, Camera plugin, cable, USB hardware, low memory, OOM/LMK, ColorOS policy, or another cause. A later meminfo snapshot reported approximately Total RAM `2,854,240K`, status `normal`, Free RAM `481,322K`, ZRAM physical `165,648K` for `787,104K` swap, and application PSS about `167,050K`; because this snapshot was captured after the event, it neither proves nor disproves the memory state at the moment of death. `dmesg` was unavailable: `dmesg: klogctl: Permission denied`. Android DropBox lowmem search returned `Searching for: lowmem` / `No entries found.` There is therefore no direct established OOM/LMK evidence.
+
+Latest external diagnostic filenames in the current evidence folder include:
+
+- `Q01-retest-01-restored-state.png`;
+- `Q01-retest-02-restored-state.png`;
+- `Q01-retest-03-restored-state.png`;
+- `Q01-retest-logcat-full.txt`;
+- `Q01-retest-meminfo-after-event.txt`;
+- `Q01-retest-dmesg-after-event.txt`;
+- `Q01-retest-dropbox-lowmem.txt`.
+
+Raw screenshots/logs remain outside GitHub. No hashes are invented for these files.
+
+Project Owner disposition dated 2026-09-12:
+
+**`Q01 = NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**.
+
+This is not Q01 PASS, not a proven product-defect verdict, and not an impossibility claim. The latest process-death root cause remains `UNKNOWN / UNESTABLISHED`.
 
 ## 7. Q02 — Gallery/media commit
 
@@ -349,30 +392,31 @@ Verified external files include `Q04-physical-pass-44a231.png`, `Q04-logcat-44a2
 - `Q04-physical-pass-44a231.png` SHA-256: `41a9444dfb53162c5b1dc70843a7725a8685c93c81f5783f9bf0972860604d9a`;
 - `Q04-logcat-44a231.txt` SHA-256: `329d927b25ea425d2d684525bff98ef0a387083c4cb2e14de5527a1f6fd7a2ea`.
 
-Q04 is now **PHYSICAL PASS on `44a231...`** and no longer awaits physical retest. This does not alter Q01, Q02, Q03, Q05, Q07, Q08, Q13, or overall Gate 6C-D closure status.
+Q04 is now **PHYSICAL PASS on `44a231...`** and no longer awaits physical retest. This does not alter the historical Q01/Q02/Q04 attempts or overall Gate 6C-D closure status.
 
-## 10. Q05 — Real permission denial
+## 10. Q05 — Permission-denial scenario identity and current Owner disposition
 
-Scenario identity remains **`G6CD-Q05-PERMISSION-DENIED`**, but its current execution protocol is:
+Scenario identity remains **`G6CD-Q05-PERMISSION-DENIED`** for historical/conceptual traceability.
 
-**`PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`**.
+### Historical protocol-review state
 
-The current qualification package manifest does **not** declare `android.permission.CAMERA`. Therefore the previous instruction to execute:
+The earlier qualification protocol required `adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA` and expected an application-level Camera permission prompt. The current production/qualification package manifest does **not** declare `android.permission.CAMERA`; therefore that revoke/prompt sequence was classified `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`. That historical protocol finding remains preserved.
 
-`adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA`
+### Project Owner disposition — 2026-09-12
 
-and then expect an application-level Camera permission prompt is not a valid guaranteed protocol for this package and must not be used.
+Current Q05 status is:
 
-Under the current manifest, external Camera launch can occur without an application-level `CAMERA` permission prompt. Consequently:
+**`NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`**.
 
-- do not synthesize a denial event and do not mark Q05 PASS from a mocked/synthetic error;
-- do not add `android.permission.CAMERA` merely to make Q05 exercisable as part of this correction;
-- do not change Camera acquisition routing in this task;
-- Q05 requires a separate narrow design/Project Owner decision defining a valid physical permission-denial protocol or a deliberately permission-enabled qualification build;
-- this Q05 protocol limitation does not block acceptance of the narrow executable correction candidate itself;
-- Gate 6C-D remains open and Q05 remains unresolved until that separate protocol decision and physical exercise occur.
+Meaning:
 
-No Q05 physical PASS is claimed by this document.
+- the current production/qualification manifest does not declare application-level `android.permission.CAMERA`;
+- external Camera can launch without an application-level Camera permission prompt;
+- the old revoke/prompt scenario is not a realistic executable test under the current manifest;
+- do not synthesize/mock denial and do not record a synthetic PASS;
+- do not add `android.permission.CAMERA` merely to manufacture a denial scenario;
+- no Q05 physical PASS is claimed;
+- this resolves the prior protocol-review question by Project Owner decision, not by changing product behavior.
 
 ## 11. Q06 — Source loss
 
@@ -385,6 +429,19 @@ Use a disposable source that can actually be removed or invalidated after select
 5. Require `PASS`, failure code `E_EVIDENCE_SOURCE_UNAVAILABLE`, and rows-before = rows-after.
 
 If the provider keeps the source readable and the commit succeeds, the source-loss condition was not established. That run is not a Q06 PASS; use a source/provider where loss can be demonstrated.
+
+### Recorded current physical result — PASS
+
+- `status = PASS`;
+- `failureCode = E_EVIDENCE_SOURCE_UNAVAILABLE`;
+- rows `1 → 1`;
+- `zeroEvidenceRowDelta = true`;
+- no Evidence ID;
+- no storage ref;
+- hash verification `NOT_RUN`;
+- resolve `NOT_RUN`.
+
+Q06 is no longer pending.
 
 ## 12. Q07 — Genuine Camera process death / appRestoredResult
 
@@ -449,11 +506,13 @@ The controlled genuine process-death run produced:
 
 External physical evidence: `https://drive.google.com/drive/folders/1rsZkAJZkK1UyjrZETdgUyB9B_-lpRdiS?usp=drive_link`.
 
-This PASS validates the Q07 correction path only. It does not convert the historical `d4f7...` Q01 failure to PASS and does not substitute for the still-unresolved normal Q01 Camera Commit requirement.
+This PASS validates the Q07 correction path only. It does not convert either historical Q01 failure/no-pass attempt or the current Q01 blocked/no-pass disposition into Q01 PASS.
 
 ## 13. Q08 — Restart/reconciliation
 
-1. Create at least one valid committed Evidence object (Q01/Q02/Q03).
+Protocol:
+
+1. Create at least one valid committed Evidence object.
 2. Record its Evidence ID/ref/hash/size.
 3. Force-stop the app:
 
@@ -464,15 +523,21 @@ adb shell am force-stop com.scientifica.inspection.gate6bproof
 4. Relaunch the APK.
 5. Press **Q08 Reopen + Reconcile**.
 6. Require the same synthetic DB/Visit is reconstructed, normal Evidence startup reconciliation runs, committed objects classify as valid, and readiness is `READY`.
-7. For each committed Evidence used in this scenario, require retrieval/resolve succeeds, SHA-256 verifies `MATCH`, and persisted size/hash/ref metadata match the reopened object.
+7. For committed Evidence used in this scenario, require retrieval/resolve succeeds, SHA-256 verifies `MATCH`, and persisted size/hash/ref metadata match the reopened object.
 
 A reset between steps 3 and 5 invalidates this scenario.
 
-### Observed reopen/reconciliation success — **not strict Q08 protocol PASS**
+### Historical reopen/reconciliation observation after Q02/Q03 — not strict Q08 protocol PASS
 
 After closing and later reopening the application during the `4ac992...` qualification sequence, the initial UI state was `Synthetic Visit owner = not reconstructed`, `Evidence readiness = NOT_OPEN`, `Volatile source = none`, `Restored Camera source = none`. Pressing **Q08 Reopen + Reconcile** reconstructed owner `1`, returned readiness `READY`, and the already committed Q02 Evidence ID `1` remained present; after Q03 there were two committed rows.
 
-This is classified only as **`OBSERVED REOPEN / RECONCILIATION SUCCESS — NOT YET STRICT Q08 PROTOCOL PASS`** because this observation did not record the protocol-required preceding `adb shell am force-stop com.scientifica.inspection.gate6bproof`. Do not promote it to formal Q08 physical PASS.
+That historical observation did not record the protocol-required preceding force-stop and therefore remains non-strict historical evidence.
+
+### Recorded current Q08 result — STRICT PHYSICAL PASS
+
+A later independent execution used a real explicit `adb shell am force-stop com.scientifica.inspection.gate6bproof`, relaunched the qualification app, ran normal reconciliation, and demonstrated that the same committed Evidence survived. Hash verification was `MATCH` and resolve was `RESOLVED`.
+
+Q08 is therefore **STRICT PHYSICAL PASS**. The earlier non-strict observation remains historical and is not rewritten.
 
 ## 14. Q09 — Diagnostic zero-row orphan cleanup
 
@@ -485,6 +550,15 @@ This is classified only as **`OBSERVED REOPEN / RECONCILIATION SUCCESS — NOT Y
 7. Require normal `EvidenceService` reconciliation reports at least one `ORPHAN_REMOVED`, confirms zero rows for the removed orphan, returns readiness `READY`, and Q09 status `PASS`.
 
 No diagnostic cleanup button exists; the cleanup algorithm under test is the closed normal reconciliation path.
+
+### Recorded current Q09 result — PHYSICAL PASS
+
+- a zero-row orphan was physically published;
+- after restart, normal reconciliation removed it;
+- `orphanRemovedCount=1`;
+- classification `ORPHAN_REMOVED`;
+- zero SQLite rows remained for the removed orphan;
+- existing valid Evidence remained intact.
 
 ## 15. Q10 — Missing-file diagnosis
 
@@ -511,6 +585,14 @@ After deletion:
 3. Press **Q10 Diagnose Missing File**.
 4. Require the SQLite row remains exactly once, reconciliation contains `BROKEN_STORAGE_REFERENCE`, the final object is missing, resolve fails with the closed broken-reference error, and no replacement/silent repair occurs.
 
+### Recorded current Q10 result — PHYSICAL PASS
+
+- a private final object was deliberately removed after a valid historical commit;
+- the SQLite row remained exactly once;
+- reconciliation classified `BROKEN_STORAGE_REFERENCE`;
+- resolve failed closed with `E_EVIDENCE_BROKEN_STORAGE_REFERENCE`;
+- no silent repair or replacement occurred.
+
 ## 16. Q11 — Large file bounded-memory behavior
 
 Gate 6C-C already proved the native 64-KiB streaming buffer and a 32-MiB executable case. Gate 6C-D adds real-device qualification.
@@ -523,6 +605,15 @@ Gate 6C-C already proved the native 64-KiB streaming buffer and a 32-MiB executa
 6. Require restart retrieval/hash verification `PASS`.
 
 The production path must not Base64 or otherwise transport the entire binary through JavaScript.
+
+### Recorded current Q11 result — PHYSICAL PASS
+
+- file size: exact `41943040` bytes (40 MiB);
+- Evidence ID `1`;
+- `storage_ref=evidence/v1/objects/605c1422-83d6-4ecd-8d0d-df911542ef2d.bin`;
+- `content_hash=sha256:80a3721188e40218b08b26776bc53bdae81e4784fff71d71450a197319cba113`;
+- hash verification `MATCH`;
+- resolve `RESOLVED`.
 
 ## 17. Q12 — Safe real write failure; literal ENOSPC remains separate
 
@@ -551,21 +642,58 @@ If this device/filesystem does not allow the controlled permission failure to be
 
 This scenario does **not** prove literal low-storage/ENOSPC. `REAL_DEVICE_ENOSPC` remains an explicit physical qualification gap unless it can be reproduced safely without filling or destabilizing the owner's device. Never relabel a controlled permission/write failure as ENOSPC.
 
+### Recorded current Q12 result — PHYSICAL PASS for `REAL_DEVICE_WRITE_FAILURE` only
+
+- `status=PASS`;
+- `failureCode=E_EVIDENCE_STORAGE_WRITE_FAILED`;
+- `writeFailureVariant=REAL_DEVICE_WRITE_FAILURE`;
+- `enospcProven=false`;
+- rows `1 → 1`;
+- zero Evidence-row delta;
+- physical execution temporarily set `files/evidence/v1/.incoming` to mode `500`;
+- the directory was restored immediately to mode `700` after the controlled write-failure attempt;
+- restoration was verified as `drwx------`;
+- this permission manipulation and verified restoration do **not** prove literal ENOSPC.
+
+This is **not** literal ENOSPC PASS.
+
+### Project Owner literal-ENOSPC disposition — 2026-09-12
+
+Literal `REAL_DEVICE_ENOSPC` remains:
+
+**`DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`**.
+
+Do not fill or destabilize the Project Owner's device storage merely to force ENOSPC. The residual evidence gap is documented and non-blocking by owner waiver, but `enospcProven=false` must remain explicit.
+
 ## 18. Q13 — Retrieval after restart
 
-1. Use a valid committed Evidence ID, preferably one from Q11 for the large-file end-to-end proof.
+Protocol:
+
+1. Use a valid committed Evidence ID, preferably the Q11 large-file Evidence.
 2. Force-stop and relaunch the app without reset.
 3. Enter the Evidence ID.
 4. Press **Q13 Retrieve After Restart**.
 5. Require startup reconciliation sees a valid reference, row/ref/size/hash metadata remain present, hash verification is `MATCH`, resolve succeeds, and status is `PASS`.
 
-### Recorded current Q13 durability/retrieval result — PASS on `560e5cf9...`
+### Historical Q13 durability/retrieval result on `560e5cf9...`
 
-For Evidence ID `1`, the observed run reported: `sqliteRowCount=1`, `validReferenceAfterRestart=true`, `metadataSurvivedRestart=true`, reconciliation `VALID_REFERENCE`, hash verification `MATCH`, resolve `RESOLVED`, and the same `storageRef`, content hash, and `fileSize=4984630` survived.
+For Evidence ID `1`, the earlier observed run reported: `sqliteRowCount=1`, `validReferenceAfterRestart=true`, `metadataSurvivedRestart=true`, reconciliation `VALID_REFERENCE`, hash verification `MATCH`, resolve `RESOLVED`, and the same `storageRef`, content hash, and `fileSize=4984630` survived.
 
 External evidence: `https://drive.google.com/drive/folders/1_5aypRPoBtZbooKvQdp-PncIuV4VfeFi?usp=drive_link`.
 
-Qualification nuance: this Q13 PASS followed a real runtime recreation observed after leaving the qualification app for Drive. This exact run did **not** record an explicit `adb shell am force-stop`. Preserve it as physical durability evidence, but do not claim it satisfied the strict force-stop mechanism for that exact execution. A later strict Q13 repetition after Q11 may still be required by this versioned protocol.
+That historical Q13 result followed a real runtime recreation after leaving the qualification app for Drive but did **not** record an explicit force-stop. It remains valid historical durability evidence and is not rewritten.
+
+### Recorded current Q13 result — STRICT PHYSICAL PASS
+
+A later independent Q13 execution used an explicit force-stop/relaunch after Q11. The Evidence metadata survived with the same:
+
+- `storage_ref=evidence/v1/objects/605c1422-83d6-4ecd-8d0d-df911542ef2d.bin`;
+- `content_hash=sha256:80a3721188e40218b08b26776bc53bdae81e4784fff71d71450a197319cba113`;
+- file size `41943040`.
+
+Reconciliation classified `VALID_REFERENCE`; hash verification was `MATCH`; resolve was `RESOLVED`.
+
+Q13 is therefore **STRICT PHYSICAL PASS**. The earlier non-strict Q13 evidence remains historical.
 
 ## 19. Machine-readable result requirements
 
@@ -598,38 +726,54 @@ The local UI may display an app-private resolve handle for manual qualification,
 Record these separately from product verdicts:
 
 - repeated switching from the qualification app to Google Drive was followed by the qualification UI returning to `owner=not reconstructed`, `readiness=NOT_OPEN`, `volatile source=none`, `restored source=none`; this is consistent with runtime/process recreation, but every occurrence was not independently PID-proven;
-- durable committed Evidence survived, as the Q13 result demonstrates;
+- durable committed Evidence survived, as the historical Q13 result demonstrates;
 - Q02 physical PASS on `4ac992...` retained PID `16121` before and after the attempt, so no process recreation occurred in that Q02 run;
 - the Q04 physical PASS on `44a231...` launched Android `android.media.action.IMAGE_CAPTURE` into `com.oppo.camera/.Camera`, moved focus from the qualification app to the external OPPO Camera, then returned focus to the qualification app after cancellation;
 - the later logged death of `com.oppo.camera` in the Q04 evidence concerns the external Camera process and is **not** qualification-app process death evidence;
 - the preserved Q04 retest logcat did not retain the exact Capacitor text `User cancelled photos app`; the Q04 PASS rests on the harness result `USER_CANCELLED`, rows `0 → 0`, and no pending source;
-- a later normal Q01 Camera Commit attempt physically proved a spontaneous application process transition `PID 27313 → process died → PID 28843` while external Camera was active; the process-death cause remains **`UNKNOWN / UNESTABLISHED`** and this observation is not by itself a product-defect verdict;
-- during one ADB/logcat sequence ColorOS logged `isUsbActive=false`, then `try set disable adb`, then `Setting USB config to midi`, after which the log ended / ADB disconnected;
-- the trigger for `isUsbActive=false` remains **`UNKNOWN / UNESTABLISHED`**;
-- do not attribute these observations conclusively to cable quality, low memory, ColorOS task management, USB hardware, the application, Camera app, or any other cause without evidence.
+- the older normal Q01 Camera Commit attempt on `560e5...` physically proved `PID 27313 → process died → PID 28843` while external Camera was active; its process-death cause remains **`UNKNOWN / UNESTABLISHED`**;
+- the latest Q01 Camera Commit retest on `44a231...` launched external Camera from PID `18964`; a broad Android process-death wave occurred while Camera remained foreground; app PID `18964` died within the wave; Android later created app PID `21912`; `system_server` remained alive. Cause remains **`UNKNOWN / UNESTABLISHED`**;
+- later meminfo values do not establish event-time OOM/LMK; `dmesg` was denied and DropBox lowmem search had no entries. No direct OOM/LMK evidence is established;
+- after the latest incident Android recorded `UsbDeviceManager: try set disable adb`, `Setting USB config to midi`, and later `Setting USB config to mtp,adb`. This proves ADB was disabled and later re-enabled and is consistent with the Project Owner's observed computer disconnect/reconnect;
+- the USB/ADB observation does **not** establish a causal relationship between Q01/Camera and USB mode switching;
+- USB/ADB cause remains **`UNKNOWN / UNESTABLISHED`**;
+- do not attribute these observations conclusively to cable quality, low memory, OOM/LMK, ColorOS task management, USB hardware, the application, Camera plugin, or Camera app without evidence.
 
 These are qualification-environment observations, not established product defects.
 
-## 21. Gate acceptance boundary
+## 21. Gate acceptance boundary / current Project Owner disposition
 
-The first physical candidate failed and remains historical failure evidence. The correction branch now has additional physical qualification evidence, but Gate 6C-D is not self-closing:
+Historical negative evidence remains historical and is not rewritten:
 
-- historical `d4f7...` verdict remains **FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY** and its Android process-death cause remains `UNKNOWN / UNESTABLISHED`;
-- correction-candidate Q01 normal Camera Commit is **UNRESOLVED / INTERRUPTED BY PROCESS DEATH / NO PASS PRODUCED** (`INTERRUPTED_PROCESS_DEATH_NO_PASS`); it is not a PASS and does not establish a new proven product defect by itself;
-- historical Q02 failure on `560e5...` remains preserved as **FAIL / CORRECTION_REQUIRED** evidence for the old IonCamera Gallery path;
-- the native Gallery correction on exact SHA `4ac992...` is **ACCEPT — Q02 GALLERY COMMIT PHYSICAL RETEST PASSED** and Q02 is no longer a blocker;
-- Q03 is **ACCEPT — Q03 GENERIC FILE COMMIT PHYSICAL PASS** on the observed `4ac992...` sequence, with only actually preserved values recorded;
-- historical Q04 on `4ac992...` remains **BLOCKED — REAL CANCELLATION SAFE, LEGACY getPhoto CANCELLATION MISCLASSIFIED** with rows `2 → 2` and no pending source; it is not rewritten;
-- later Q04 correction/retest on exact SHA `44a231...` is **ACCEPT — Q04 REAL CAMERA CANCELLATION PHYSICAL RETEST PASSED** with `USER_CANCELLED`, rows `0 → 0`, and no pending source; Q04 is no longer a blocker and no longer awaits physical retest;
-- Q05 is **PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST**; no synthetic denial may substitute for a real protocol and no CAMERA permission is added by this correction;
-- Q07 correction path on `560e5cf9...` remains recorded as physical **PASS**;
-- current Q13 durability/retrieval evidence on `560e5cf9...` remains recorded as **PASS** with the actual runtime-recreation mechanism stated above;
-- the later reopen/reconcile observation after Q02/Q03 is **not** a formal Q08 PASS because the strict `adb shell am force-stop` prerequisite was not recorded;
-- Q06, formal strict Q08, Q09/Q10/Q11/Q12 remain pending;
-- literal ENOSPC remains a named qualification gap;
+- `d4f7...` remains **FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY** with cause `UNKNOWN / UNESTABLISHED`;
+- the `560e5...` normal-Q01 attempt remains historical `INTERRUPTED_PROCESS_DEATH_NO_PASS`;
+- Q02 IonCamera failure on `560e5...` remains historical FAIL;
+- Q04 cancellation on `4ac992...` remains historical BLOCKED;
+- the earlier Q08 reopen/reconcile observation remains non-strict historical evidence;
+- the earlier Q13 durability run remains historical non-strict-force-stop evidence.
+
+Current physical qualification matrix:
+
+- Q01: **`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**; no Q01 PASS; no established product defect or impossibility; process-death-wave cause `UNKNOWN / UNESTABLISHED`.
+- Q02: **PHYSICAL PASS**.
+- Q03: **PHYSICAL PASS**.
+- Q04: **PHYSICAL PASS**.
+- Q05: **`NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`** by Project Owner decision; not physical PASS.
+- Q06: **PHYSICAL PASS**.
+- Q07: **PHYSICAL PASS**.
+- Q08: **STRICT PHYSICAL PASS**.
+- Q09: **PHYSICAL PASS**.
+- Q10: **PHYSICAL PASS**.
+- Q11: **PHYSICAL PASS**.
+- Q12: **PHYSICAL PASS for `REAL_DEVICE_WRITE_FAILURE` only**; `enospcProven=false`.
+- Q13: **STRICT PHYSICAL PASS**.
+- literal `REAL_DEVICE_ENOSPC`: **`DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`**, not ENOSPC PASS.
+
+Closure boundary:
+
 - Gate 6C remains `IN_PROGRESS`;
-- Gate 6C-D remains `OPEN / IN_PROGRESS`, not accepted/closed;
+- Gate 6C-D remains `OPEN / IN_PROGRESS`, not accepted/closed by this reconciliation;
 - Gate 6D remains `NOT_STARTED`;
 - `field_usable_v1=false`.
 
-No PR or merge is implied by this document. Independent review must evaluate the exact correction branch/head, APK provenance, and physical-device evidence before any Gate 6C-D closure decision.
+No PR merge is implied by this document. Independent review must evaluate the documentation diff, current accepted evidence and Project Owner dispositions before any separate Gate 6C-D closure decision.

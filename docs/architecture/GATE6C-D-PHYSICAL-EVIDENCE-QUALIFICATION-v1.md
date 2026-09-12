@@ -420,13 +420,15 @@ Meaning:
 
 ## 11. Q06 — Source loss
 
-Protocol:
+Use a disposable source that can actually be removed or invalidated after selection.
 
-1. Press **Q06 Acquire Generic File Only** and select a disposable source.
+1. Press **Q06 Acquire Generic File Only** and select the disposable source.
 2. Confirm the UI shows a volatile pending ID/kind and that no Evidence row was added.
-3. Outside the app, delete/move/revoke the selected source so the original URI can no longer be opened.
+3. Outside the app, delete/move/revoke the selected source so the original URI can no longer be opened. Provider behavior varies; verify that the source is genuinely unavailable.
 4. Return to the still-running harness and press **Commit Pending as Q06**.
-5. Successful qualification requires safe source-unavailable failure and zero row delta.
+5. Require `PASS`, failure code `E_EVIDENCE_SOURCE_UNAVAILABLE`, and rows-before = rows-after.
+
+If the provider keeps the source readable and the commit succeeds, the source-loss condition was not established. That run is not a Q06 PASS; use a source/provider where loss can be demonstrated.
 
 ### Recorded current physical result — PASS
 
@@ -539,15 +541,13 @@ Q08 is therefore **STRICT PHYSICAL PASS**. The earlier non-strict observation re
 
 ## 14. Q09 — Diagnostic zero-row orphan cleanup
 
-Protocol:
-
 1. Start READY.
 2. Press **Q09 Acquire Orphan Source** and select a disposable generic file.
 3. Press **Publish Pending as Q09 Zero-Row Orphan**.
-4. Require the intermediate state to show a published object with zero SQLite rows.
+4. Require the intermediate JSON shows a canonical published object, `zeroRowOrphanPublished=true`, final object exists, and SQLite row count for that storage ref is zero. Intermediate status remains `BLOCKED` because cleanup has not yet been exercised.
 5. Force-stop and relaunch the app.
 6. Press **Q09 Reopen + Normal Orphan Cleanup**.
-7. Require normal `EvidenceService` reconciliation to report/remove the orphan without harming valid Evidence.
+7. Require normal `EvidenceService` reconciliation reports at least one `ORPHAN_REMOVED`, confirms zero rows for the removed orphan, returns readiness `READY`, and Q09 status `PASS`.
 
 No diagnostic cleanup button exists; the cleanup algorithm under test is the closed normal reconciliation path.
 
@@ -562,8 +562,6 @@ No diagnostic cleanup button exists; the cleanup algorithm under test is the clo
 
 ## 15. Q10 — Missing-file diagnosis
 
-Protocol:
-
 Create a valid committed Evidence first. Record its Evidence ID and canonical `storage_ref`.
 
 Delete the app-private final object externally with ADB/run-as, substituting the exact canonical ref displayed by the harness:
@@ -572,7 +570,20 @@ Delete the app-private final object externally with ADB/run-as, substituting the
 adb shell run-as com.scientifica.inspection.gate6bproof rm "files/evidence/v1/objects/<uuid-v4>.<ext>"
 ```
 
-After deletion, force-stop/relaunch and diagnose the historical Evidence row. A successful qualification must retain the row, report a broken storage reference, fail resolve closed, and avoid repair/replacement.
+If the device's `run-as` starts in another working directory, first inspect only the debug package's sandbox with:
+
+```sh
+adb shell run-as com.scientifica.inspection.gate6bproof pwd
+```
+
+Then use the correct app-private path. Do not add a production deletion API to manufacture this state.
+
+After deletion:
+
+1. Force-stop and relaunch the app.
+2. Enter the historical Evidence ID in the Q10/Q13 input.
+3. Press **Q10 Diagnose Missing File**.
+4. Require the SQLite row remains exactly once, reconciliation contains `BROKEN_STORAGE_REFERENCE`, the final object is missing, resolve fails with the closed broken-reference error, and no replacement/silent repair occurs.
 
 ### Recorded current Q10 result — PHYSICAL PASS
 
@@ -586,7 +597,14 @@ After deletion, force-stop/relaunch and diagnose the historical Evidence row. A 
 
 Gate 6C-C already proved the native 64-KiB streaming buffer and a 32-MiB executable case. Gate 6C-D adds real-device qualification.
 
-Protocol requires selecting a disposable large generic file, committing through the production path, verifying authoritative size/hash/ref, then force-stop/relaunch and verify durable retrieval. The production path must not Base64 or otherwise transport the entire binary through JavaScript.
+1. Prepare a non-sensitive disposable large file. A file clearly larger than the prior 32-MiB synthetic case is preferred when practical; do not impose a product file-size cap.
+2. Press **Q11 Acquire Large File** and select it via the generic file picker.
+3. Press **Commit Pending as Q11**.
+4. Require `PASS`, authoritative final byte count, canonical SHA-256, canonical ref, and committed row.
+5. Force-stop/relaunch and run Q13 for that Evidence ID.
+6. Require restart retrieval/hash verification `PASS`.
+
+The production path must not Base64 or otherwise transport the entire binary through JavaScript.
 
 ### Recorded current Q11 result — PHYSICAL PASS
 
@@ -601,9 +619,28 @@ Protocol requires selecting a disposable large generic file, committing through 
 
 Do **not** fill the Project Owner's storage.
 
-The bounded qualification method uses a controlled real write failure, such as temporarily making only the Gate-6C incoming directory non-writable after acquiring the source but before staging, then restoring permissions immediately.
+A bounded debug-package technique is to make only the Gate-6C incoming directory temporarily non-writable after acquiring the source but before staging:
 
-The required classification is a real storage-write failure with zero Evidence-row delta. This scenario does **not** prove literal low-storage/ENOSPC and must never be relabeled as ENOSPC.
+1. Press **Q12 Acquire Write-Failure Source** and select a disposable generic file.
+2. From ADB, inspect the debug sandbox if needed, then temporarily remove write permission from the incoming directory:
+
+```sh
+adb shell run-as com.scientifica.inspection.gate6bproof chmod 500 files/evidence/v1/.incoming
+```
+
+3. Press **Commit Pending as Q12**.
+4. Require failure code `E_EVIDENCE_STORAGE_WRITE_FAILED`, zero Evidence-row delta, and JSON details:
+   - `writeFailureVariant = REAL_DEVICE_WRITE_FAILURE`
+   - `enospcProven = false`
+5. Immediately restore the directory permission even if the scenario failed:
+
+```sh
+adb shell run-as com.scientifica.inspection.gate6bproof chmod 700 files/evidence/v1/.incoming
+```
+
+If this device/filesystem does not allow the controlled permission failure to be established, report `BLOCKED` and restore normal permissions.
+
+This scenario does **not** prove literal low-storage/ENOSPC. `REAL_DEVICE_ENOSPC` remains an explicit physical qualification gap unless it can be reproduced safely without filling or destabilizing the owner's device. Never relabel a controlled permission/write failure as ENOSPC.
 
 ### Recorded current Q12 result — PHYSICAL PASS for `REAL_DEVICE_WRITE_FAILURE` only
 
@@ -612,7 +649,11 @@ The required classification is a real storage-write failure with zero Evidence-r
 - `writeFailureVariant=REAL_DEVICE_WRITE_FAILURE`;
 - `enospcProven=false`;
 - rows `1 → 1`;
-- zero Evidence-row delta.
+- zero Evidence-row delta;
+- physical execution temporarily set `files/evidence/v1/.incoming` to mode `500`;
+- the directory was restored immediately to mode `700` after the controlled write-failure attempt;
+- restoration was verified as `drwx------`;
+- this permission manipulation and verified restoration do **not** prove literal ENOSPC.
 
 This is **not** literal ENOSPC PASS.
 

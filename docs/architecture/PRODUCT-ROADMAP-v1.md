@@ -1,6 +1,6 @@
 # Product Delivery Roadmap — v1
 
-> **Status:** Gate 6A roadmap baseline — OWNER APPROVED; current-state annotations reconciled through the 2026-09-12 Gate 6C closure decision
+> **Status:** Gate 6A roadmap baseline — OWNER APPROVED; current-state annotations reconciled through the 2026-09-12 Gate 6C closure decision and subsequent second-device Q01 physical PASS
 > **Authoritative Gate-6A base:** GitHub `main` at `bde4359eac5cdb8c9873164fe992bd03b9871a71`
 > **Traceability:** PROJECT architecture/delivery decision. It does not replace or reinterpret DIRECT/DERIVED requirements.
 
@@ -32,7 +32,7 @@ The project has completed and merged/closed in their recorded scopes:
 - Gate 6C-A — Evidence Storage Contract — CLOSED / MERGED
 - Gate 6C-B — Runtime-neutral Evidence orchestration — CLOSED / MERGED
 - Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters — CLOSED / MERGED
-- Gate 6C-D — Physical Android Evidence Qualification — CLOSED by Project Owner decision dated 2026-09-12 with an explicit Q01 documented non-blocking residual-risk waiver
+- Gate 6C-D — Physical Android Evidence Qualification — CLOSED; current closure basis includes a reviewed Q01 PHYSICAL PASS on a second real Android device using the exact same qualification APK. The earlier Q01 owner-waiver closure decision remains historical but is superseded as the current closure basis.
 - Gate 6C — Evidence Storage + Camera/File Pipeline — CLOSED after all 6C-A→6C-D substages closed
 
 Application Core therefore includes T0→T11, OBS-1 and durable restart reconstruction from SQLite. Gate 6B has physically qualified the Android/native SQLite boundary and is CLOSED. Gate 6C is now CLOSED. Gate 6D is the next roadmap Gate but remains `NOT_STARTED`; no executable Gate 6D work is implied by this annotation.
@@ -194,7 +194,7 @@ capture/import
 
 Do not pretend SQLite and filesystem form one atomic transaction.
 
-Gate 6C-D closure is governed by the Project Owner decision dated 2026-09-12 on closure base `1fef46731835e2640de9b11b88078b63bde3d918`. Q01 remains `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT` and is accepted only as `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`; this waiver does not convert Q01 to PASS or establish correctness of the uninterrupted normal-Camera-return path. Q01 must be requalified if a suitable non-blocked physical environment/device becomes available or if Camera acquisition behavior/material implementation changes. Q05 remains `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`. Literal `REAL_DEVICE_ENOSPC` remains `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`; Q12 proves only `REAL_DEVICE_WRITE_FAILURE` with `enospcProven=false`. These distinctions are closure governance, not an all-scenarios physical-PASS claim.
+Gate 6C-D remains CLOSED under the Project Owner closure decision dated 2026-09-12 on closure base `1fef46731835e2640de9b11b88078b63bde3d918`. Subsequent reviewed physical evidence now establishes **Q01 PHYSICAL PASS on a second real Android device** using the exact same qualification APK: `testedGitSha=44a231a8281d1031a40e7105160c919633d32531`, installed APK SHA-256 `d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2` independently matched. Earlier first-device Q01 failures/blocked attempts remain historical; their root causes remain `UNKNOWN / UNESTABLISHED` where recorded and no OPPO/ColorOS/OOM/LMK/Camera-plugin/USB cause is inferred. The prior `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE` remains durable engineering history but is `SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS`. Q05 remains `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`. Literal `REAL_DEVICE_ENOSPC` remains `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`; Q12 proves only `REAL_DEVICE_WRITE_FAILURE` with `enospcProven=false`. Gate-level `physical_device_pass_claimed=false` remains appropriate only because Q05 is N/A rather than PASS and literal ENOSPC is not proven; it is no longer explained by Q01.
 
 ---
 

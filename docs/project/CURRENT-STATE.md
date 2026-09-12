@@ -50,7 +50,7 @@
 - Reviewed second-device evidence record: `https://docs.google.com/document/d/1M91Csm83t-q6B2Xy254jvIWBh5qQlCYoJcHj-FXaZx8/edit`.
 - Gate 6C-D / Gate 6C closure governing base: `1fef46731835e2640de9b11b88078b63bde3d918`.
 - Gate 6C-D / Gate 6C closure authorization date: `2026-09-12`.
-- Closure branch: `docs/gate6c-d-gate6c-closure-q01-waiver-v1`; merge SHA is not known before merge and is not invented.
+- Closure branch: `docs/gate6c-d-gate6c-closure-q01-waiver-v1`; PR: `#29`; merge SHA: `f3839e65bd4258b1d673c71f4ec9cd2bcbfdec61`.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
@@ -163,6 +163,8 @@ Final APK provenance, with hashes intentionally distinct:
 - original governing qualification base: `20d194959afa50ce705198ba993554c7f9cc210d`;
 - closure governing base: `1fef46731835e2640de9b11b88078b63bde3d918`;
 - closure authorization date: `2026-09-12`;
+- closure PR: `#29`;
+- closure merge SHA: `f3839e65bd4258b1d673c71f4ec9cd2bcbfdec61`;
 - Camera correction branch: `correction/gate6c-d-camera-process-death-v1`;
 - Gallery correction branch: `correction/gate6c-d-gallery-native-picker-v1`;
 - historical Camera-correction physical SHA `560e5cf9...`: APK SHA-256 `e855ff9d266dbfe22eca81fa2959939d71b62113640f1dd73c1332de6a22967d`; artifact `10191115023` / `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`; ZIP SHA-256 `920df2197ca1fe42b5b5183f17950ef48f34b283b3fa274d772e020da0d047be`;

@@ -59,7 +59,7 @@
 
 راجع `docs/project/CURRENT-STATE.md` و`.json` بدل الاعتماد على هذا القسم وحده.
 
-الخلاصة الحالية بعد إغلاق Gate 6C-C:
+الخلاصة الحالية:
 
 - Gates 1→5L: مغلقة/معتمدة/مدمجة.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap: **CLOSED / MERGED**.
@@ -70,7 +70,7 @@
 - Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters: **CLOSED / MERGED**. التنفيذ دُمج عبر PR #23 عند merge SHA `f221b215358f83dce381ac5261a856a7de4e5c98`، ثم أُغلقت حالة المشروع توثيقيًا عبر PR #24.
 - Gate 6C-C final reviewed head: `9de6c69eef90c490319c02eac48d236482597210`؛ exact-final-SHA qualification run: `34531511138` — SUCCESS.
 - Gate 6C ككل: **IN_PROGRESS**.
-- **Gate 6C-D: OPEN / IN_PROGRESS**؛ `gate6c_d_started=true`. التصحيح الميداني عند `560e5cf9c7b84554e79bb434afb6a662ac7d9376` أثبت Q07 process-death recovery = PASS وQ13 durability/retrieval = PASS ضمن الآليات الموصوفة في عقد التأهيل، مع بقاء Q01 Camera Commit وبقية المصفوفة المطلوبة قيد التأهيل.
+- **Gate 6C-D: OPEN / IN_PROGRESS**؛ `gate6c_d_started=true`. الحالة الحالية المعتمدة: Q01 = `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`; Q05 = `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`; Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 لها physical PASS وفق التمييزات الموثقة في عقد Gate 6C-D و`CURRENT-STATE`. Q12 يثبت `REAL_DEVICE_WRITE_FAILURE` فقط و`enospcProven=false`; literal `REAL_DEVICE_ENOSPC` يبقى `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`. هذا لا يغلق Gate 6C-D.
 - Gate 6D: **NOT_STARTED**.
 - `field_usable_v1=false`.
 
@@ -116,4 +116,4 @@ Fresh Read main
 → scoped work only
 ```
 
-الحالة الحالية هي **Gate 6C-D — OPEN / IN_PROGRESS**. يوجد physical correction evidence جزئي فقط؛ Gate 6C-D وGate 6C لم تُغلقا، Gate 6D لم يبدأ، و`field_usable_v1=false`. راجع عقد Gate 6C-D و`CURRENT-STATE` قبل أي استكمال للمصفوفة أو قرار إغلاق.
+الحالة الحالية هي **Gate 6C-D — OPEN / IN_PROGRESS**. نتائج Q02→Q13 الحالية موثقة في `CURRENT-STATE` مع الاستثناءات/التصنيفات الدقيقة لـQ05 وQ12؛ Q01 يبقى بلا PASS ومحجوبًا في البيئة الفيزيائية الحالية. Gate 6C-D وGate 6C لم تُغلقا، Gate 6D لم يبدأ، و`field_usable_v1=false`. راجع عقد Gate 6C-D و`CURRENT-STATE` قبل أي قرار إغلاق.

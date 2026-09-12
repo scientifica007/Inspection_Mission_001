@@ -1,8 +1,8 @@
 # Gate 6C-D — Physical Android Evidence Qualification v1
 
-Status: **OPEN / IN_PROGRESS — OWNER DISPOSITION RECONCILED; Q01 NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT; Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 CURRENT PHYSICAL PASS WITH Q08/Q13 STRICT AND Q12 LIMITED TO REAL_DEVICE_WRITE_FAILURE; Q05 NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST; LITERAL ENOSPC RESIDUAL GAP / NON-BLOCKING OWNER WAIVER; GATE NOT CLOSED**
+Status: **CLOSED — OWNER_AUTHORIZED_WITH_Q01_DOCUMENTED_NON_BLOCKING_RESIDUAL_RISK; Q01 REMAINS NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT; Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 CURRENT PHYSICAL PASS WITH Q08/Q13 STRICT AND Q12 LIMITED TO REAL_DEVICE_WRITE_FAILURE; Q05 NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST; LITERAL ENOSPC RESIDUAL GAP / NON-BLOCKING OWNER WAIVER; NOT AN ALL-SCENARIOS PHYSICAL-PASS CLAIM**
 
-This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. It does **not** close Gate 6C-D, does **not** close Gate 6C, and does **not** begin Gate 6D.
+This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. Gate 6C-D is **CLOSED by Project Owner decision dated 2026-09-12** on closure-governing base `1fef46731835e2640de9b11b88078b63bde3d918`. The closure is governance acceptance of the recorded qualification evidence and explicit residual-risk dispositions; it does **not** convert Q01 to PASS and does **not** begin Gate 6D executable implementation.
 
 The first physical Camera candidate is historical failure evidence and remains so even if a later correction or later scenario passes:
 
@@ -17,7 +17,7 @@ The first physical Camera candidate is historical failure evidence and remains s
 
 The PROJECT-authorized narrow correction candidate routes Android `CAMERA_PHOTO` through the dependency's legacy `Camera.getPhoto()` URI path while preserving the existing EvidenceService/storage/SQLite architecture. Physical retest on exact SHA `560e5cf9c7b84554e79bb434afb6a662ac7d9376` produced a Q07 genuine process-death recovery PASS and an earlier Q13 durability/retrieval PASS. A later Q01 normal Camera Commit attempt on that physical-tested APK was interrupted by a real process death while Camera was active and therefore produced **no valid Q01 PASS**; that attempt remains historical `INTERRUPTED_PROCESS_DEATH_NO_PASS`, not a new proven product defect. Q02 on `560e5...` remains preserved as historical reproducible IonCamera Gallery failure evidence, but the project-owned native URI picker was subsequently physically retested on exact SHA `4ac992eb3fb4062ffbd3040db5ef967e3e126fd3` and **passed Q02**. Q03 then physically passed on the same `4ac992...` runtime/database without reset. Q04 on `4ac992...` physically demonstrated safe cancellation with zero row delta and no pending source, but the legacy `Camera.getPhoto()` cancellation was misclassified as `SOURCE_UNAVAILABLE`; that attempt remains historical **BLOCKED** evidence. The narrow classification correction on exact SHA `44a231a8281d1031a40e7105160c919633d32531` was then physically retested and **Q04 passed** with `USER_CANCELLED`, rows `0 → 0`, and no pending source.
 
-Further physical qualification on the current later-phase APK `44a231a8281d1031a40e7105160c919633d32531` established current PASS results for Q06, strict Q08, Q09, Q10, Q11, Q12 as `REAL_DEVICE_WRITE_FAILURE` only, and strict Q13. The latest normal-Q01 retest on the same qualification APK again did not produce a Q01 PASS because the app process died within a broad Android process-death wave while external Camera was foreground; the root cause remains `UNKNOWN / UNESTABLISHED`. On 2026-09-12 the Project Owner adopted Q01=`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`, Q05=`NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`, and literal `REAL_DEVICE_ENOSPC`=`DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`. These dispositions do not close Gate 6C-D. Host tests, GitHub Actions, or emulator runs cannot erase or supersede physical evidence by themselves.
+Further physical qualification on the current later-phase APK `44a231a8281d1031a40e7105160c919633d32531` established current PASS results for Q06, strict Q08, Q09, Q10, Q11, Q12 as `REAL_DEVICE_WRITE_FAILURE` only, and strict Q13. The latest normal-Q01 retest on the same qualification APK again did not produce a Q01 PASS because the app process died within a broad Android process-death wave while external Camera was foreground; the root cause remains `UNKNOWN / UNESTABLISHED`. On 2026-09-12 the Project Owner adopted Q01=`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`, Q05=`NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`, and literal `REAL_DEVICE_ENOSPC`=`DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`. The Project Owner subsequently authorized Gate 6C-D closure with Q01 retained as `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`. Host tests, GitHub Actions, or emulator runs cannot erase or supersede physical evidence by themselves.
 
 The APK must visibly show:
 
@@ -112,7 +112,7 @@ Reset only when the scenario calls for a clean database. Do not reset between th
 
 | ID | Purpose | Physical action | Required result / current disposition |
 |---|---|---|---|
-| `G6CD-Q01-CAMERA-COMMIT` | Real Camera commit | Take a real disposable test photo | **`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**; no Q01 PASS; root cause `UNKNOWN / UNESTABLISHED`; not a proven product defect or impossibility |
+| `G6CD-Q01-CAMERA-COMMIT` | Real Camera commit | Take a real disposable test photo | **`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**; no Q01 PASS; root cause `UNKNOWN / UNESTABLISHED`; accepted for closure only under explicit documented non-blocking residual-risk owner waiver |
 | `G6CD-Q02-GALLERY-COMMIT` | Gallery/media commit | Select exactly one disposable image/video through the correction picker | **PHYSICAL PASS on `4ac992...`; no longer a blocker** |
 | `G6CD-Q03-GENERIC-FILE-COMMIT` | SAF generic file | Select one disposable file through ACTION_OPEN_DOCUMENT | **PHYSICAL PASS on `4ac992...` after Q02 without DB reset** |
 | `G6CD-Q04-CANCEL` | Real cancellation | Start Camera then cancel | **PHYSICAL PASS on `44a231...`; `USER_CANCELLED`; rows `0 → 0`; no pending source** |
@@ -228,7 +228,11 @@ Project Owner disposition dated 2026-09-12:
 
 **`Q01 = NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**.
 
-This is not Q01 PASS, not a proven product-defect verdict, and not an impossibility claim. The latest process-death root cause remains `UNKNOWN / UNESTABLISHED`.
+Q01 is accepted for Gate 6C-D closure only as:
+
+**`DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`**.
+
+This waiver does not convert Q01 to PASS, does not establish product correctness for the uninterrupted normal-Camera-return path, and does not establish a product defect or impossibility. `physical_pass_claimed=false`; the latest process-death root cause remains `UNKNOWN / UNESTABLISHED`. Requalify the direct Q01 normal-Camera path if either (1) a suitable physical environment/device becomes available such that Q01 can execute without the current environmental blocking, or (2) Camera acquisition behavior/material implementation changes. Either trigger creates a future requalification obligation; it does not automatically reopen Gate 6C-D.
 
 ## 7. Q02 — Gallery/media commit
 
@@ -392,7 +396,7 @@ Verified external files include `Q04-physical-pass-44a231.png`, `Q04-logcat-44a2
 - `Q04-physical-pass-44a231.png` SHA-256: `41a9444dfb53162c5b1dc70843a7725a8685c93c81f5783f9bf0972860604d9a`;
 - `Q04-logcat-44a231.txt` SHA-256: `329d927b25ea425d2d684525bff98ef0a387083c4cb2e14de5527a1f6fd7a2ea`.
 
-Q04 is now **PHYSICAL PASS on `44a231...`** and no longer awaits physical retest. This does not alter the historical Q01/Q02/Q04 attempts or overall Gate 6C-D closure status.
+Q04 is now **PHYSICAL PASS on `44a231...`** and no longer awaits physical retest. This does not alter the historical Q01/Q02/Q04 attempts or the Q01 closure-waiver distinction.
 
 ## 10. Q05 — Permission-denial scenario identity and current Owner disposition
 
@@ -400,7 +404,7 @@ Scenario identity remains **`G6CD-Q05-PERMISSION-DENIED`** for historical/concep
 
 ### Historical protocol-review state
 
-The earlier qualification protocol required `adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA` and expected an application-level Camera permission prompt. The current production/qualification package manifest does **not** declare `android.permission.CAMERA`; therefore that revoke/prompt sequence was classified `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`. That historical protocol finding remains preserved.
+The earlier qualification protocol required `adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA` and expected an application-level Camera permission prompt. The current production/qualification package manifest does **not** declare `android.permission.CAMERA`; therefore that revoke/prompt sequence was classified `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY_EXERCISABLE UNDER CURRENT MANIFEST`. That historical protocol finding remains preserved.
 
 ### Project Owner disposition — 2026-09-12
 
@@ -754,7 +758,7 @@ Historical negative evidence remains historical and is not rewritten:
 
 Current physical qualification matrix:
 
-- Q01: **`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**; no Q01 PASS; no established product defect or impossibility; process-death-wave cause `UNKNOWN / UNESTABLISHED`.
+- Q01: **`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**; no Q01 PASS; `physical_pass_claimed=false`; no established product defect or impossibility; process-death-wave cause `UNKNOWN / UNESTABLISHED`; closure only under **`DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`**.
 - Q02: **PHYSICAL PASS**.
 - Q03: **PHYSICAL PASS**.
 - Q04: **PHYSICAL PASS**.
@@ -769,11 +773,15 @@ Current physical qualification matrix:
 - Q13: **STRICT PHYSICAL PASS**.
 - literal `REAL_DEVICE_ENOSPC`: **`DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`**, not ENOSPC PASS.
 
-Closure boundary:
+Project Owner closure decision dated 2026-09-12:
 
-- Gate 6C remains `IN_PROGRESS`;
-- Gate 6C-D remains `OPEN / IN_PROGRESS`, not accepted/closed by this reconciliation;
-- Gate 6D remains `NOT_STARTED`;
+- Gate 6C-D is **CLOSED** with authorization **`OWNER_AUTHORIZED_WITH_Q01_DOCUMENTED_NON_BLOCKING_RESIDUAL_RISK`** on closure-governing base `1fef46731835e2640de9b11b88078b63bde3d918`.
+- The Q01 waiver does not convert Q01 to PASS, does not establish correctness of the uninterrupted normal-Camera-return path, and does not erase future requalification. Requalify Q01 if a suitable non-blocked physical environment/device becomes available or if Camera acquisition behavior/material implementation changes; either trigger does not automatically reopen Gate 6C-D.
+- Q05 remains N/A, not PASS.
+- Literal ENOSPC remains a documented non-blocking residual gap; Q12 remains a real-device-write-failure PASS only.
+- Because Gate 6C-A, 6C-B, 6C-C and 6C-D are all closed, Gate 6C is **CLOSED**.
+- Gate 6D becomes **NEXT / NOT_STARTED**; `gate6d_started=false`; this closure does not start Gate 6D executable implementation.
 - `field_usable_v1=false`.
+- `physical_device_pass_claimed` remains false at Gate 6C-D level because Q01 did not physically pass; Gate closure and all-scenarios physical PASS are intentionally distinct concepts.
 
-No PR merge is implied by this document. Independent review must evaluate the documentation diff, current accepted evidence and Project Owner dispositions before any separate Gate 6C-D closure decision.
+No merge of this closure branch is implied by this document. The closure decision is owner-authorized; repository merge provenance remains `PENDING_MERGE` until a separate PR merge actually occurs.

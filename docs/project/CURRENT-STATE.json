@@ -40,6 +40,11 @@
     "gate6c_d_documentation_checkpoint_live_main_sha": "20d194959afa50ce705198ba993554c7f9cc210d",
     "gate6c_d_owner_disposition_base_sha": "74f695c995726f22a0f02e580a6157f5a8be3495",
     "gate6c_d_owner_disposition_date": "2026-09-12",
+    "gate6c_d_closure_governing_base_sha": "1fef46731835e2640de9b11b88078b63bde3d918",
+    "gate6c_d_closure_authorization_date": "2026-09-12",
+    "gate6c_d_closure_branch": "docs/gate6c-d-gate6c-closure-q01-waiver-v1",
+    "gate6c_d_q01_second_device_evidence_date": "2026-09-12",
+    "gate6c_d_q01_second_device_tested_sha": "44a231a8281d1031a40e7105160c919633d32531",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
   },
   "traceability": {
@@ -47,7 +52,7 @@
     "DERIVED": "Executable/technical consequence derived from an official requirement.",
     "PROJECT": "Explicit project-owner decision or requirement; must not be attributed to official sources."
   },
-  "closed_gates": ["1","2","3","4","4A","4B","4-Revision-6","5A","5B","5C","5D","5E","5F","5G","5H","5I","5J","5K","5L","6A","6B","6C-A","6C-B","6C-C"],
+  "closed_gates": ["1","2","3","4","4A","4B","4-Revision-6","5A","5B","5C","5D","5E","5F","5G","5H","5I","5J","5K","5L","6A","6B","6C-A","6C-B","6C-C","6C-D","6C"],
   "closed_gate_corrections": {
     "gate5b_lastinsertrowid_normalization_v1": {
       "status": "MERGED_RESOLVED",
@@ -270,11 +275,11 @@
   "gate_6c": {
     "id": "6C",
     "name": "Evidence Storage + Camera/File Pipeline",
-    "status": "IN_PROGRESS",
+    "status": "CLOSED",
     "current_substage": "6C-D",
     "current_substage_name": "Gate 6C-D",
-    "current_substage_status": "OPEN_IN_PROGRESS_OWNER_DISPOSITION_RECONCILED_NOT_CLOSED",
-    "mode": "PHYSICAL_QUALIFICATION_RECONCILIATION",
+    "current_substage_status": "CLOSED_WITH_SECOND_DEVICE_Q01_PHYSICAL_PASS",
+    "mode": "CLOSED_GOVERNANCE_WITH_ACCEPTED_PHYSICAL_EVIDENCE",
     "design_branch": "design/gate6c-evidence-contract-v1",
     "design_base_sha": "0fbd9ca3db6f2a34f063a682e4f997becefb83ad",
     "design_contract": "docs/architecture/GATE6C-EVIDENCE-STORAGE-CONTRACT-v1.md",
@@ -364,13 +369,21 @@
       "merged": true
     },
     "gate6c_d": {
-      "status": "IN_PROGRESS",
-      "phase": "OWNER_DISPOSITION_RECONCILED_PHYSICAL_QUALIFICATION_NOT_CLOSED",
+      "status": "CLOSED",
+      "phase": "CLOSED_WITH_SECOND_DEVICE_Q01_PHYSICAL_PASS_Q05_NA_LITERAL_ENOSPC_WAIVER",
       "qualification_branch": "qualification/gate6c-d-physical-evidence-v1",
       "correction_branch": "correction/gate6c-d-camera-process-death-v1",
       "gallery_correction_branch": "correction/gate6c-d-gallery-native-picker-v1",
       "governing_base_sha": "20d194959afa50ce705198ba993554c7f9cc210d",
       "initial_checkpoint_sha": "33a0297ce83f5e93bfabb8cd9bb2e055a73b7b82",
+      "closure_authorization": "OWNER_AUTHORIZED_GATE6C_D_CLOSURE",
+      "closure_authorization_date": "2026-09-12",
+      "closure_governing_base_sha": "1fef46731835e2640de9b11b88078b63bde3d918",
+      "closure_branch": "docs/gate6c-d-gate6c-closure-q01-waiver-v1",
+      "closure_merge_sha": "PENDING_MERGE",
+      "current_closure_basis": "ACCEPTED_PHYSICAL_EVIDENCE_WITH_Q01_SECOND_DEVICE_PHYSICAL_PASS_Q05_NOT_APPLICABLE_AND_LITERAL_ENOSPC_NON_BLOCKING_OWNER_WAIVER",
+      "historical_q01_waiver_closure_authorization": "OWNER_AUTHORIZED_WITH_Q01_DOCUMENTED_NON_BLOCKING_RESIDUAL_RISK",
+      "q01_waiver_current_closure_basis_status": "SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS",
       "historical_failure": {
         "tested_sha": "d4f7f9f34a48202aea0639ab77b10b7f9262bd57",
         "verdict": "FAIL — Q01 CAMERA PROCESS-DEATH RECOVERY",
@@ -548,19 +561,58 @@
         "artifact_zip_sha256": "0d2dd011583c9bb188fe807477bca1137dfb453fd0928c5ea17b09c46205b50b",
         "apk_sha256": "d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2",
         "local_zip_and_apk_hashes_verified_before_install": true,
-        "external_evidence_folder": "https://drive.google.com/drive/folders/1nrBWWWwLHHjYO87CyGeYrvbzttMBZdv9?usp=drive_link",
-        "q01_camera_commit": {
-          "status": "NO_PASS_BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT",
+        "external_evidence_folder_first_device": "https://drive.google.com/drive/folders/1nrBWWWwLHHjYO87CyGeYrvbzttMBZdv9?usp=drive_link",
+        "q01_camera_commit_first_device_historical": {
+          "status": "NO_PASS / BLOCKED_ON_FIRST_PHYSICAL_ENVIRONMENT",
           "physical_pass_claimed": false,
           "product_defect_established": false,
           "impossibility_claimed": false,
           "root_cause": "UNKNOWN / UNESTABLISHED",
+          "historical": true,
+          "historical_closure_waiver": {
+            "status": "DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE",
+            "owner_authorized": true,
+            "authorization_date": "2026-09-12",
+            "converts_q01_to_pass": false,
+            "current_closure_basis_status": "SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS"
+          },
           "precondition": {"synthetic_visit_owner_valid": true, "evidence_readiness": "READY", "committed_evidence_rows": 0, "fresh_synthetic_database": true},
           "post_recreation": {"synthetic_visit_owner": "not reconstructed", "evidence_readiness": "NOT_OPEN", "volatile_source": "none", "restored_camera_source": "getPhoto / CAMERA_PHOTO", "canonical_q01_pass_result_produced": false, "new_evidence_row_created": false},
           "process_evidence": {"launching_app_pid": 18964, "broad_android_process_death_wave_observed": true, "app_pid_died_in_wave": true, "recreated_app_pid": 21912, "system_server_survived": true, "full_device_reboot_proven": false},
           "oom_lmk_evidence": {"direct_oom_lmk_evidence": false, "later_meminfo_total_ram_k": 2854240, "later_meminfo_status": "normal", "later_meminfo_free_ram_k": 481322, "later_meminfo_zram_physical_k": 165648, "later_meminfo_swap_k": 787104, "later_meminfo_app_pss_k_approx": 167050, "later_snapshot_proves_event_time_memory_state": false, "dmesg": "dmesg: klogctl: Permission denied", "dropbox_lowmem_search": "No entries found."},
           "external_diagnostic_files": ["Q01-retest-01-restored-state.png","Q01-retest-02-restored-state.png","Q01-retest-03-restored-state.png","Q01-retest-logcat-full.txt","Q01-retest-meminfo-after-event.txt","Q01-retest-dmesg-after-event.txt","Q01-retest-dropbox-lowmem.txt"],
           "raw_diagnostics_committed_to_github": false
+        },
+        "q01_camera_commit": {
+          "classification": "PHYSICAL_PASS_ON_SECOND_PHYSICAL_DEVICE",
+          "scenario_id": "G6CD-Q01-CAMERA-COMMIT",
+          "status": "PASS",
+          "physical_pass_claimed": true,
+          "tested_sha": "44a231a8281d1031a40e7105160c919633d32531",
+          "apk_sha256_expected": "d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2",
+          "installed_apk_sha256": "d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2",
+          "installed_apk_sha256_match": true,
+          "device": {"manufacturer": "Samsung", "model": "SM-M356B", "android": 16, "api": 36, "sensitive_identifiers_recorded": false},
+          "source_kind": "CAMERA_PHOTO",
+          "evidence_id": 1,
+          "sqlite_row_count": 1,
+          "acquisition_outcome": "SUCCESS",
+          "canonical_content_hash": true,
+          "canonical_storage_ref": true,
+          "content_hash": "sha256:84f5a589b1b640dac6c057681c522b8c0e5725104b23c9a997f6284fe53b2ee2",
+          "file_size": 6801739,
+          "hash_verification_result": "MATCH",
+          "resolve_result": {"status": "RESOLVED", "handle_scheme": "content"},
+          "storage_ref": "evidence/v1/objects/ce1b97c3-1a12-4d9b-9f65-df6ae123dfb4.jpg",
+          "timestamp": "2026-09-12T10:40:38.761Z",
+          "runtime": {"android": true, "native": true, "platform": "android"},
+          "owner": {"kind": "VISIT", "ref": 1},
+          "readiness": "READY",
+          "pid_continuity": {"before_camera": 26910, "after_initialize_reset": 26910, "while_external_camera_foreground": 26910, "after_photo_accept_and_return": 26910, "no_process_death_observed": true, "supplementary_not_mandatory_protocol_criterion": true},
+          "historical_orphan_cleanup_observed": {"kind": "ORPHAN_REMOVED", "storage_ref": "evidence/v1/objects/6d9832cf-7217-43c7-b1a0-83427703f036.jpg", "belongs_to_earlier_execution": true, "is_new_q01_evidence_object": false, "is_q01_failure": false},
+          "external_evidence_folder": "https://drive.google.com/drive/folders/1kWO4PXJutYyry_zl6u25abscK0iW2lPU?usp=drive_link",
+          "reviewed_evidence_record": "https://docs.google.com/document/d/1M91Csm83t-q6B2Xy254jvIWBh5qQlCYoJcHj-FXaZx8/edit",
+          "raw_sensitive_evidence_committed_to_github": false
         },
         "q04_cancel": {
           "verdict": "ACCEPT — Q04 REAL CAMERA CANCELLATION PHYSICAL RETEST PASSED",
@@ -606,7 +658,7 @@
         "q13_strict_durability_retrieval": {"status": "STRICT_PHYSICAL_PASS", "independent_explicit_force_stop_relaunch": true, "metadata_survived": true, "same_storage_ref": "evidence/v1/objects/605c1422-83d6-4ecd-8d0d-df911542ef2d.bin", "same_content_hash": "sha256:80a3721188e40218b08b26776bc53bdae81e4784fff71d71450a197319cba113", "same_file_size": 41943040, "reconciliation": "VALID_REFERENCE", "hash_verification_result": "MATCH", "resolve_status": "RESOLVED"}
       },
       "current_q_matrix": {
-        "Q01": "NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT",
+        "Q01": "PHYSICAL_PASS_SECOND_PHYSICAL_DEVICE",
         "Q02": "PHYSICAL_PASS",
         "Q03": "PHYSICAL_PASS",
         "Q04": "PHYSICAL_PASS",
@@ -622,9 +674,26 @@
       },
       "owner_disposition_2026_09_12": {
         "classification": "PROJECT_OWNER_DECISION",
-        "q01": {"status": "NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT", "root_cause": "UNKNOWN / UNESTABLISHED", "product_defect_established": false, "impossible_claimed": false},
-        "q05": {"status": "NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST", "camera_permission_declared": false, "physical_pass_claimed": false, "synthetic_or_mock_denial_allowed": false, "add_camera_permission_to_make_test_executable": false},
-        "literal_real_device_enospc": {"status": "DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER", "q12_real_device_write_failure_pass": true, "enospc_proven": false, "literal_enospc_pass_claimed": false, "fill_owner_device_storage_to_force_enospc": false},
+        "q01": {
+          "status": "NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT",
+          "root_cause": "UNKNOWN / UNESTABLISHED",
+          "product_defect_established": false,
+          "impossible_claimed": false
+        },
+        "q05": {
+          "status": "NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST",
+          "camera_permission_declared": false,
+          "physical_pass_claimed": false,
+          "synthetic_or_mock_denial_allowed": false,
+          "add_camera_permission_to_make_test_executable": false
+        },
+        "literal_real_device_enospc": {
+          "status": "DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER",
+          "q12_real_device_write_failure_pass": true,
+          "enospc_proven": false,
+          "literal_enospc_pass_claimed": false,
+          "fill_owner_device_storage_to_force_enospc": false
+        },
         "gate6c_d_closed_by_this_decision": false,
         "gate6c_closed_by_this_decision": false
       },
@@ -647,37 +716,44 @@
         "q04_44a231_external_camera_process_death_not_qualification_app": true,
         "q04_44a231_exact_capacitor_cancel_text_preserved_in_logcat": false,
         "historical_coloros_log_sequence": ["isUsbActive=false","try set disable adb","Setting USB config to midi","ADB disconnected / log ended"],
-        "latest_q01_usb_adb_sequence": ["UsbDeviceManager: try set disable adb","Setting USB config to midi","Setting USB config to mtp,adb"],
-        "latest_q01_usb_adb_interpretation": "ADB_DISABLED_THEN_REENABLED; TEMPORALLY_CONSISTENT_WITH_OWNER_PC_DISCONNECT_RECONNECT; NO_CAUSAL_LINK_TO_Q01_OR_CAMERA_ESTABLISHED",
+        "latest_q01_usb_adb_sequence_first_device": ["UsbDeviceManager: try set disable adb","Setting USB config to midi","Setting USB config to mtp,adb"],
+        "first_device_q01_usb_adb_interpretation": "ADB_DISABLED_THEN_REENABLED; TEMPORALLY_CONSISTENT_WITH_OWNER_PC_DISCONNECT_RECONNECT; NO_CAUSAL_LINK_TO_Q01_OR_CAMERA_ESTABLISHED",
         "usb_adb_cause": "UNKNOWN / UNESTABLISHED",
-        "not_conclusively_attributed_to": ["application","Camera plugin","cable","USB hardware","low memory","OOM/LMK","ColorOS policy"]
+        "not_conclusively_attributed_to": ["application","Camera plugin","cable","USB hardware","low memory","OOM/LMK","ColorOS policy"],
+        "second_device_q01_no_process_death_observed": true
       },
-      "physical_device_evidence_status": "Q01_NO_PASS_BLOCKED_CURRENT_ENV_Q02_Q03_Q04_Q06_Q07_Q08_Q09_Q10_Q11_Q12_Q13_PASS_Q05_NOT_APPLICABLE_CURRENT_MANIFEST_LITERAL_ENOSPC_RESIDUAL_GAP_OWNER_WAIVER_GATE_NOT_CLOSED",
+      "physical_device_evidence_status": "GATE6C_D_CLOSED_Q01_SECOND_DEVICE_PHYSICAL_PASS_Q02_Q03_Q04_Q06_Q07_Q08_Q09_Q10_Q11_Q12_Q13_PASS_Q05_NOT_APPLICABLE_LITERAL_ENOSPC_RESIDUAL_GAP_OWNER_WAIVER",
       "physical_device_pass_claimed": false,
+      "physical_device_pass_claimed_false_reason": "Q05_IS_NOT_APPLICABLE_NOT_PASS_AND_LITERAL_REAL_DEVICE_ENOSPC_IS_NOT_PROVEN; Q01_NOW_HAS_PHYSICAL_PASS",
       "pending_scenarios": [],
-      "closure_review_pending": true,
+      "closure_review_pending": false,
       "literal_enospc_gap": true,
       "literal_enospc_disposition": "DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER",
-      "gate_closure_status": "NOT_CLOSED",
+      "gate_closure_status": "CLOSED",
       "gate6d_started": false,
       "field_usable_v1": false,
-      "closed": false
-    }
+      "closed": true
+    },
+    "closure_status": "CLOSED",
+    "closure_authorization": "OWNER_AUTHORIZED_GATE6C_CLOSURE",
+    "closure_authorization_date": "2026-09-12",
+    "closure_governing_base_sha": "1fef46731835e2640de9b11b88078b63bde3d918",
+    "all_substages_closed": true,
+    "closed": true
   },
   "next_gate": {
-    "id": "6C",
-    "name": "Evidence Storage + Camera/File Pipeline",
-    "status": "IN_PROGRESS",
-    "role": "CURRENT",
-    "current_substage": "6C-D",
-    "current_substage_status": "OPEN_IN_PROGRESS_OWNER_DISPOSITION_RECONCILED_NOT_CLOSED"
+    "id": "6D",
+    "name": "Arabic RTL Field UI + End-to-End Visit Workflow",
+    "status": "NOT_STARTED",
+    "role": "NEXT",
+    "implementation_started": false
   },
-  "gate_6c_status": "IN_PROGRESS_6C_A_CLOSED_MERGED_6C_B_CLOSED_MERGED_6C_C_CLOSED_MERGED_6C_D_OPEN_OWNER_DISPOSITION_RECONCILED_NOT_CLOSED",
+  "gate_6c_status": "CLOSED_6C_A_6C_B_6C_C_6C_D_ALL_CLOSED_Q01_SECOND_DEVICE_PHYSICAL_PASS_Q05_NA_LITERAL_ENOSPC_WAIVED",
   "roadmap": [
     "6A Product Runtime Architecture & Delivery Roadmap — CLOSED",
     "6B Android Shell + Native SQLite Adapter / Device Runtime Proof — CLOSED",
-    "6C Evidence Storage + Camera/File Pipeline — IN_PROGRESS / 6C-A CLOSED / MERGED / 6C-B CLOSED / MERGED / 6C-C CLOSED / MERGED / 6C-D OPEN / IN PROGRESS / OWNER DISPOSITION RECONCILED / NOT CLOSED",
-    "6D Arabic RTL Field UI + End-to-End Visit Workflow — LATER / NOT_STARTED",
+    "6C Evidence Storage + Camera/File Pipeline — CLOSED / 6C-A CLOSED / 6C-B CLOSED / 6C-C CLOSED / 6C-D CLOSED",
+    "6D Arabic RTL Field UI + End-to-End Visit Workflow — NEXT / NOT_STARTED",
     "6E ExternalSystemTracking application capability — LATER",
     "6F Deterministic Report Model / Snapshot Generation — LATER",
     "6G DOCX + PDF + Artifact Save/Share — LATER",
@@ -748,6 +824,20 @@
         "app_debug_apk_sha256": "da98c8437619a9e93d0d28df5bb1e2b20bf0d2f20120600e0bbbff10a40e9112",
         "github_artifact_zip_sha256": "2718aa9309b69fad63c8054ef6d941f13c63821991382b83513d72aa1af6dded"
       }
+    },
+    "gate6c_d": {
+      "classification": "CLOSED_WITH_SECOND_DEVICE_Q01_PHYSICAL_PASS_Q05_NA_LITERAL_ENOSPC_WAIVER",
+      "closure_authorization_date": "2026-09-12",
+      "closure_governing_base_sha": "1fef46731835e2640de9b11b88078b63bde3d918",
+      "physical_device_pass_claimed": false,
+      "physical_device_pass_claimed_false_reason": "Q05_IS_NOT_APPLICABLE_NOT_PASS_AND_LITERAL_REAL_DEVICE_ENOSPC_IS_NOT_PROVEN",
+      "q01_status": "PHYSICAL_PASS_SECOND_PHYSICAL_DEVICE",
+      "q01_tested_sha": "44a231a8281d1031a40e7105160c919633d32531",
+      "q01_installed_apk_sha256": "d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2",
+      "q01_historical_waiver_status": "SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS",
+      "q05_status": "NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST",
+      "literal_enospc_status": "DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER",
+      "merge_sha": "PENDING_MERGE"
     }
   },
   "canonical_hashes": {

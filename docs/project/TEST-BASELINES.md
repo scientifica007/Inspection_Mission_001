@@ -4,7 +4,7 @@
 
 ## 1) Adopted baselines
 
-Gate 6B وGate 6C-B وGate 6C-C أُغلقت/دُمجت في نطاقاتها المعتمدة. الـrepeatable host suites التالية أصبحت جزءًا من baselines التاريخية المعتمدة:
+Gate 6B وGate 6C-B وGate 6C-C أُغلقت/دُمجت في نطاقاتها المعتمدة. Gate 6C-D وGate 6C أُغلقتا لاحقًا بقرار Project Owner توثيقي/حوكمي؛ هذا لا يحوّل physical qualification outcomes إلى repeatable host baselines. الـrepeatable host suites التالية أصبحت جزءًا من baselines التاريخية المعتمدة:
 
 | Suite | Passed | Failed |
 |---|---:|---:|
@@ -179,7 +179,7 @@ Gate 6C-B provenance:
 
 ## 10) Gate 6C-C adopted closure evidence
 
-Gate 6C is **`IN_PROGRESS`**. Gate 6C-A, Gate 6C-B and Gate 6C-C are **`CLOSED / MERGED`**. Gate 6C-D is **`OPEN / IN_PROGRESS`** and remains unclosed pending separate reviewer/owner closure disposition.
+Gate 6C is **`CLOSED`**. Gate 6C-A, Gate 6C-B, Gate 6C-C and Gate 6C-D are **`CLOSED`** in their recorded scopes. Gate 6D is **`NEXT / NOT_STARTED`**.
 
 Gate 6C-C provenance:
 
@@ -226,7 +226,7 @@ Q12: `PHYSICAL_PASS_REVIEW_ACCEPTED`.
 
 `@capacitor-community/sqlite@8.1.1`: `ADOPTED_BY_CLOSED_GATE6B`.
 
-Gate 6C: **`IN_PROGRESS`**.
+Gate 6C: **`CLOSED`**.
 
 Gate 6C-A: **`CLOSED / MERGED`**.
 
@@ -234,17 +234,17 @@ Gate 6C-B: **`CLOSED / MERGED`** عبر PR #21 / merge `7418df4fc03b9b6017cbeb58
 
 Gate 6C-C: **`CLOSED / MERGED`** عبر PR #23 / merge `f221b215358f83dce381ac5261a856a7de4e5c98`.
 
-Gate 6C-D: **`OPEN / IN_PROGRESS`**. Current physical qualification disposition is recorded in `CURRENT-STATE` and `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`; this document does not convert physical qualification evidence into ordinary host baselines.
+Gate 6C-D: **`CLOSED`** by Project Owner decision dated 2026-09-12. Closure is `OWNER_AUTHORIZED_WITH_Q01_DOCUMENTED_NON_BLOCKING_RESIDUAL_RISK`; it is not an all-scenarios physical-PASS claim.
 
-Gate 6D: **`NOT_STARTED`**.
+Gate 6D: **`NEXT / NOT_STARTED`**; `gate6d_started=false`.
 
 `field_usable_v1=false`.
 
-## 12) Gate 6C-D current physical qualification evidence — not host baselines
+## 12) Gate 6C-D physical qualification evidence — not host baselines
 
 These are physical qualification outcomes, not repeatable host regression baseline counts. Historical FAIL/BLOCKED attempts remain historical.
 
-- Q01: `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`; no Q01 PASS and no established product defect; current physical-event root cause remains `UNKNOWN / UNESTABLISHED`.
+- Q01: `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`; `physical_pass_claimed=false`; no established product defect or impossibility; current physical-event root cause remains `UNKNOWN / UNESTABLISHED`. Project Owner accepts it as `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`. The waiver does not establish correctness of the uninterrupted normal-Camera-return path and does not convert Q01 to PASS. Requalify Q01 if a suitable non-blocked physical environment/device becomes available or if Camera acquisition behavior/material implementation changes; that trigger does not automatically reopen Gate 6C-D.
 - Q02: PHYSICAL PASS.
 - Q03: PHYSICAL PASS.
 - Q04: PHYSICAL PASS.
@@ -259,4 +259,4 @@ These are physical qualification outcomes, not repeatable host regression baseli
 - Q13: STRICT PHYSICAL PASS after an independent explicit force-stop/relaunch.
 - Literal `REAL_DEVICE_ENOSPC`: `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`; it is not an ENOSPC PASS.
 
-Gate 6C-D remains `OPEN / IN_PROGRESS`; Gate 6C remains `IN_PROGRESS`; Gate 6D remains `NOT_STARTED`; `field_usable_v1=false`.
+Gate 6C-D is `CLOSED` by owner-authorized closure disposition; Gate 6C is `CLOSED`; Gate 6D is `NEXT / NOT_STARTED`; `field_usable_v1=false`.

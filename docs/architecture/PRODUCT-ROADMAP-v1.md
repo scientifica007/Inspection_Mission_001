@@ -1,6 +1,6 @@
 # Product Delivery Roadmap — v1
 
-> **Status:** Gate 6A roadmap baseline — OWNER APPROVED; post-merge current-state annotations reconciled after Gate 6B closure
+> **Status:** Gate 6A roadmap baseline — OWNER APPROVED; current-state annotations reconciled through the 2026-09-12 Gate 6C-D owner disposition
 > **Authoritative Gate-6A base:** GitHub `main` at `bde4359eac5cdb8c9873164fe992bd03b9871a71`
 > **Traceability:** PROJECT architecture/delivery decision. It does not replace or reinterpret DIRECT/DERIVED requirements.
 
@@ -29,8 +29,11 @@ The project has completed and merged:
 - Gate 5L — currentVisitState / restart reconstruction
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap
 - Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof — merged via PR #17 at `0905c6111269d62480e7ccadc31786bef29f3c51`
+- Gate 6C-A — Evidence Storage Contract — CLOSED / MERGED
+- Gate 6C-B — Runtime-neutral Evidence orchestration — CLOSED / MERGED
+- Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters — CLOSED / MERGED
 
-Application Core therefore includes T0→T11, OBS-1 and durable restart reconstruction from SQLite. Gate 6B has physically qualified the Android/native SQLite boundary and is CLOSED.
+Application Core therefore includes T0→T11, OBS-1 and durable restart reconstruction from SQLite. Gate 6B has physically qualified the Android/native SQLite boundary and is CLOSED. Gate 6C as a whole remains `IN_PROGRESS`; Gate 6C-D is `OPEN / IN_PROGRESS` and is not closed by these current-state annotations.
 
 ## 2. Product objective
 
@@ -55,11 +58,13 @@ Application Core
 
 6A  Product Runtime Architecture & Delivery Roadmap        CLOSED
         ↓
-6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   CLOSED
+6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   CLOSED / MERGED
         ↓
-6C  Evidence Storage + Camera/File Pipeline                NEXT / NOT_STARTED
+6C  Evidence Storage + Camera/File Pipeline                IN_PROGRESS
+    6C-A / 6C-B / 6C-C                                   CLOSED / MERGED
+    6C-D Physical Evidence Qualification                  OPEN / IN_PROGRESS
         ↓
-6D  Arabic RTL Field UI + End-to-End Visit Workflow        LATER
+6D  Arabic RTL Field UI + End-to-End Visit Workflow        LATER / NOT_STARTED
         ↓
 6E  ExternalSystemTracking application capability          LATER
         ↓
@@ -155,7 +160,7 @@ Physical Adapter Qualification on `87135cfe80ae3de79a34e941828249fc6889139c` pas
 
 # Gate 6C — Evidence Storage + Camera/File Pipeline
 
-**Status:** NEXT / NOT_STARTED
+**Status:** IN_PROGRESS — Gate 6C-A / 6C-B / 6C-C CLOSED / MERGED; Gate 6C-D OPEN / IN_PROGRESS
 
 **Purpose:** implement P0 phone photo/file evidence safely across SQLite + filesystem.
 
@@ -188,13 +193,13 @@ capture/import
 
 Do not pretend SQLite and filesystem form one atomic transaction.
 
-No Gate 6C implementation is introduced by this post-merge Gate 6B closure reconciliation.
+Current Gate 6C-D qualification status is governed by `docs/project/CURRENT-STATE.json`, `docs/project/CURRENT-STATE.md`, and `docs/architecture/GATE6C-D-PHYSICAL-EVIDENCE-QUALIFICATION-v1.md`. The 2026-09-12 Project Owner disposition records Q01 as `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`, Q05 as `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`, and literal `REAL_DEVICE_ENOSPC` as `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`; these dispositions do not close Gate 6C-D.
 
 ---
 
 # Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
-**Status:** LATER
+**Status:** LATER / NOT_STARTED
 
 **Purpose:** deliver the first complete inspector-facing vertical slice.
 
@@ -344,8 +349,4 @@ A later Gate must not reopen a closed Gate merely for elegance. Reopening is jus
 
 ## 6. Next action
 
-After Gate 6B merged and closed, the next executable design/implementation Gate in the adopted sequence is:
-
-> **Gate 6C — Evidence Storage + Camera/File Pipeline — NEXT / NOT_STARTED**
-
-This post-merge reconciliation does not start Gate 6C. A separate scoped authorization is required before implementation.
+The current roadmap action is to keep Gate 6C-D **OPEN / IN_PROGRESS** while its accepted physical evidence and Project Owner dispositions are reviewed for a separate closure decision. Do not start Gate 6D merely from this reconciliation; Gate 6D remains `NOT_STARTED` until Gate 6C closure is separately authorized.

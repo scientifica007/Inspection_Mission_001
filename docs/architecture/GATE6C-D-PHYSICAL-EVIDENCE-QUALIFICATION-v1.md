@@ -471,7 +471,7 @@ Scenario identity remains **`G6CD-Q05-PERMISSION-DENIED`** for historical/concep
 
 ### Historical protocol-review state
 
-The earlier qualification protocol required `adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA` and expected an application-level Camera permission prompt. The current production/qualification package manifest does **not** declare `android.permission.CAMERA`; therefore that revoke/prompt sequence was classified `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY_EXERCISABLE UNDER CURRENT MANIFEST`. That historical protocol finding remains preserved.
+The earlier qualification protocol required `adb shell pm revoke com.scientifica.inspection.gate6bproof android.permission.CAMERA` and expected an application-level Camera permission prompt. The current production/qualification package manifest does **not** declare `android.permission.CAMERA`; therefore that revoke/prompt sequence was classified `PROTOCOL_REVIEW_REQUIRED / NOT YET PHYSICALLY EXERCISABLE UNDER CURRENT MANIFEST`. That historical protocol finding remains preserved.
 
 ### Project Owner disposition — 2026-09-12
 

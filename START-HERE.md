@@ -1,6 +1,6 @@
 # START HERE — Inspection_Mission_001
 
-هذا الملف هو **نقطة الدخول الإلزامية** لأي إنسان أو ذكاء اصطناعي يستلم المشروع من الصفر.
+هذا الملف هو **نقطة الدخول الإلزامية** لأي إنسان أو ذكاءً اصطناعيًا يستلم المشروع من الصفر.
 
 ## 1) السلطة الحاكمة
 
@@ -68,7 +68,9 @@
 - Gate 6C-A — Evidence Storage Contract: **CLOSED / MERGED**.
 - Gate 6C-B — Runtime-neutral Evidence orchestration: **CLOSED / MERGED** عبر PR #21؛ adopted host baseline **85 / 0**.
 - Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters: **CLOSED / MERGED** عبر PR #23؛ final reviewed head `9de6c69eef90c490319c02eac48d236482597210`؛ exact-final-SHA qualification run `34531511138` — SUCCESS.
-- Gate 6C-D — Physical Android Evidence Qualification: **CLOSED by Project Owner decision dated 2026-09-12**. Q01 remains `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT` with `physical_pass_claimed=false` under an explicit non-blocking residual-risk owner waiver; closure does not convert Q01 to PASS.
+- Gate 6C-D — Physical Android Evidence Qualification: **CLOSED**. Current Q01 is **PHYSICAL PASS on a second real Android device** using the same qualification APK (`testedGitSha=44a231a8281d1031a40e7105160c919633d32531`) with independently matched installed APK SHA-256 `d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2`.
+- Earlier first-device Q01 failures/blocked attempts remain historical with root cause `UNKNOWN / UNESTABLISHED` where recorded; they are not rewritten as PASS.
+- The former Q01 closure waiver remains engineering history but is `SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS`.
 - Gate 6C ككل: **CLOSED**؛ جميع substages 6C-A→6C-D أصبحت مغلقة.
 - Q05 يبقى `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST` وليس physical PASS.
 - Q12 يبقى PHYSICAL PASS لـ`REAL_DEVICE_WRITE_FAILURE` فقط مع `enospcProven=false`; literal `REAL_DEVICE_ENOSPC` يبقى `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER` وليس ENOSPC PASS.
@@ -117,4 +119,4 @@ Fresh Read main
 → scoped work only
 ```
 
-الحالة الحالية هي **Gate 6D — NEXT / NOT_STARTED**. Gate 6C-D وGate 6C مغلقتان بقرار Project Owner المؤرخ 2026-09-12، مع بقاء Q01 `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT` تحت documented non-blocking residual-risk owner waiver لا يحوله إلى PASS. لا يبدأ Gate 6D إلا بتفويض تنفيذ منفصل؛ `gate6d_started=false` و`field_usable_v1=false`.
+الحالة الحالية هي **Gate 6D — NEXT / NOT_STARTED**. Gate 6C-D وGate 6C مغلقتان. Q01 الحالي **PHYSICAL PASS على جهاز Android فيزيائي ثانٍ باستخدام نفس APK المؤهلة**؛ أدلة الجهاز الأول السلبية تبقى تاريخية، وQ01 owner waiver السابق يبقى تاريخيًا لكنه superseded كأساس الإغلاق الحالي. لا يبدأ Gate 6D إلا بتفويض تنفيذ منفصل؛ `gate6d_started=false` و`field_usable_v1=false`.

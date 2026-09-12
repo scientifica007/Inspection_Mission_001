@@ -2,7 +2,7 @@
 
 Status: **CLOSED — Q01 PHYSICAL PASS ON SECOND PHYSICAL DEVICE; Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 PHYSICAL PASS WITH Q08/Q13 STRICT AND Q12 LIMITED TO REAL_DEVICE_WRITE_FAILURE; Q05 NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST; LITERAL ENOSPC RESIDUAL GAP / NON-BLOCKING OWNER WAIVER; FORMER Q01 WAIVER SUPERSEDED AS CURRENT CLOSURE BASIS; NOT AN ALL-LITERAL-SCENARIOS PHYSICAL-PASS CLAIM**
 
-This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. Gate 6C-D is **CLOSED** on closure-governing base `1fef46731835e2640de9b11b88078b63bde3d918`. Subsequent reviewed physical evidence now establishes a valid normal Q01 Camera Commit **PHYSICAL PASS on a second real Android device using the exact same qualification APK**. The earlier Q01 owner-waiver decision remains durable engineering history but is `SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS`. This reconciliation does not begin Gate 6D executable implementation.
+This document governs the Project Owner's physical Android Evidence qualification for Gate 6C-D. Gate 6C-D is **CLOSED** on closure-governing base `1fef46731835e2640de9b11b88078b63bde3d918`. Subsequent reviewed physical evidence now establishes a valid normal Q01 Camera Commit **PHYSICAL PASS on a second real Android device using the exact same qualification APK**. The earlier Q01 owner-waiver decision remains durable engineering history but is `SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS`. Closure documentation was merged through PR `#29` at merge SHA `f3839e65bd4258b1d673c71f4ec9cd2bcbfdec61`. This reconciliation does not begin Gate 6D executable implementation.
 
 The first physical Camera candidate is historical failure evidence and remains so even after the later Q01 PASS:
 
@@ -853,4 +853,4 @@ Current closure interpretation:
 - Gate 6D remains **NEXT / NOT_STARTED**; `gate6d_started=false`; this reconciliation does not start Gate 6D executable implementation.
 - `field_usable_v1=false`.
 
-No merge of this closure branch is implied by this document. Repository merge provenance remains `PENDING_MERGE` until a separate PR merge actually occurs.
+Closure documentation is merged through PR `#29` at merge SHA `f3839e65bd4258b1d673c71f4ec9cd2bcbfdec61`. Repository merge provenance is now recorded; no further `PENDING_MERGE` claim applies to this closure.

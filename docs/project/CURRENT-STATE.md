@@ -45,11 +45,14 @@
 - Latest physically tested qualification SHA for the current Q01/Q04/Q06/Q08→Q13 phase: `44a231a8281d1031a40e7105160c919633d32531`.
 - Latest physically tested correction artifact: `10280027500` / `gate6c-d-gallery-correction-apk-44a231a8281d1031a40e7105160c919633d32531`.
 - Current external physical-evidence folder: `https://drive.google.com/drive/folders/1nrBWWWwLHHjYO87CyGeYrvbzttMBZdv9?usp=drive_link`.
+- Gate 6C-D / Gate 6C closure governing base: `1fef46731835e2640de9b11b88078b63bde3d918`.
+- Gate 6C-D / Gate 6C closure authorization date: `2026-09-12`.
+- Closure branch: `docs/gate6c-d-gate6c-closure-q01-waiver-v1`; merge SHA is not known before merge and is not invented.
 - لا تعتبر أي SHA مضمن هنا HEAD الحالي تلقائيًا؛ Fresh Read إلزامي.
 
 ## 2) حالة Gates
 
-Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B وGate 6C-C مغلقة/مدمجة كـsub-stages، بينما Gate 6C ككل ما تزال `IN_PROGRESS`. Gate 6C-D هي **OPEN / IN_PROGRESS**؛ نتائجها الفيزيائية الحالية وقرارات Project Owner موثقة أدناه، لكن قرار الإغلاق محفوظ لمراجعة/قرار مستقل لاحق. Gate 6D ما تزال `NOT_STARTED` و`field_usable_v1=false`.
+Gates 1→5L و6A و6B مغلقة/معتمدة/مدمجة كما هو موثق في history. Gate 6C-A وGate 6C-B وGate 6C-C مغلقة/مدمجة كـsub-stages، وGate 6C-D أصبحت **CLOSED** بقرار Project Owner المؤرخ `2026-09-12` مع Q01 documented non-blocking residual-risk waiver. لذلك Gate 6C ككل أصبحت **CLOSED**. Gate 6D هي **NEXT / NOT_STARTED**؛ `gate6d_started=false` و`field_usable_v1=false`.
 
 ### Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof
 
@@ -67,7 +70,9 @@ SQLite candidate: `@capacitor-community/sqlite@8.1.1`.
 
 ### Gate 6C — Evidence Storage + Camera/File Pipeline
 
-الحالة: **`IN_PROGRESS`**.
+الحالة: **`CLOSED`**.
+
+جميع substages 6C-A→6C-D أصبحت مغلقة. إغلاق Gate 6C-D / Gate 6C هو `OWNER_AUTHORIZED_WITH_Q01_DOCUMENTED_NON_BLOCKING_RESIDUAL_RISK`; لا يعني أن كل physical scenario حقق PASS.
 
 #### Gate 6C-A — Evidence Storage Contract & Failure Model
 
@@ -150,9 +155,11 @@ Final APK provenance, with hashes intentionally distinct:
 
 #### Gate 6C-D — Physical Android Evidence qualification + Gate closure
 
-الحالة: **`OPEN / IN_PROGRESS — OWNER DISPOSITION RECONCILED; GATE NOT CLOSED`**.
+الحالة: **`CLOSED — OWNER_AUTHORIZED_WITH_Q01_DOCUMENTED_NON_BLOCKING_RESIDUAL_RISK`**.
 
-- governing base recorded for Gate 6C-D: `20d194959afa50ce705198ba993554c7f9cc210d`;
+- original governing qualification base: `20d194959afa50ce705198ba993554c7f9cc210d`;
+- closure governing base: `1fef46731835e2640de9b11b88078b63bde3d918`;
+- closure authorization date: `2026-09-12`;
 - Camera correction branch: `correction/gate6c-d-camera-process-death-v1`;
 - Gallery correction branch: `correction/gate6c-d-gallery-native-picker-v1`;
 - historical Camera-correction physical SHA `560e5cf9...`: APK SHA-256 `e855ff9d266dbfe22eca81fa2959939d71b62113640f1dd73c1332de6a22967d`; artifact `10191115023` / `gate6c-d-camera-correction-apk-560e5cf9c7b84554e79bb434afb6a662ac7d9376`; ZIP SHA-256 `920df2197ca1fe42b5b5183f17950ef48f34b283b3fa274d772e020da0d047be`;
@@ -171,6 +178,7 @@ Historical evidence is preserved and not rewritten:
 ### Current Q01→Q13 disposition
 
 - **Q01 — `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`.** Latest retest used qualification APK `44a231a8281d1031a40e7105160c919633d32531` from a clean synthetic DB with a valid owner, readiness `READY`, and Evidence rows `0`. After **Q01 Camera Commit**, disposable photo capture and acceptance, the app returned with `Synthetic Visit owner = not reconstructed`, readiness `NOT_OPEN`, volatile source `none`, and a real restored Camera source from `getPhoto / CAMERA_PHOTO`. No Q01 canonical PASS result was produced and no Evidence row was added. Logcat shows the app launched external Camera from PID `18964`; while Camera remained foreground a broad wave of Android processes died, including app PID `18964`; Android later created app PID `21912`. `system_server` remained alive, so the evidence does not show a full device reboot. The root cause of the process-death wave is **`UNKNOWN / UNESTABLISHED`**. This is not classified as a proven product defect and does not establish that normal Camera commit is impossible.
+- **Q01 closure waiver — `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`.** `physical_pass_claimed=false`, `product_defect_established=false`, `impossibility_claimed=false`. The waiver accepts Q01 as a documented non-blocking physical-qualification residual risk for Gate 6C-D closure; it does **not** convert Q01 to PASS and does **not** establish product correctness for the uninterrupted normal-Camera-return path. Requalify that direct path if a suitable physical environment/device becomes available without the current environmental blocking, or if Camera acquisition behavior/material implementation changes. This trigger does not automatically reopen Gate 6C-D.
 - **Q01 diagnostics do not prove OOM/LMK.** A later meminfo snapshot reported approximately Total RAM `2,854,240K`, status `normal`, Free RAM `481,322K`, ZRAM physical `165,648K` for `787,104K` swap, and app PSS about `167,050K`; because it was captured after the event it neither proves nor disproves memory state at the time of death. `dmesg` was unavailable with `dmesg: klogctl: Permission denied`. Android DropBox search returned `Searching for: lowmem` / `No entries found.` No direct OOM/LMK evidence is established.
 - **Q02 — PHYSICAL PASS.** Current pass remains the accepted native-picker physical pass on `4ac992...`; historical IonCamera FAIL remains historical.
 - **Q03 — PHYSICAL PASS.** Accepted on the same `4ac992...` runtime after Q02 without DB reset; no unpreserved canonical JSON fields are invented.
@@ -187,9 +195,11 @@ Historical evidence is preserved and not rewritten:
 
 Project Owner dispositions adopted on `2026-09-12`:
 
-- Q01 = **`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`**. Cause remains `UNKNOWN / UNESTABLISHED`; no product-defect or impossibility claim.
+- Q01 = **`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`** + **`DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`**. Cause remains `UNKNOWN / UNESTABLISHED`; no Q01 physical PASS, product-defect, impossibility, OOM/LMK, or USB/ADB-causality claim.
 - Q05 = **`NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`**. Historical scenario identity may remain for traceability; no physical PASS is claimed.
 - Literal `REAL_DEVICE_ENOSPC` = **`DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`**. Q12 proves a real-device write failure but not literal ENOSPC; `enospcProven=false`. Do not fill the Project Owner's device storage merely to force literal ENOSPC.
+- Gate 6C-D = **CLOSED** by owner-authorized closure with the Q01 documented non-blocking residual risk.
+- Gate 6C = **CLOSED** because all 6C-A→6C-D substages are closed.
 
 ### Environment / USB observation — separate from product verdict
 
@@ -201,13 +211,11 @@ Current external physical evidence folder:
 
 Latest Q01 diagnostic filenames retained externally include `Q01-retest-01-restored-state.png`, `Q01-retest-02-restored-state.png`, `Q01-retest-03-restored-state.png`, `Q01-retest-logcat-full.txt`, `Q01-retest-meminfo-after-event.txt`, `Q01-retest-dmesg-after-event.txt`, and `Q01-retest-dropbox-lowmem.txt`. Raw screenshots/logs/test binaries/device identifiers and sensitive operational material remain outside GitHub; no unrecorded hashes are invented here.
 
-Gate 6C-D remains **OPEN / IN_PROGRESS** and is not closed by this reconciliation. Gate 6C remains `IN_PROGRESS`. Gate 6D remains `NOT_STARTED`. `field_usable_v1=false`.
-
 ### Gate 6D — Arabic RTL Field UI + End-to-End Visit Workflow
 
-الحالة: **`LATER / NOT_STARTED`**.
+الحالة: **`NEXT / NOT_STARTED`**.
 
-Gate 6D has not started and must not begin before Gate 6C closure under the adopted Roadmap.
+Gate 6D has not started. `gate6d_started=false`; this closure documentation does not create a Gate 6D implementation branch or authorize executable Gate 6D implementation.
 
 ## 3) Adapter Qualification الفيزيائية المقبولة على `87135cfe...`
 
@@ -346,12 +354,12 @@ Gate 6C-C adopted repeatable host baselines: **14 / 0**, **11 / 0**, and **4 / 0
 - diagnostic Q12 writer ليس product architecture.
 - Q12 classifier semantics لم تُضعف.
 - Gate 6B **CLOSED / MERGED** عند `0905c6111269d62480e7ccadc31786bef29f3c51`.
-- Gate 6C **IN_PROGRESS**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **CLOSED / MERGED** عند `f221b215358f83dce381ac5261a856a7de4e5c98`.
+- Gate 6C **CLOSED**؛ Gate 6C-A **CLOSED / MERGED** عند `4dfe7afd920285b034b26decb500932de4dae655`؛ Gate 6C-B **CLOSED / MERGED** عند `7418df4fc03b9b6017cbeb588eb6ae76bd560be2`؛ Gate 6C-C **CLOSED / MERGED** عند `f221b215358f83dce381ac5261a856a7de4e5c98`؛ Gate 6C-D **CLOSED** by Project Owner decision dated 2026-09-12.
 - Gate 6C-A category-C project decisions: **OWNER_APPROVED / ADOPTED on 2026-09-10**.
-- Gate 6C-D **OPEN / IN_PROGRESS**; current Q01→Q13 dispositions are recorded above, including Q01 blocked/no-pass, Q05 not-applicable under current production manifest, Q12 real-device-write-failure PASS with `enospcProven=false`, strict Q08/Q13 PASS, and the non-blocking literal-ENOSPC residual-gap owner waiver. Gate 6C-D is not closed.
-- Gate 6D **LATER / NOT_STARTED**.
+- Gate 6C-D closure does not imply all physical scenarios passed: Q01 remains `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT` under the explicit non-blocking residual-risk owner waiver; Q05 remains N/A; Q12 remains real-device-write-failure-only with literal ENOSPC waived as a residual gap.
+- Gate 6D **NEXT / NOT_STARTED**؛ `gate6d_started=false`.
 - `field_usable_v1=false`.
 
 ## 8) الحالة التالية
 
-Gate 6C-D هي المرحلة الفرعية الحالية داخل Gate 6C وهي **OPEN / IN_PROGRESS**. Physical execution now has accepted PASS outcomes for Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 with the exact distinctions above; Q01 remains `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`; Q05 is `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`; literal ENOSPC remains `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER` and is not claimed as PASS. This documentation reconciliation does not itself close Gate 6C-D or Gate 6C. Gate 6D remains `NOT_STARTED`, and `field_usable_v1=false`.
+Gate 6D هي المرحلة التالية في Roadmap: **NEXT / NOT_STARTED**. Gate 6C-D وGate 6C مغلقتان بقرار Project Owner المؤرخ `2026-09-12` على closure base `1fef46731835e2640de9b11b88078b63bde3d918`. Q01 remains `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT` under a documented non-blocking residual-risk owner waiver and is not converted to PASS. No Gate 6D executable implementation, implementation branch, or start claim is introduced by this documentation/governance closure. `field_usable_v1=false`.

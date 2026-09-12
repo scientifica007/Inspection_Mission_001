@@ -51,6 +51,9 @@
 - Gate 5A→5L — Application Core، بما يشمل T0→T11 وOBS-1 و`currentVisitState` لإعادة البناء بعد restart من SQLite وحدها.
 - Gate 6A — Product Runtime Architecture & Delivery Roadmap.
 - Gate 6B — Android Shell + Native SQLite Adapter / Device Runtime Proof — **CLOSED / MERGED** عبر PR #17 عند merge SHA `0905c6111269d62480e7ccadc31786bef29f3c51`.
+- Gate 6C-A — Evidence Storage Contract — **CLOSED / MERGED**.
+- Gate 6C-B — Runtime-neutral Evidence orchestration — **CLOSED / MERGED**.
+- Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters — **CLOSED / MERGED**.
 
 Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، وقد أصبحت **MERGED / RESOLVED** دون تغيير عقد `SqlAdapter`.
 
@@ -77,17 +80,13 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
 
 ## المرحلة التنفيذية الحالية على مستوى المنتج
 
-**Gate 6B — CLOSED / MERGED.**
+**Gate 6C — IN_PROGRESS.**
 
-- implementation branch المراجَع: `implementation/gate6b-android-runtime-proof-v1`.
-- reviewed branch head: `04dcf001e5494c38258c7112619ea1d508af694c`.
-- PR: `#17`.
-- merge SHA: `0905c6111269d62480e7ccadc31786bef29f3c51`.
-- physical Adapter Qualification target: `87135cfe80ae3de79a34e941828249fc6889139c` — **PASS Q1→Q12**.
-- Q12: `PHYSICAL_PASS_REVIEW_ACCEPTED`.
-- Application-Core وreal Force Stop/Restart evidence من `89d405d6254108ce735125638ccdb2fb2e67c568` تبقى accepted بإعادة استخدام evidence مبنية على non-drift؛ `same_binary=false` بين APK `89d` وAPK `871`.
-
-المرحلة التالية هي **Gate 6C — NEXT / NOT_STARTED**. هذا لا يعني أن Gate 6C بدأت تنفيذًا.
+- Gate 6C-A و6C-B و6C-C مغلقة/مدمجة في نطاقاتها المعتمدة.
+- Gate 6C-D هي **OPEN / IN_PROGRESS** ولم تُغلق.
+- الحالة الفيزيائية الحالية: Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 لها PASS وفق التمييزات الموثقة في `CURRENT-STATE` وعقد Gate 6C-D؛ Q01 = `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`؛ Q05 = `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST` بقرار Project Owner.
+- Q12 يثبت `REAL_DEVICE_WRITE_FAILURE` فقط مع `enospcProven=false`; literal `REAL_DEVICE_ENOSPC` يبقى `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER` وليس ENOSPC PASS.
+- Gate 6D ما تزال **NOT_STARTED** و`field_usable_v1=false`.
 
 ## Roadmap حتى Field-usable v1
 
@@ -96,9 +95,11 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
  ↓
 6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   CLOSED / MERGED
  ↓
-6C  Evidence Storage + Camera/File Pipeline               NEXT / NOT_STARTED
+6C  Evidence Storage + Camera/File Pipeline               IN_PROGRESS
+    6C-A / 6C-B / 6C-C CLOSED / MERGED
+    6C-D OPEN / IN_PROGRESS
  ↓
-6D  Arabic RTL Field UI + End-to-End Visit Workflow       LATER
+6D  Arabic RTL Field UI + End-to-End Visit Workflow       NOT_STARTED
  ↓
 6E  ExternalSystemTracking application capability         LATER
  ↓

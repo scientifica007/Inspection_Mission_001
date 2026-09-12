@@ -54,6 +54,8 @@
 - Gate 6C-A — Evidence Storage Contract — **CLOSED / MERGED**.
 - Gate 6C-B — Runtime-neutral Evidence orchestration — **CLOSED / MERGED**.
 - Gate 6C-C — Android Camera/File + durable EvidenceStorage adapters — **CLOSED / MERGED**.
+- Gate 6C-D — Physical Android Evidence Qualification — **CLOSED by Project Owner decision dated 2026-09-12**, with Q01 retained as `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT` under an explicit documented non-blocking residual-risk owner waiver.
+- Gate 6C — Evidence Storage + Camera/File Pipeline — **CLOSED** after all 6C-A→6C-D substages reached closure disposition.
 
 Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlResult.lastInsertRowid` في `NodeSqliteAdapter`، موثقة في `docs/application/GATE5B-LASTINSERTROWID-CORRECTION-v1.md`، وقد أصبحت **MERGED / RESOLVED** دون تغيير عقد `SqlAdapter`.
 
@@ -80,13 +82,14 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
 
 ## المرحلة التنفيذية الحالية على مستوى المنتج
 
-**Gate 6C — IN_PROGRESS.**
+**Gate 6D — NEXT / NOT_STARTED.**
 
-- Gate 6C-A و6C-B و6C-C مغلقة/مدمجة في نطاقاتها المعتمدة.
-- Gate 6C-D هي **OPEN / IN_PROGRESS** ولم تُغلق.
-- الحالة الفيزيائية الحالية: Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 لها PASS وفق التمييزات الموثقة في `CURRENT-STATE` وعقد Gate 6C-D؛ Q01 = `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`؛ Q05 = `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST` بقرار Project Owner.
+- Gate 6C-A و6C-B و6C-C و6C-D مغلقة، ولذلك Gate 6C ككل **CLOSED**.
+- Q01 لم يتحول إلى PASS: يبقى `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`، و`physical_pass_claimed=false`، مع `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`.
+- Q05 يبقى `NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST` وليس PASS.
 - Q12 يثبت `REAL_DEVICE_WRITE_FAILURE` فقط مع `enospcProven=false`; literal `REAL_DEVICE_ENOSPC` يبقى `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER` وليس ENOSPC PASS.
-- Gate 6D ما تزال **NOT_STARTED** و`field_usable_v1=false`.
+- Gate 6D هي **NEXT / NOT_STARTED**؛ `gate6d_started=false`، ولا يوجد implementation بدأ لهذه المرحلة.
+- `field_usable_v1=false`.
 
 ## Roadmap حتى Field-usable v1
 
@@ -95,11 +98,10 @@ Gate 5B يتضمن كذلك owner-authorized narrow correction لسلوك `SqlRe
  ↓
 6B  Android Shell + Native SQLite Adapter / Device Runtime Proof   CLOSED / MERGED
  ↓
-6C  Evidence Storage + Camera/File Pipeline               IN_PROGRESS
-    6C-A / 6C-B / 6C-C CLOSED / MERGED
-    6C-D OPEN / IN_PROGRESS
+6C  Evidence Storage + Camera/File Pipeline               CLOSED
+    6C-A / 6C-B / 6C-C / 6C-D CLOSED
  ↓
-6D  Arabic RTL Field UI + End-to-End Visit Workflow       NOT_STARTED
+6D  Arabic RTL Field UI + End-to-End Visit Workflow       NEXT / NOT_STARTED
  ↓
 6E  ExternalSystemTracking application capability         LATER
  ↓

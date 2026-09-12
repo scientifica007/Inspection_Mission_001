@@ -254,7 +254,7 @@ GitHub ليس storage للتشغيل الميداني الحقيقي.
 - Gate 6C-B **CLOSED / MERGED** عبر PR #21؛ adopted host baseline **85 / 0**.
 - Gate 6C-C **CLOSED / MERGED**: final reviewed head `9de6c69eef90c490319c02eac48d236482597210`؛ exact-final-SHA qualification run `34531511138` SUCCESS؛ implementation merge عبر PR #23 عند `f221b215358f83dce381ac5261a856a7de4e5c98`؛ post-merge closure reconciliation عبر PR #24.
 - Gate 6C ككل **IN_PROGRESS**.
-- **Gate 6C-D = NEXT / NOT_STARTED**؛ `gate6c_d_started=false`.
+- **Gate 6C-D = OPEN / IN_PROGRESS**؛ `gate6c_d_started=true`. Owner disposition الحالية: Q01=`NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`; Q05=`NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST`; Q02/Q03/Q04/Q06/Q07/Q08/Q09/Q10/Q11/Q12/Q13 لها physical PASS وفق التصنيف الدقيق في `CURRENT-STATE` وعقد Gate 6C-D. Q12 يثبت `REAL_DEVICE_WRITE_FAILURE` فقط مع `enospcProven=false`; literal ENOSPC هو `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`. Gate 6C-D ليست CLOSED.
 - Gate 6D = **NOT_STARTED**؛ `field_usable_v1=false`.
 - HNT-001/HNT-002 tooling experiment: `CLOSED`.
 - Default implementation workflow: `ChatGPT + GitHub + GitHub Actions`؛ Harness/local execution agent: `ON_DEMAND_ONLY`.

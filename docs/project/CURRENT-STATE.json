@@ -673,19 +673,27 @@
         "Q13": "STRICT_PHYSICAL_PASS"
       },
       "owner_disposition_2026_09_12": {
-        "classification": "PROJECT_OWNER_DECISION_HISTORICAL_AFTER_SUBSEQUENT_Q01_PASS",
+        "classification": "PROJECT_OWNER_DECISION",
         "q01": {
-          "historical_status_at_decision": "NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT",
+          "status": "NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT",
           "root_cause": "UNKNOWN / UNESTABLISHED",
-          "physical_pass_claimed_at_decision": false,
           "product_defect_established": false,
-          "impossibility_claimed": false,
-          "historical_closure_waiver": "DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE",
-          "waiver_non_blocking": true,
-          "current_closure_basis_status": "SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS"
+          "impossible_claimed": false
         },
-        "q05": {"status": "NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST", "camera_permission_declared": false, "physical_pass_claimed": false, "synthetic_or_mock_denial_allowed": false, "add_camera_permission_to_make_test_executable": false},
-        "literal_real_device_enospc": {"status": "DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER", "q12_real_device_write_failure_pass": true, "enospc_proven": false, "literal_enospc_pass_claimed": false, "fill_owner_device_storage_to_force_enospc": false},
+        "q05": {
+          "status": "NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST",
+          "camera_permission_declared": false,
+          "physical_pass_claimed": false,
+          "synthetic_or_mock_denial_allowed": false,
+          "add_camera_permission_to_make_test_executable": false
+        },
+        "literal_real_device_enospc": {
+          "status": "DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER",
+          "q12_real_device_write_failure_pass": true,
+          "enospc_proven": false,
+          "literal_enospc_pass_claimed": false,
+          "fill_owner_device_storage_to_force_enospc": false
+        },
         "gate6c_d_closed_by_this_decision": false,
         "gate6c_closed_by_this_decision": false
       },

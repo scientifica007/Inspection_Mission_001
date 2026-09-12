@@ -43,6 +43,8 @@
     "gate6c_d_closure_governing_base_sha": "1fef46731835e2640de9b11b88078b63bde3d918",
     "gate6c_d_closure_authorization_date": "2026-09-12",
     "gate6c_d_closure_branch": "docs/gate6c-d-gate6c-closure-q01-waiver-v1",
+    "last_gate6c_d_closure_pr": 29,
+    "last_gate6c_d_closure_merge_sha": "f3839e65bd4258b1d673c71f4ec9cd2bcbfdec61",
     "gate6c_d_q01_second_device_evidence_date": "2026-09-12",
     "gate6c_d_q01_second_device_tested_sha": "44a231a8281d1031a40e7105160c919633d32531",
     "sha_policy": "Do not treat embedded SHAs as current branch HEADs; always read live main first."
@@ -380,7 +382,8 @@
       "closure_authorization_date": "2026-09-12",
       "closure_governing_base_sha": "1fef46731835e2640de9b11b88078b63bde3d918",
       "closure_branch": "docs/gate6c-d-gate6c-closure-q01-waiver-v1",
-      "closure_merge_sha": "PENDING_MERGE",
+      "closure_pr": 29,
+      "closure_merge_sha": "f3839e65bd4258b1d673c71f4ec9cd2bcbfdec61",
       "current_closure_basis": "ACCEPTED_PHYSICAL_EVIDENCE_WITH_Q01_SECOND_DEVICE_PHYSICAL_PASS_Q05_NOT_APPLICABLE_AND_LITERAL_ENOSPC_NON_BLOCKING_OWNER_WAIVER",
       "historical_q01_waiver_closure_authorization": "OWNER_AUTHORIZED_WITH_Q01_DOCUMENTED_NON_BLOCKING_RESIDUAL_RISK",
       "q01_waiver_current_closure_basis_status": "SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS",
@@ -738,6 +741,8 @@
     "closure_authorization": "OWNER_AUTHORIZED_GATE6C_CLOSURE",
     "closure_authorization_date": "2026-09-12",
     "closure_governing_base_sha": "1fef46731835e2640de9b11b88078b63bde3d918",
+    "closure_pr": 29,
+    "closure_merge_sha": "f3839e65bd4258b1d673c71f4ec9cd2bcbfdec61",
     "all_substages_closed": true,
     "closed": true
   },
@@ -829,6 +834,7 @@
       "classification": "CLOSED_WITH_SECOND_DEVICE_Q01_PHYSICAL_PASS_Q05_NA_LITERAL_ENOSPC_WAIVER",
       "closure_authorization_date": "2026-09-12",
       "closure_governing_base_sha": "1fef46731835e2640de9b11b88078b63bde3d918",
+      "pr": 29,
       "physical_device_pass_claimed": false,
       "physical_device_pass_claimed_false_reason": "Q05_IS_NOT_APPLICABLE_NOT_PASS_AND_LITERAL_REAL_DEVICE_ENOSPC_IS_NOT_PROVEN",
       "q01_status": "PHYSICAL_PASS_SECOND_PHYSICAL_DEVICE",
@@ -837,7 +843,7 @@
       "q01_historical_waiver_status": "SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS",
       "q05_status": "NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST",
       "literal_enospc_status": "DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER",
-      "merge_sha": "PENDING_MERGE"
+      "merge_sha": "f3839e65bd4258b1d673c71f4ec9cd2bcbfdec61"
     }
   },
   "canonical_hashes": {

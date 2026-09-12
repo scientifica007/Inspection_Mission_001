@@ -584,7 +584,25 @@
         "q09_orphan_reconciliation": {"status": "PASS", "zero_row_orphan_physically_published": true, "restart_reconciliation_removed_orphan": true, "orphan_removed_count": 1, "classification": "ORPHAN_REMOVED", "removed_orphan_sqlite_rows": 0, "existing_valid_evidence_remained_intact": true},
         "q10_broken_storage_reference": {"status": "PASS", "private_final_object_deliberately_removed_after_valid_commit": true, "row_retained_exactly_once": true, "reconciliation": "BROKEN_STORAGE_REFERENCE", "resolve_status": "FAILED_CLOSED", "failure_code": "E_EVIDENCE_BROKEN_STORAGE_REFERENCE", "silent_repair_or_replacement": false},
         "q11_large_file": {"status": "PASS", "file_size": 41943040, "evidence_id": 1, "storage_ref": "evidence/v1/objects/605c1422-83d6-4ecd-8d0d-df911542ef2d.bin", "content_hash": "sha256:80a3721188e40218b08b26776bc53bdae81e4784fff71d71450a197319cba113", "hash_verification_result": "MATCH", "resolve_status": "RESOLVED"},
-        "q12_real_device_write_failure": {"status": "PASS", "failure_code": "E_EVIDENCE_STORAGE_WRITE_FAILED", "write_failure_variant": "REAL_DEVICE_WRITE_FAILURE", "enospc_proven": false, "rows_before": 1, "rows_after": 1, "zero_evidence_row_delta": true, "literal_enospc_pass_claimed": false},
+        "q12_real_device_write_failure": {
+          "status": "PASS",
+          "failure_code": "E_EVIDENCE_STORAGE_WRITE_FAILED",
+          "write_failure_variant": "REAL_DEVICE_WRITE_FAILURE",
+          "enospc_proven": false,
+          "rows_before": 1,
+          "rows_after": 1,
+          "zero_evidence_row_delta": true,
+          "literal_enospc_pass_claimed": false,
+          "permission_execution": {
+            "incoming_directory": "files/evidence/v1/.incoming",
+            "temporary_mode": "500",
+            "restored_mode": "700",
+            "restored_immediately": true,
+            "restoration_verified": true,
+            "restoration_verification": "drwx------",
+            "proves_literal_enospc": false
+          }
+        },
         "q13_strict_durability_retrieval": {"status": "STRICT_PHYSICAL_PASS", "independent_explicit_force_stop_relaunch": true, "metadata_survived": true, "same_storage_ref": "evidence/v1/objects/605c1422-83d6-4ecd-8d0d-df911542ef2d.bin", "same_content_hash": "sha256:80a3721188e40218b08b26776bc53bdae81e4784fff71d71450a197319cba113", "same_file_size": 41943040, "reconciliation": "VALID_REFERENCE", "hash_verification_result": "MATCH", "resolve_status": "RESOLVED"}
       },
       "current_q_matrix": {

@@ -31,7 +31,7 @@ Gate 6B وGate 6C-B وGate 6C-C أُغلقت/دُمجت في نطاقاتها ا
 
 إجمالي Gate 5B عبر suite الأصلية + suite التصحيح الضيق = **38 / 0**، مع بقاء العدّين منفصلين.
 
-نتائج Gate 6C-C native API24/API35 وfull-integration API24/API35 موثقة أدناه كـqualification evidence، وليست ordinary host regression baselines.
+نتائج Gate 6C-C native API24/API35 وfull-integration API24/API35 موثقة أدناه كـqualification evidence، وليست ordinary host regression baselines. Gate 6C-D physical evidence—including the subsequent second-device Q01 PASS—is likewise qualification evidence, not a repeatable host-regression count.
 
 Q12 host suite لا تدّعي lock proof على Android؛ الـdevice lock proof هو التشغيل الفيزيائي المقبول على `87135cfe80ae3de79a34e941828249fc6889139c`، وقد أسهم مع بقية evidence المقبولة في إغلاق Gate 6B عبر PR #17 / merge `0905c6111269d62480e7ccadc31786bef29f3c51`.
 
@@ -234,7 +234,7 @@ Gate 6C-B: **`CLOSED / MERGED`** عبر PR #21 / merge `7418df4fc03b9b6017cbeb58
 
 Gate 6C-C: **`CLOSED / MERGED`** عبر PR #23 / merge `f221b215358f83dce381ac5261a856a7de4e5c98`.
 
-Gate 6C-D: **`CLOSED`** by Project Owner decision dated 2026-09-12. Closure is `OWNER_AUTHORIZED_WITH_Q01_DOCUMENTED_NON_BLOCKING_RESIDUAL_RISK`; it is not an all-scenarios physical-PASS claim.
+Gate 6C-D: **`CLOSED`**. Current closure basis now includes Q01 PHYSICAL PASS on a second real Android device using the same exact qualification APK. The earlier Q01 owner-waiver closure decision remains historical but is `SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS`.
 
 Gate 6D: **`NEXT / NOT_STARTED`**; `gate6d_started=false`.
 
@@ -244,7 +244,9 @@ Gate 6D: **`NEXT / NOT_STARTED`**; `gate6d_started=false`.
 
 These are physical qualification outcomes, not repeatable host regression baseline counts. Historical FAIL/BLOCKED attempts remain historical.
 
-- Q01: `NO_PASS / BLOCKED_ON_CURRENT_PHYSICAL_ENVIRONMENT`; `physical_pass_claimed=false`; no established product defect or impossibility; current physical-event root cause remains `UNKNOWN / UNESTABLISHED`. Project Owner accepts it as `DOCUMENTED_NON_BLOCKING_PHYSICAL_QUALIFICATION_RESIDUAL_RISK / OWNER_WAIVER_FOR_GATE6C_D_CLOSURE`. The waiver does not establish correctness of the uninterrupted normal-Camera-return path and does not convert Q01 to PASS. Requalify Q01 if a suitable non-blocked physical environment/device becomes available or if Camera acquisition behavior/material implementation changes; that trigger does not automatically reopen Gate 6C-D.
+- Q01 current: **PHYSICAL PASS on second physical device** (`Samsung SM-M356B`, Android 16, API 36) using `testedGitSha=44a231a8281d1031a40e7105160c919633d32531`. SHA-256 of the actually installed APK independently matched `d18d4eef683707e66c3aacae885d9d7871685f4bd0e869a74efca6bc5aee54f2`; canonical result was PASS with Evidence ID 1, one SQLite row, canonical ref/hash, hash `MATCH`, resolve `RESOLVED`, and scenario-level `physical_pass_claimed=true`. Application PID remained `26910` across the successful Camera round trip; no process death was observed. PID continuity is supplementary, not a mandatory protocol criterion.
+- Q01 historical first-device: remains **`NO_PASS / BLOCKED_ON_FIRST_PHYSICAL_ENVIRONMENT`** with root cause `UNKNOWN / UNESTABLISHED`, `product_defect_established=false`, `impossibility_claimed=false`. Earlier process-death attempts also remain historical. No OPPO/ColorOS/OOM/LMK/Camera-plugin/USB cause is established by either the earlier failures or the later Samsung success.
+- Former Q01 owner waiver: remains historical engineering evidence, but current status is **`SUPERSEDED_AS_CURRENT_CLOSURE_BASIS_BY_SUBSEQUENT_Q01_PHYSICAL_PASS`**.
 - Q02: PHYSICAL PASS.
 - Q03: PHYSICAL PASS.
 - Q04: PHYSICAL PASS.
@@ -259,4 +261,4 @@ These are physical qualification outcomes, not repeatable host regression baseli
 - Q13: STRICT PHYSICAL PASS after an independent explicit force-stop/relaunch.
 - Literal `REAL_DEVICE_ENOSPC`: `DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER`; it is not an ENOSPC PASS.
 
-Gate 6C-D is `CLOSED` by owner-authorized closure disposition; Gate 6C is `CLOSED`; Gate 6D is `NEXT / NOT_STARTED`; `field_usable_v1=false`.
+Gate 6C-D is `CLOSED`; Gate 6C is `CLOSED`; Gate 6D is `NEXT / NOT_STARTED`; `field_usable_v1=false`. Gate-level `physical_device_pass_claimed=false` remains correct because Q05 is N/A rather than PASS and literal ENOSPC is unproven—not because Q01 failed.

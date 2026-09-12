@@ -686,8 +686,8 @@
         },
         "q05": {"status": "NOT_APPLICABLE_UNDER_CURRENT_PRODUCTION_MANIFEST", "camera_permission_declared": false, "physical_pass_claimed": false, "synthetic_or_mock_denial_allowed": false, "add_camera_permission_to_make_test_executable": false},
         "literal_real_device_enospc": {"status": "DOCUMENTED_RESIDUAL_GAP / NON_BLOCKING_OWNER_WAIVER", "q12_real_device_write_failure_pass": true, "enospc_proven": false, "literal_enospc_pass_claimed": false, "fill_owner_device_storage_to_force_enospc": false},
-        "gate6c_d_closed_by_this_decision": true,
-        "gate6c_closed_by_this_decision": true
+        "gate6c_d_closed_by_this_decision": false,
+        "gate6c_closed_by_this_decision": false
       },
       "q07_protocol_fallback": {
         "am_kill_result": "DENIED_SECURITYEXCEPTION_MISSING_KILL_BACKGROUND_PROCESSES",
